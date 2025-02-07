@@ -1017,6 +1017,28 @@
                         return `<p>${token.text}</p>`;
                     }
                 }, {
+                    name: 'katexDollarBlock',
+                    level: 'block',
+                    start(src) {
+                        return src.indexOf('$');
+                    },
+                    tokenizer(src) {
+                        const match = src.match(/^\$\$([\s\S]+?)\$\$/);
+                        if (match) {
+                            const raw = match[0];
+                            const text = katex.renderToString(match[1].replace(/\\\\/g, '\\'), { displayMode: true });
+                            return {
+                                type: 'katexDollarBlock',
+                                raw,
+                                text
+                            };
+                        }
+                        return false;
+                    },
+                    renderer(token) {
+                        return `<p>${token.text}</p>`;
+                    }
+                }, {
                     name: 'katexInline',
                     level: 'inline',
                     start(src) {
@@ -1039,18 +1061,18 @@
                         return token.text;
                     }
                 }, {
-                    name: 'katexDollar',
-                    level: 'block',
+                    name: 'katexDollarInline',
+                    level: 'inline',
                     start(src) {
                         return src.indexOf('$');
                     },
                     tokenizer(src) {
-                        const match = src.match(/^\$(\$)?([\s\S]+?)\$?\$/);
+                        const match = src.match(/^\$([\s\S]+?)\$/);
                         if (match) {
                             const raw = match[0];
-                            const text = katex.renderToString(match[2].replace(/\\\\/g, '\\'), { displayMode: !!match[1] });
+                            const text = katex.renderToString(match[1].replace(/\\\\/g, '\\'), { displayMode: false });
                             return {
-                                type: 'katexDollar',
+                                type: 'katexDollarInline',
                                 raw,
                                 text
                             };
@@ -1058,7 +1080,7 @@
                         return false;
                     },
                     renderer(token) {
-                        return `<p>${token.text}</p>`;
+                        return token.text;
                     }
                 }],
                 renderer: {
