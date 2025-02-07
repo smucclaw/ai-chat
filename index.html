@@ -467,10 +467,6 @@
             overflow: hidden;
             overflow-x: auto;
         }
-
-        .katex .mopen, .katex .mclose {
-            display: none;
-        }
     </style>
 </head>
 <body>
@@ -1002,13 +998,13 @@
                     name: 'katexBlock',
                     level: 'block',
                     start(src) {
-                        return src.indexOf('\\');
+                        return src.indexOf('\\\[');
                     },
                     tokenizer(src) {
-                        const match = src.match(/^\\(\[[\s\S]+?)\\\]/);
+                        const match = src.match(/^\\\[([\s\S]+?)\\\]/);
                         if (match) {
                             const raw = match[0];
-                            const text = katex.renderToString(match[1].replace(/\\\\/g, '\\') + ']', { displayMode: true });
+                            const text = katex.renderToString(match[1].replace(/\\\\/g, '\\'), { displayMode: true });
                             return {
                                 type: 'katexBlock',
                                 raw,
@@ -1024,13 +1020,13 @@
                     name: 'katexInline',
                     level: 'inline',
                     start(src) {
-                        return src.indexOf('\\');
+                        return src.indexOf('\\\(');
                     },
                     tokenizer(src) {
-                        const match = src.match(/^\\(\([\s\S]+?)\\\)/);
+                        const match = src.match(/^\\\(([\s\S]+?)\\\)/);
                         if (match) {
                             const raw = match[0];
-                            const text = katex.renderToString(match[1].replace(/\\\\/g, '\\') + ')', { displayMode: false });
+                            const text = katex.renderToString(match[1].replace(/\\\\/g, '\\'), { displayMode: false });
                             return {
                                 type: 'katexInline',
                                 raw,
@@ -1041,6 +1037,28 @@
                     },
                     renderer(token) {
                         return token.text;
+                    }
+                }, {
+                    name: 'katexDollar',
+                    level: 'block',
+                    start(src) {
+                        return src.indexOf('$');
+                    },
+                    tokenizer(src) {
+                        const match = src.match(/^\$(\$)?([\s\S]+?)\$?\$/);
+                        if (match) {
+                            const raw = match[0];
+                            const text = katex.renderToString(match[2].replace(/\\\\/g, '\\'), { displayMode: !!match[1] });
+                            return {
+                                type: 'katexDollar',
+                                raw,
+                                text
+                            };
+                        }
+                        return false;
+                    },
+                    renderer(token) {
+                        return `<p>${token.text}</p>`;
                     }
                 }],
                 renderer: {
