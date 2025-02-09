@@ -404,13 +404,38 @@
             margin-bottom: 0px;
         }
 
+        .code {
+            background-color: var(--content-box);
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .meta {
+            border-top: 1px solid #333;
+            font-size: 13px;
+            color: #888;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 1em;
+        }
+
+        .meta button.copy {
+            background-color: transparent;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' aria-hidden='true'%3E%3Cpath fill='%23888' d='M19.5 2C20.88 2 22 3.12 22 4.5v11c0 1.21-.86 2.22-2 2.45V4.5c0-.28-.22-.5-.5-.5H6.05c.23-1.14 1.24-2 2.45-2h11zm-4 4C16.88 6 18 7.12 18 8.5v11c0 1.38-1.12 2.5-2.5 2.5h-11C3.12 22 2 20.88 2 19.5v-11C2 7.12 3.12 6 4.5 6h11zM4 19.5c0 .28.22.5.5.5h11c.28 0 .5-.22.5-.5v-11c0-.28-.22-.5-.5-.5h-11c-.28 0-.5.22-.5.5v11z'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            width: 16px;
+            height: 16px;
+            border: none;
+            cursor: pointer;
+        }
+
         pre {
             display: block;
             overflow: hidden;
             overflow-x: auto;
-            border-radius: 5px;
-            background: var(--content-box);
-            margin: 10px 0;
+            margin-bottom: 0;
         }
 
         code {
@@ -419,6 +444,12 @@
             background: var(--content-box);
             color: #d7ba7d;
             font-size: 1em;
+        }
+
+        pre > code {
+            display: block;
+            background: transparent;
+            padding: 1em;
         }
 
         a {
@@ -440,6 +471,7 @@
             overflow-x: auto;
             margin: 10px 0;
             max-width: 100%;
+            width: fit-content;
             border-radius: 5px;
             background: var(--content-box);
         }
@@ -1087,35 +1119,11 @@
                         return token.text;
                     }
                 }],
-                renderer: {
-                    table(token) {
-                        let header = '';
-
-                        let cell = '';
-                        for (let j = 0; j < token.header.length; j++) {
-                        cell += this.tablecell(token.header[j]);
-                        }
-                        header += this.tablerow({ text: cell });
-
-                        let body = '';
-                        for (let j = 0; j < token.rows.length; j++) {
-                        const row = token.rows[j];
-
-                        cell = '';
-                        for (let k = 0; k < row.length; k++) {
-                            cell += this.tablecell(row[k]);
-                        }
-
-                        body += this.tablerow({ text: cell });
-                        }
-                        if (body) body = `<tbody>${body}</tbody>`;
-
-                        return '<div class="table"><table>\n'
-                        + '<thead>\n'
-                        + header
-                        + '</thead>\n'
-                        + body
-                        + '</table></div>\n';
+                hooks: {
+                    postprocess(html) {;
+                        return html
+                            .replace(/(<table>[\s\S]*?<\/table>)/g, '<div class="table">$1</div>')
+                            .replace(/(<pre><code(?: class="language-(\S+)")>[\s\S]*?<\/code><\/pre>)/g, '<div class="code">$1<div class="meta"><span>$2</span><button class="copy" /></div></div>');
                     }
                 }
             };
@@ -1178,6 +1186,14 @@
             const menuElement = e.target.closest('.menu-container')
             if (!menuElement) {
                 closeMenu();
+            }
+
+            if (e.target.className === 'copy') {
+                const textToCopy = e.target.closest('.code').children[0].children[0].innerText;
+                navigator.clipboard.writeText(textToCopy)
+                    .catch((error) => {
+                        console.error("Error:", error);
+                    });
             }
         });
 
