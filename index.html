@@ -1024,10 +1024,10 @@
                     name: 'katexDollarBlock',
                     level: 'block',
                     start(src) {
-                        return src.indexOf('$');
+                        return src.indexOf('$$');
                     },
                     tokenizer(src) {
-                        const match = src.match(/^\$\$([\s\S]+?)\$\$/);
+                        const match = src.match(/^\$\$([\s\S]+?)\$\$(\s|$)/);
                         if (match) {
                             const raw = match[0];
                             const text = katex.renderToString(match[1].replace(/\\\\/g, '\\'), { displayMode: true });
@@ -1071,10 +1071,10 @@
                         return src.indexOf('$');
                     },
                     tokenizer(src) {
-                        const match = src.match(/^\$([\s\S]+?)\$/);
+                        const match = src.match(/^\$([\s\S]+?)\$([\s.,]|$)/);
                         if (match) {
                             const raw = match[0];
-                            const text = katex.renderToString(match[1].replace(/\\\\/g, '\\'), { displayMode: false });
+                            const text = katex.renderToString(match[1].replace(/\\\\/g, '\\'), { displayMode: false }) + match[2];
                             return {
                                 type: 'katexDollarInline',
                                 raw,
