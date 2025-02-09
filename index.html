@@ -19,7 +19,7 @@
         body {
             --width: calc(100vw - 20px);
             --max-width: 986px;
-            --background-color: #0d0d0daa;
+            --background-color: #111111e2;
             --offset: 0px;
             --content-box: #18181888;
             font-family: Arial, sans-serif;
@@ -59,6 +59,7 @@
             display: flex;
             justify-content: space-between;
             background-color: var(--background-color);
+            backdrop-filter: blur(5px);
             box-shadow: 0 5px 25px #00000055;
         }
 
@@ -255,6 +256,7 @@
             margin: 0 -10px;
             max-width: var(--max-width);
             background-color: var(--background-color);
+            backdrop-filter: blur(5px);
             width: var(--width);
             min-height: 60px;
             box-shadow: 0 -2px 25px #00000055;
