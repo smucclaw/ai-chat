@@ -19,7 +19,7 @@
         body {
             --width: calc(100vw - 20px);
             --max-width: 986px;
-            --background-color: #111111e2;
+            --background-color: #111111ee;
             --offset: 0px;
             --content-box: #18181888;
             font-family: Arial, sans-serif;
@@ -58,7 +58,7 @@
             margin: 0 -10px;
             display: flex;
             justify-content: space-between;
-            background-color: var(--background-color);
+            background: linear-gradient(to bottom, #111 0%, var(--background-color) 100%);
             backdrop-filter: blur(5px);
             box-shadow: 0 5px 25px #00000055;
         }
@@ -214,7 +214,7 @@
         }
 
         .chat-messages {
-            padding: 4px 0;
+            padding: 8px 0 4px;
             overflow-x: hidden;
             display: flex;
             flex-direction: column;
@@ -255,7 +255,7 @@
             padding: 10px 10px calc(10px + var(--offset));
             margin: 0 -10px;
             max-width: var(--max-width);
-            background-color: var(--background-color);
+            background: linear-gradient(to top, #111 0%, var(--background-color) 100%);
             backdrop-filter: blur(5px);
             width: var(--width);
             min-height: 60px;
