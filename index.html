@@ -1141,7 +1141,7 @@
                         return src.indexOf('$');
                     },
                     tokenizer(src) {
-                        const match = src.match(/^\$([\s\S]+?)\$([\s.,]|$)/);
+                        const match = src.match(/^\$([\s\S]+?)\$([\s.,)\]/:;"']|$)/);
                         if (match) {
                             const raw = match[0];
                             const text = katex.renderToString(match[1].replace(/\\\\/g, '\\'), { displayMode: false }) + match[2];
@@ -1253,7 +1253,7 @@
 
             window.addEventListener('scroll', function () {
                 const scrollButton = document.getElementById('scrolldown')
-                const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 10
+                const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 26
                 scrollButton.style.display = isAtBottom ? 'none' : 'block'
             })
         });
