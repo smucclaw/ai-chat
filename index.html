@@ -481,7 +481,7 @@
 
         pre > code {
             display: block;
-            background: transparent;
+            background: transparent !important;
             padding: 1em;
         }
 
@@ -581,7 +581,7 @@
 
     <script>
         // Configuration
-        const MAX_TOKENS = 8072;
+        const MAX_TOKENS = 32000;
         const DEFAULT_MODEL = 'llama-3.2-3b-instruct';
         const MAX_STORAGE_CHARS = 5242880 // 5MB character limit for localStorage
 
@@ -1141,7 +1141,7 @@
                         return src.indexOf('$');
                     },
                     tokenizer(src) {
-                        const match = src.match(/^\$([\s\S]+?)\$([\s.,)\]/:;"']|$)/);
+                        const match = src.match(/^\$([\s\S]+?)\$([\s.,]|$)/);
                         if (match) {
                             const raw = match[0];
                             const text = katex.renderToString(match[1].replace(/\\\\/g, '\\'), { displayMode: false }) + match[2];
