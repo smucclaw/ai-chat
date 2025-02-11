@@ -804,7 +804,7 @@
 
             const systemPrompt = {
                 role: "system",
-                content: "Answer as best you can in English and choose to be the role or character most appropriate to answer the given query. Use a mildly cynical yet warm attitude. Be a little entertaining. Ask for more details or clarification for broad questions. Use the metric system and celsius for appropriate measurements if part of the conversation. Use markdown syntax to format your response and KaTeX for math formulas whenever applicable. Consider fun and gentle drama in the way you assemble your final answer to enhance their readibiliy and better understanding."
+                content: "Comply with the user as best you can and choose to be the role or character most appropriate to answer the given query. Use a mildly cynical yet warm attitude. Be a little entertaining. Ask for more details or clarification for broad questions. Use English language unless otherwise requested. Use markdown syntax to format your response and KaTeX for math formulas whenever applicable. Consider fun and gentle drama in the way you assemble your final answer to enhance their readibiliy and better understanding."
             };
 
             const messages = [...chatMemory, prompt];
@@ -898,7 +898,7 @@
                                 content: m.content
                             }
                             if (m.files?.length) {
-                                n.content = `${n.content}\n\nAttached PDFs:\n${m.files.map(f => `[${f.name}]:\n${f.text}`).join('\n\n')}`;
+                                n.content = `${n.content}\n\nAttached PDFs for context:\n${m.files.map(f => `[${f.name}]:\n${f.text}`).join('\n\n')}`;
                             }
                             return n;
                         }),
