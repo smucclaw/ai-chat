@@ -1354,10 +1354,12 @@
                     }
                 }],
                 hooks: {
-                    postprocess(html) {;
-                        return html
+                    postprocess(html) {
+                        html = html
                             .replace(/(<table>[\s\S]*?<\/table>)/g, '<div class="table">$1</div>')
-                            .replace(/(<pre><code(?: class="language-(\S+)")>[\s\S]*?<\/code><\/pre>)/g, '<div class="code">$1<div class="meta"><span>$2</span><button class="copy" /></div></div>');
+                            .replace(/(<pre><code[^>]*(language-(\S+))?>[\s\S]*?<\/code><\/pre>)/g, '<div class="code">$1<div class="meta"><span>$2</span><button class="copy" /></div></div>');
+                        console.log(html)
+                        return html;
                     }
                 }
             };
