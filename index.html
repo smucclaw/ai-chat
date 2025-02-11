@@ -246,13 +246,6 @@
             gap: 4px;
         }
 
-        .user-message .attachment.pdf:before {
-            content: 'PDF';
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 8px;
-            font-weight: bold;
-        }
-
         .ai-message {
             background-color: #33333399;
             backdrop-filter: blur(5px);
@@ -353,14 +346,21 @@
             min-width: 44px;
             max-width: 200px;
             overflow: hidden;
+            color: rgba(255, 255, 255, .8);
             background: var(--background);
+        }
+
+        .attachment .type {
+            color: #d7ba7d;
+            font-size: 7px;
+            font-weight: bold;
+            text-transform: uppercase;
         }
 
         .attachment .name {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            color: rgba(255, 255, 255, .8);
             font-size: 13px;
         }
 
@@ -373,6 +373,8 @@
             padding: 0;
             font-size: 18px;
             line-height: 14px;
+            position: relative;
+            top: -1px;
         }
 
         .input-container .attachment button {
@@ -664,8 +666,8 @@
         <div class="input-container">
             <div class="attachments" id="fileAttachments"></div>
             <textarea id="userInput" placeholder="What's on your mind ..." rows="1" onfocus="adjustOffset('0px')" onblur="adjustOffset()"></textarea>
-            <input type="file" id="fileInput" accept=".pdf" multiple>
-            <button id="addFiles" onclick="document.getElementById('fileInput').click()" title="Attach PDF files"></button>
+            <input type="file" id="fileInput" accept=".pdf,.txt,.csv,.tsv,.js,.json,.jsx,.ts,.tsx,.css,.scss,.less,.html,.htm,.xml,.yaml,.yml,.md,.py,.rb,.java,.c,.cpp,.h,.hpp,.cs,.php,.sql,.sh,.bash,.zsh" multiple>
+            <button id="addFiles" onclick="document.getElementById('fileInput').click()" title="Attach PDF or Text files"></button>
             <button id="ask" onclick="sendMessage()" disabled title="Start/stop answer generation"></button>
             <button id="scrolldown" onclick="window.scrollTo(0, document.documentElement.scrollHeight)"></button>
         </div>
@@ -718,19 +720,26 @@
             const files = event.target.files;
 
             for (const file of files) {
-                if (file.type !== 'application/pdf') continue;
                 if (attachedFiles.find(f => f.name === file.name)) continue;
 
-                try {
-                    const text = await extractTextFromPDF(file);
-                    
+                if (file.type === 'application/pdf') {
+                    try {
+                        const text = await extractTextFromPDF(file);
+                        
+                        attachedFiles.push({
+                            name: file.name,
+                            text: text,
+                            type: 'pdf'
+                        });
+                    } catch (error) {
+                        console.error('Error reading PDF:', error);
+                    }
+                } else {
                     attachedFiles.push({
                         name: file.name,
-                        text: text,
-                        type: 'pdf'
+                        text: await file.text(),
+                        type: file.name.split('.')[1] || 'txt'
                     });
-                } catch (error) {
-                    console.error('Error reading PDF:', error);
                 }
             }
             const attachmentsElem = document.getElementById('fileAttachments');
@@ -747,6 +756,7 @@
                 const attachment = document.createElement('div');
                 attachment.className = 'attachment ' + file.type;
                 attachment.innerHTML = `
+                    <span class="type">${file.type}</span>
                     <span class="name">${file.name}</span>
                     <button onclick="removeFile('${file.name}')">&times;</button>
                 `;
@@ -809,7 +819,7 @@
 
             const messages = [...chatMemory, prompt];
 
-            let tokenLength = JSON.stringify(systemPrompt).length + 2;
+            let tokenLength = JSON.stringify(systemPrompt).length + 40;
             for (let i = messages.length - 1; i >= 0; i--) {
                 tokenLength += JSON.stringify(messages[i]).length + 1;
                 if (tokenLength > MAX_TOKENS) {
@@ -822,7 +832,6 @@
             }
 
             if (!messages.length) {
-                console.log(messages)
                 appendMessage('Prompt size is too large.', 'system')
                 return;
             }
@@ -898,7 +907,8 @@
                                 content: m.content
                             }
                             if (m.files?.length) {
-                                n.content = `${n.content}\n\nAttached PDFs for context:\n${m.files.map(f => `[${f.name}]:\n${f.text}`).join('\n\n')}`;
+                                let i = 1;
+                                n.content = `${n.content}\n\n${m.files.length} file(s) are attached for context:\n${m.files.map(f => `[File ${i++}: ${f.name}]:\n${f.text}`).join('\n\n')}`;
                             }
                             return n;
                         }),
