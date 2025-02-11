@@ -828,10 +828,6 @@
                 return;
             }
 
-            if (!messageText) {
-                messageText = attachedFiles[0].type.toUpperCase() + ': ' + attachedFiles[0].name;
-            }
-
             appendMessage(messageText, 'user', attachedFiles);
 
             // Clear input and attachments
@@ -1211,7 +1207,11 @@
             }
             const option = document.createElement('button');
             option.dataset.id = chat.id;
-            option.textContent = chat.log[0].content;
+            let content = chat.log[0].content;
+            if (!content && chat.log[0].files?.length) {
+                content = chat.log[0].files[0].type.toUpperCase() + ': ' + chat.log[0].files[0].name;
+            }
+            option.textContent = content;
             option.onclick = () => loadHistoryLog(chat);
             select[replaceID ? 'prepend' : 'appendChild'](option);
         }
