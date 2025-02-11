@@ -192,7 +192,7 @@
 
         .chat-container {
             max-width: var(--max-width);
-            margin: 40px auto calc(88px + var(--offset));
+            margin: 40px auto calc(92px + var(--offset));
             width: var(--width);
             min-height: calc(100dvh - calc(130px + var(--offset)));
             display: flex;
@@ -233,6 +233,23 @@
             color: #eee;
             align-self: flex-end;
             cursor: pointer;
+            --borders: rgba(255, 255, 255, .3);
+            --background: rgba(0, 0, 0, .04);
+        }
+
+        .user-message .attachments {
+            margin: 10px 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            gap: 4px;
+        }
+
+        .user-message .attachment.pdf:before {
+            content: 'PDF';
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 8px;
+            font-weight: bold;
         }
 
         .ai-message {
@@ -260,7 +277,8 @@
             width: var(--width);
             min-height: 60px;
             box-shadow: 0 -2px 25px #00000055;
-            display: none;
+            --borders: #444;
+            --background: #222;
         }
 
         .input-container button#scrolldown {
@@ -289,7 +307,7 @@
         textarea {
             width: 100%;
             box-sizing: border-box;
-            padding: 10px 40px 10px 10px;
+            padding: 10px 40px 30px 32px;
             border: none;
             background: #333333cc;
             border-radius: 5px;
@@ -299,7 +317,9 @@
             resize: none;
             font-family: inherit;
             line-height: 20px;
-            height: 60px;
+            min-height: 64px;
+            max-height: 200px;
+            overflow-y: hidden;
         }
 
         textarea:focus {
@@ -310,15 +330,79 @@
             color: #aaa;
         }
 
-        li {
-            margin-bottom: 10px;
+        .input-container .attachments {
+            position: absolute;
+            bottom: 18px;
+            padding: 0;
+            left: 14px;
+            right: 54px;
+            display: flex;
+            gap: 4px;
+            overflow: hidden;
+            overflow-x: scroll;
+        }
+
+        .attachment {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 5px;
+            border-radius: 3px;
+            border: 1px solid var(--borders);
+            min-width: 44px;
+            max-width: 200px;
+            overflow: hidden;
+            background: var(--background);
+        }
+
+        .attachment .name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: rgba(255, 255, 255, .8);
+            font-size: 13px;
+        }
+
+        .attachment button {
+            display: none;
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            padding: 0;
+            font-size: 18px;
+            line-height: 14px;
+        }
+
+        .input-container .attachment button {
+            display: block;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        #addFiles {
+            position: absolute;
+            left: 14px;
+            top: 17px;
+            height: 24px;
+            width: 24px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            opacity: 0.5;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ddd' d='M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 0 1 5 0v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5a2.5 2.5 0 0 0 5 0V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 20px;
         }
 
         button#ask {
             position: absolute;
             right: 14px;
             top: 14px;
-            height: 52px;
+            bottom: 18px;
             box-sizing: border-box;
             width: 32px;
             background-color: #3498db;
@@ -464,6 +548,10 @@
             transition: none;
         }
 
+        li {
+            margin-bottom: 10px;
+        }
+
         pre {
             display: block;
             overflow: hidden;
@@ -573,7 +661,10 @@
             <div class="status" id="statusInfo">Loading models ...</div>
         </div>
         <div class="input-container">
-            <textarea id="userInput" placeholder="What's on your mind ..." rows="2" onfocus="adjustOffset('0px')" onblur="adjustOffset()"></textarea>
+            <div class="attachments" id="fileAttachments"></div>
+            <textarea id="userInput" placeholder="What's on your mind ..." rows="1" onfocus="adjustOffset('0px')" onblur="adjustOffset()"></textarea>
+            <input type="file" id="fileInput" accept=".pdf" multiple>
+            <button id="addFiles" onclick="document.getElementById('fileInput').click()" title="Attach PDF files"></button>
             <button id="ask" onclick="sendMessage()" disabled title="Start/stop answer generation"></button>
             <button id="scrolldown" onclick="window.scrollTo(0, document.documentElement.scrollHeight)"></button>
         </div>
@@ -599,6 +690,7 @@
         let lastThrottleTime = 0
         let queuedTokens = ''
         let throttleInterval = null
+        let attachedFiles = [];
 
         function adjustOffset(value) {
             if (!value) {
@@ -621,6 +713,75 @@
           clearInterval(generatingInterval);
         }
 
+        async function handleFileUpload(event) {
+            const files = event.target.files;
+
+            for (const file of files) {
+                if (file.type !== 'application/pdf') continue;
+                if (attachedFiles.find(f => f.name === file.name)) continue;
+
+                try {
+                    const text = await extractTextFromPDF(file);
+                    
+                    attachedFiles.push({
+                        name: file.name,
+                        text: text,
+                        type: 'pdf'
+                    });
+                } catch (error) {
+                    console.error('Error reading PDF:', error);
+                }
+            }
+            const attachmentsElem = document.getElementById('fileAttachments');
+            appendFileElements(attachedFiles, attachmentsElem);
+            event.target.value = '';
+        }
+
+        function appendFileElements(files, elem) {
+            if (!elem) {
+                elem = document.createElement('div');
+                elem.className = 'attachments';
+            }
+            files.forEach(file => {
+                const attachment = document.createElement('div');
+                attachment.className = 'attachment ' + file.type;
+                attachment.innerHTML = `
+                    <span class="name">${file.name}</span>
+                    <button onclick="removeFile('${file.name}')">&times;</button>
+                `;
+                elem.appendChild(attachment);
+            })
+
+            return elem;
+        }
+
+        async function extractTextFromPDF(file) {
+            // We'll use pdf.js to extract text
+            const pdfjsLib = window['pdfjs-dist/build/pdf'];
+            
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+            
+            let text = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                text += content.items.map(item => item.str).join(' ') + '\n';
+            }
+            
+            return text;
+        }
+
+        function removeFile(filename) {
+            attachedFiles = attachedFiles.filter(f => f.name !== filename);
+            const fileAttachments = document.getElementById('fileAttachments');
+            const attachment = Array.from(fileAttachments.children)
+                .find(el => el.querySelector('.name').textContent === filename);
+            if (attachment) {
+                fileAttachments.removeChild(attachment);
+            }
+        }
+
         async function sendMessage() {
             if (!isAvailable) return;
 
@@ -633,28 +794,53 @@
             let messageText = inputElem.value.trim();
             
             if (!messageText && chatMemory.length) {
-              messageText = chatMemory.find(m => m.role === 'user')?.content
-              clearMemory();
+                messageText = chatMemory.find(m => m.role === 'user')?.content;
+                clearMemory();
             }
 
-            if (!messageText) return;
-
-            // Add user message
-            appendMessage(messageText, 'user');
-
-            // Clear input
-            inputElem.blur();
-            userInput.value = '';
+            if (!messageText && !attachedFiles.length) return;
 
             chatMemory.push({
                 role: 'user',
-                content: messageText
+                content: messageText,
+                files: attachedFiles
             });
 
             const messages = [{
                 role: "system",
-                content: "Answer as best you can in English and choose to be the role or character most appropriate to answer the given query. Use a mildly cynical yet warm attitude. Be a little entertaining. Ask for more details or clarification for broad questions. Use the metric system and celsius for appropriate measurements if part of the conversation. Use markdown and KaTeX syntax to format your response if applicable. Consider fun and gentle drama in the way you assemble your final answer to enhance their readibiliy and better understanding."
+                content: "Answer as best you can in English and choose to be the role or character most appropriate to answer the given query. Use a mildly cynical yet warm attitude. Be a little entertaining. Ask for more details or clarification for broad questions. Use the metric system and celsius for appropriate measurements if part of the conversation. Use markdown syntax to format your response and KaTeX for math formulas whenever applicable. Consider fun and gentle drama in the way you assemble your final answer to enhance their readibiliy and better understanding."
             }, ...chatMemory];
+
+            let tokenLength = 0;
+            for (let i = messages.length - 1; i >= 0; i--) {
+                tokenLength += JSON.stringify(messages[i]).length + 3;
+                if (tokenLength > MAX_TOKENS) {
+                    while (i >= 0) {
+                        messages.shift();
+                        i--;
+                    }
+                    continue;
+                }
+            }
+
+            if (!messages.length) {
+                appendMessage('Prompt size is too large.', 'system')
+                return;
+            }
+
+            if (!messageText) {
+                messageText = attachedFiles[0].type.toUpperCase() + ': ' + attachedFiles[0].name;
+            }
+
+            appendMessage(messageText, 'user', attachedFiles);
+
+            // Clear input and attachments
+            inputElem.blur();
+            userInput.value = '';
+            userInput.style.height = 'auto'
+            attachedFiles = [];
+            document.getElementById('fileAttachments').innerHTML = '';
+
 
             await streamResponse(messages, selectedModel, function (agentResponse) {
                 if (!agentResponse || cancelStreaming) return;
@@ -702,18 +888,6 @@
             let agentResponse = '';
 
             try {
-                let tokenLength = 0;
-                for (let i = messages.length - 1; i >= 0; i--) {
-                    tokenLength += JSON.stringify(messages[i]).length + 3;
-                    if (tokenLength > MAX_TOKENS) {
-                        while (i >= 0) {
-                            messages.shift();
-                            i--;
-                        }
-                        continue;
-                    }
-                }
-
                 const response = await fetch(window.API_URL + '/v1/chat/completions', {
                     method: 'POST',
                     headers: {
@@ -722,7 +896,16 @@
                     },
                     body: JSON.stringify({
                         model,
-                        messages,
+                        messages: messages.map(m => {
+                            const n = {
+                                role: m.role,
+                                content: m.content
+                            }
+                            if (m.files?.length) {
+                                n.content = `${n.content}\n\nAttached PDFs:\n${m.files.map(f => `[${f.name}]:\n${f.text}`).join('\n\n')}`;
+                            }
+                            return n;
+                        }),
                         stream: true,
                         max_tokens: MAX_TOKENS,
                         temperature: 0.7
@@ -781,13 +964,16 @@
             }
         }
 
-        function appendMessage(text, sender) {
+        function appendMessage(text, sender, files) {
             if (isGenerating) return;
 
             const messagesDiv = document.getElementById('chatMessages');
             const message = document.createElement('div');
             message.className = `message ${sender === 'user' ? 'user-message' : sender === 'system' ? 'system-message' : 'ai-message'}`;
             message.innerHTML = markdownToHtml(text);
+            if (files?.length) {
+                message.appendChild(appendFileElements(files));
+            }
             messagesDiv.appendChild(message);
             scrollToEnd(true);
         }
@@ -839,7 +1025,7 @@
 
         function scrollToEnd(noStatus) {
             const messagesDiv = document.getElementById('chatMessages');
-            if (window.scrollY + window.innerHeight - 90 > messagesDiv.scrollHeight || noStatus) {
+            if (window.scrollY + window.innerHeight - 96 > messagesDiv.scrollHeight || noStatus) {
                 window.scrollTo(0, messagesDiv.scrollHeight);
             }
 
@@ -1038,7 +1224,7 @@
             loadedChatID = chat.id;
             chatMemory = chat.log;
             chatMemory.forEach(l => {
-                appendMessage(l.content, l.role);
+                appendMessage(l.content, l.role, l.files);
             });
             hljs.highlightAll();
         }
@@ -1217,6 +1403,13 @@
             loadHistory();
 
             const textarea = document.getElementById('userInput');
+            
+            // Add auto-resize functionality
+            textarea.addEventListener('input', function () {
+                textarea.style.height = 'auto';
+                textarea.style.height = Math.min(200, textarea.scrollHeight) + 'px';
+            })
+            
             textarea.addEventListener('keypress', e => {
                 if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey && !e.altKey) {
                     e.preventDefault();
@@ -1256,6 +1449,9 @@
                 const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 26
                 scrollButton.style.display = isAtBottom ? 'none' : 'block'
             })
+
+            // Add file input handler
+            document.getElementById('fileInput').addEventListener('change', handleFileUpload);
         });
 
         if ('serviceWorker' in navigator) {
@@ -1264,6 +1460,12 @@
             })
             document.body.classList.add(window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'embedded');
         };
+    </script>
+
+    <!-- Add PDF.js library before the closing body tag -->
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 </body>
 </html>
