@@ -792,28 +792,25 @@
 
             const inputElem = document.getElementById('userInput');
             let messageText = inputElem.value.trim();
-            
-            if (!messageText && chatMemory.length) {
-                messageText = chatMemory.find(m => m.role === 'user')?.content;
-                clearMemory();
-            }
 
             if (!messageText && !attachedFiles.length) return;
 
-            chatMemory.push({
+            const prompt = {
                 role: 'user',
                 content: messageText,
                 files: attachedFiles
-            });
+            };
 
-            const messages = [{
+            const systemPrompt = {
                 role: "system",
                 content: "Answer as best you can in English and choose to be the role or character most appropriate to answer the given query. Use a mildly cynical yet warm attitude. Be a little entertaining. Ask for more details or clarification for broad questions. Use the metric system and celsius for appropriate measurements if part of the conversation. Use markdown syntax to format your response and KaTeX for math formulas whenever applicable. Consider fun and gentle drama in the way you assemble your final answer to enhance their readibiliy and better understanding."
-            }, ...chatMemory];
+            };
 
-            let tokenLength = 0;
+            const messages = [...chatMemory, prompt];
+
+            let tokenLength = JSON.stringify(systemPrompt).length + 2;
             for (let i = messages.length - 1; i >= 0; i--) {
-                tokenLength += JSON.stringify(messages[i]).length + 3;
+                tokenLength += JSON.stringify(messages[i]).length + 1;
                 if (tokenLength > MAX_TOKENS) {
                     while (i >= 0) {
                         messages.shift();
@@ -824,6 +821,7 @@
             }
 
             if (!messages.length) {
+                console.log(messages)
                 appendMessage('Prompt size is too large.', 'system')
                 return;
             }
@@ -837,8 +835,9 @@
             attachedFiles = [];
             document.getElementById('fileAttachments').innerHTML = '';
 
+            chatMemory.push(prompt);
 
-            await streamResponse(messages, selectedModel, function (agentResponse) {
+            await streamResponse([systemPrompt, ...messages], selectedModel, function (agentResponse) {
                 if (!agentResponse || cancelStreaming) return;
 
                 chatMemory.push({
