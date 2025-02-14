@@ -105,7 +105,7 @@
             position: absolute;
             top: 49px;
             left: 0px;
-            width: min(100vw, 380px);
+            width: min(var(--width), 380px);
             padding: 10px 10px 0;
             display: none;
             gap: 10px;
@@ -204,7 +204,7 @@
             width: 100%;
             box-sizing: border-box;
             padding: 5px 8px;
-            margin: 8px 0 2px;
+            margin: 8px 0 10px;
             border: none;
             background: #333333cc;
             border-radius: 5px;
@@ -1510,8 +1510,9 @@
                     document.getElementById('userInput').value = userElement.innerText;
                 }
 
-                const menuElement = e.target.closest('.menu-container')
-                if (!menuElement) {
+                const containerElement = e.target.closest('.menu-container')
+                const menuElement = e.target.closest('.menu')
+                if (!containerElement && !menuElement) {
                     closeMenu();
                 }
 
