@@ -80,6 +80,8 @@
             color: #ddd;
             margin: 0;
             font-size: 1.8em;
+            transition: transform .5s ease-in-out;
+            text-shadow: 0 5px 25px rgba(0, 0, 0, .5);
         }
 
         .header button {
@@ -733,6 +735,9 @@
             color: rgba(255,255,255,.2);
         }
 
+        .new .header h1 {
+            transform: translateY(18vh) scale(3.2);
+        }
 
         .new .input-container {
             transform: translateY(-40vh);
@@ -765,7 +770,7 @@
         }
     </style>
 </head>
-<body>
+<body class="new">
     <header>
         <div class="header">
             <div class="menu-container">
@@ -784,7 +789,7 @@
             </div>
         </div>
     </header>
-    <div id="chat" class="aichat new">
+    <div class="aichat">
         <div class="menus">
             <div class="menu" id="historyMenu"></div>
             <div class="menu" id="settingsMenu">
@@ -837,11 +842,11 @@
             if (!value) {
                 document.body.style.removeProperty('--offset');
                 if (!chatMemory.length) {
-                    document.getElementById('chat').classList.add('new');
+                    document.body.classList.add('new');
                 }
             } else {
                 document.body.style.setProperty('--offset', value);
-                document.getElementById('chat').classList.remove('new');
+                document.body.classList.remove('new');
                 window.scrollTo(0, window.innerHeight)
             }
         }
@@ -951,7 +956,7 @@
 
             if (!messageText && !attachedFiles.length) return;
 
-            document.getElementById('chat').classList.remove('new');
+            document.body.classList.remove('new');
 
             const prompt = {
                 role: 'user',
@@ -1297,7 +1302,7 @@
 
             clearMemory();
 
-            document.getElementById('chat').classList.add('new');
+            document.body.classList.add('new');
 
             if (loadedModels.find(m => m.id === DEFAULT_MODEL)) {
                 let content = 'Say a funny hello and ask how to help. Sometimes be mildly cynical. Use less than 30 English words. Don\'t wrap you answer in quotes!';
@@ -1379,7 +1384,7 @@
             if (loadedChatID === chat.id) return;
             closeMenu();
             clearMemory();
-            document.getElementById('chat').classList.remove('new');
+            document.body.classList.remove('new');
             loadedChatID = chat.id;
             chatMemory = chat.log;
             chatMemory.forEach(l => {
