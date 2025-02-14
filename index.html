@@ -26,7 +26,7 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: var(--background-color);
+            background-color: #111;
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -108,8 +108,6 @@
             width: min(var(--width), 380px);
             padding: 10px 10px 0;
             display: none;
-            gap: 10px;
-            flex-direction: column;
             background: var(--background-color);
             backdrop-filter: blur(10px);
             box-shadow: 0 10px 25px #00000055;
@@ -134,7 +132,6 @@
                 box-shadow: 0 5px 25px #00000055;
                 background: linear-gradient(to bottom, #111 0%, var(--background-color) 100%);
                 overflow: hidden;
-                gap: 2px;
             }
 
             .menu {
@@ -144,8 +141,8 @@
                 display: block;
                 width: 300px;
                 border: 0;
+                height: fit-content;
                 max-height: 50vh;
-                min-height: fit-content;
                 margin: 0;
                 box-shadow: none;
                 background: none;
