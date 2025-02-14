@@ -846,8 +846,10 @@
                 }
             } else {
                 document.body.style.setProperty('--offset', value);
-                document.body.classList.remove('new');
-                window.scrollTo(0, window.innerHeight)
+                if (window.innerWidth <= 768) {
+                    document.body.classList.remove('new');
+                    window.scrollTo(0, window.innerHeight)
+                }
             }
         }
 
