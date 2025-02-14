@@ -845,9 +845,11 @@
         function adjustOffset(value) {
             if (!value) {
                 document.body.style.removeProperty('--offset');
-                if (!chatMemory.length) {
-                    document.body.classList.add('new');
-                }
+                setTimeout(() => {
+                    if (!chatMemory.length) {
+                        document.body.classList.add('new');
+                    }
+                }, 250);
             } else {
                 document.body.style.setProperty('--offset', value);
                 if (isAvailable && window.innerWidth <= 768) {
@@ -1333,7 +1335,7 @@
             document.body.classList.add('new');
 
             if (loadedModels.find(m => m.id === DEFAULT_MODEL)) {
-                let content = 'Say a funny hello and ask how to help. Sometimes be mildly cynical. Use less than 30 English words. Don\'t wrap you answer in quotes!';
+                let content = 'Say a funny hello and ask how to help. Sometimes be mildly cynical. You must use less than 30 English words. Don\'t wrap you answer in quotes!';
                 const history = JSON.parse(localStorage.getItem('history')) || [];
                 if (history.length) {
                     content += ' Here are some previous user questions you could subtly reference on the occasion:'
