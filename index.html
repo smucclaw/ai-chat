@@ -113,9 +113,15 @@
             background: var(--background-color);
             backdrop-filter: blur(10px);
             box-shadow: 0 10px 25px #00000055;
-            max-height: calc(58dvh - 76px);
+            height: 70vh;
             overflow: hidden;
             overflow-y: auto;
+        }
+
+        @media (max-width: 1008px) {
+            .menu {
+                height: calc(100dvh - 59px);
+            }
         }
 
         @media (min-width: 1340px) {
@@ -1527,12 +1533,12 @@
         }
 
         function openMenu(menu) {
-            closeMenu();
-            document.getElementById(menu).classList.add('open')
+            closeMenu(menu);
+            document.getElementById(menu).classList.toggle('open')
         }
 
-        function closeMenu() {
-            document.querySelectorAll('.menu').forEach(e => e.classList.remove('open'))
+        function closeMenu(menu) {
+            document.querySelectorAll('.menu').forEach(e => e.id !== menu && e.classList.remove('open'))
         }
 
         function loadSettings() {
@@ -1594,12 +1600,6 @@
                 const userElement = e.target.closest('.user-message')
                 if (userElement) {
                     document.getElementById('userInput').value = userElement.innerText;
-                }
-
-                const containerElement = e.target.closest('.menu-container')
-                const menuElement = e.target.closest('.menu')
-                if (!containerElement && !menuElement) {
-                    closeMenu();
                 }
 
                 if (e.target.className === 'copy') {
