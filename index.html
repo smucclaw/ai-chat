@@ -22,7 +22,7 @@
             --max-width: 986px;
             --background-color: #080808bb;
             --offset: 0px;
-            --content-box: #18181888;
+            --content-box: #00000055;
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
@@ -33,7 +33,8 @@
             min-height: 100dvh;
             display: flex;
             flex-direction: column;
-            background-image: radial-gradient(circle at center, #111111dd 0%, #111111ee 60%, #111111ff 100%), url(bg.jpg);
+            background-image: radial-gradient(circle at center, #111111ee 0%, #111111f3 60%, #111111ff 100%), url(bg.jpg);
+            
         }
 
         .standalone {
@@ -292,32 +293,32 @@
         }
 
         .chat-messages {
-            padding: 8px 0 4px;
+            padding: 2em 4px 4px;
             overflow-x: hidden;
             display: flex;
             flex-direction: column;
-            transition: transform .5s ease-in-out;
+            transition: all .5s ease-in-out;
         }
 
         .message {
             width: fit-content;
-            max-width: 90%;
-            padding: 1px 12px;
+            max-width: 85%;
+            padding: 0 1em;
             border-radius: 15px;
-            margin-top: 10px;
-            box-shadow: 0 5px 25px #00000033;
+            margin-top: 1em;
         }
 
         .user-message {
+            margin-top: 2em;
             background-color: #3498db;
             color: #eee;
-            align-self: flex-end;
             cursor: pointer;
             --background: rgba(0, 0, 0, .1);
+            box-shadow: 0 5px 25px #00000055;
         }
 
         .user-message .attachments {
-            margin: 10px 0;
+            margin: 1em 0;
             display: flex;
             flex-wrap: wrap;
             justify-content: flex-start;
@@ -325,17 +326,17 @@
         }
 
         .ai-message {
-            background-color: #2a2a2a88;
-            backdrop-filter: blur(10px);
-            color: black;
-            align-self: flex-start;
             color: #eee;
+            max-width: 100%;
+            line-height: 1.5em;
+            padding: 0 0;
         }
 
         .system-message {
-            border: 1px solid #444;
+            line-height: 1.5em;
+            font-style: italic;
+            padding: 0 0;
             color: #888;
-            align-self: flex-start;
         }
 
         .input-container {
@@ -545,12 +546,11 @@
           font-size: 13px;
           line-height: 16px;
           color: #888;
-          padding: 10px 10px;
+          padding: 10px 0;
           border-radius: 5px;
           overflow: hidden;
           max-height: 17px;
           margin: 10px 0;
-          background: var(--content-box);
           position: relative;
         }
 
@@ -562,8 +562,8 @@
         .think:after {
             content: "";
             position: absolute;
-            top: .65rem;
-            left: 11px;
+            top: .7rem;
+            left: 1px;
             width: 16px;
             height: 16px;
             transform: rotate(-90deg);
@@ -602,7 +602,7 @@
         .code {
             background-color: var(--content-box);
             border-radius: 5px;
-            margin: 10px 0;
+            margin: 1em 0;
         }
 
         .meta {
@@ -642,7 +642,7 @@
         }
 
         li {
-            margin-bottom: 10px;
+            margin-bottom: 1em;
         }
 
         pre {
@@ -673,17 +673,17 @@
         blockquote {
             font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
             font-style: italic;
-            margin: 10px 0;
+            margin: 1em 0;
         }
 
         p {
-            margin: 10px 0;
+            margin: 1em 0;
         }
 
         .table {
             overflow: hidden;
             overflow-x: auto;
-            margin: 10px 0;
+            margin: 1em 0;
             max-width: 100%;
             width: fit-content;
             border-radius: 5px;
@@ -705,16 +705,16 @@
 
         hr {
             border: none;
-            border-bottom: 2px solid var(--content-box);
-            margin: 12px 0;
+            border-bottom: 2px solid rgba(255, 255, 255, .1);
+            margin: 1em 0;
         }
 
         h1, h2, h3, h4, h5, h6 {
-            margin: 20px 0 10px 0;
+            margin: 2em 0 1em 0;
         }
 
         .katex-display {
-            margin: 10px 0;
+            margin: 1em 0;
             padding: 12px;
             border-radius: 5px;
             background: var(--content-box);
@@ -734,7 +734,6 @@
             color: rgba(255,255,255,.2);
             text-align: center;
             font-size: .8em;
-            transition: opacity .5s ease-in-out;
             animation: load 1.6s ease-in-out 1;
         }
 
@@ -756,24 +755,23 @@
         }
 
         .new .chat-messages {
-            transform: translateY(calc(-40vh - 20px)) translateX(10px);
+            padding: 0 30px;
+            transform: translateY(calc(-40vh - 10px));
         }
 
         .new .message {
-            background: transparent;
             border: none;
-            backdrop-filter: none;
-            box-shadow: none;
         }
 
         .new .status {
             opacity: 0;
             transform: translateY(-40vh);
-            margin-top: -26px;
+            margin-top: -32px;
         }
 
         .new footer {
             opacity: 1;
+            transition: opacity .5s ease-in-out;
         }
     </style>
 </head>
@@ -853,7 +851,7 @@
                 }
             } else {
                 document.body.style.setProperty('--offset', value);
-                if (window.innerWidth <= 768) {
+                if (isAvailable && window.innerWidth <= 768) {
                     document.body.classList.remove('new');
                     window.scrollTo(0, window.innerHeight)
                 }
@@ -1302,7 +1300,7 @@
           } catch (error) {
             console.error(error)
             clearMemory()
-            appendMessage('Configure a valid OpenAI v1 compatible API in the settings.', 'system');
+            appendMessage('Configure a valid OpenAI v1 compatible API in the server settings.', 'system');
           }
         }
         
@@ -1601,6 +1599,12 @@
                 const userElement = e.target.closest('.user-message')
                 if (userElement) {
                     document.getElementById('userInput').value = userElement.innerText;
+                }
+
+                const inputElement = e.target.closest('.input-container')
+                const chatElement = e.target.closest('.chat-container')
+                if (inputElement || chatElement) {
+                    closeMenu();
                 }
 
                 if (e.target.className === 'copy') {
