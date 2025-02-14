@@ -141,7 +141,7 @@
                 display: block;
                 width: 300px;
                 border: 0;
-                height: fit-content;
+                flex: 1;
                 margin: 0;
                 box-shadow: none;
                 background: none;
@@ -149,6 +149,7 @@
             }
 
             .menu + .menu {
+                flex: 0 0 fit-content;
                 border-top: 1px solid #222;
                 max-height: 50vh;
             }
