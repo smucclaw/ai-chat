@@ -160,6 +160,12 @@
                 box-shadow: none;
                 background: none;
                 max-height: none;
+                opacity: .4;
+                transition: opacity .3s linear;
+            }
+
+            .menu:hover {
+                opacity: 1;
             }
 
             .menu + .menu {
@@ -821,7 +827,7 @@
     </div>
     <script>
         // Configuration
-        const MAX_TOKENS = 32000;
+        const MAX_TOKENS = 20000;
         const DEFAULT_MODEL = 'llama-3.2-3b-instruct';
         const MAX_STORAGE_CHARS = 5242880 // 5MB character limit for localStorage
 
@@ -849,7 +855,7 @@
                     if (!chatMemory.length) {
                         document.body.classList.add('new');
                     }
-                }, 250);
+                }, 300);
             } else {
                 document.body.style.setProperty('--offset', value);
                 if (isAvailable && window.innerWidth <= 768) {
