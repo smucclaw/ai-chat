@@ -178,7 +178,7 @@
         }
         
         .menu > div:not(:empty) + div:not(:empty) {
-            margin-top: 15px;
+            margin-top: 16px;
         }
 
         .menu button {
@@ -187,8 +187,8 @@
             cursor: pointer;
             color: #ddd;
             font-size: 1em;
-            margin: 16px 0;
-            padding: 0 3px;
+            margin: 20px 0;
+            padding: 0 8px;
             display: block;
             text-align: left;
             max-height: 3.54em;
@@ -201,7 +201,7 @@
             font-style: italic;
             border-top: 1px solid #222;
             margin: 8px 0 0;
-            padding: 12px 3px 12px 30px;
+            padding: 16px 8px 16px 30px;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ddd' aria-hidden='true'%3E%3Cpath d='M16 6V4.5C16 3.12 14.88 2 13.5 2h-3C9.11 2 8 3.12 8 4.5V6H3v2h1.06l.81 11.21C4.98 20.78 6.28 22 7.86 22h8.27c1.58 0 2.88-1.22 3-2.79L19.93 8H21V6h-5zm-6-1.5c0-.28.22-.5.5-.5h3c.27 0 .5.22.5.5V6h-4V4.5zm7.13 14.57c-.04.52-.47.93-1 .93H7.86c-.53 0-.96-.41-1-.93L6.07 8h11.85l-.79 11.07zM9 17v-6h2v6H9zm4 0v-6h2v6h-2z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: left 4px center;
@@ -212,7 +212,7 @@
             display: block;
             width: 100%;
             box-sizing: border-box;
-            padding: 4px 8px 3px;
+            padding: 5px 8px 4px;
             margin: 8px 0 10px;
             border: none;
             background: #333333cc;
@@ -233,7 +233,7 @@
             display: block;
             content: 'History';
             color: #444;
-            margin: 4px 0;
+            margin: 4px 0 -4px;
         }
 
         #historyMenu:empty:before {
@@ -250,18 +250,18 @@
             display: block;
             content: 'Models';
             color: #444;
-            margin: 4px 0;
+            margin: 4px 0 -4px;
         }
 
         #settingsSection:before {
             display: block;
             content: 'Server';
             color: #444;
-            margin: 4px 0;
+            margin: 4px 0 0;
         }
 
         #modelSection button:not(.checked) {
-            padding-left: 21px;
+            padding-left: 30px;
         }
 
         #modelSection button.checked:before {
@@ -269,7 +269,7 @@
             display: inline-block;
             width: 16px;
             height: 16px;
-            margin: -2px 4px -2px -2px;
+            margin: -2px 8px -2px -2px;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ddd' d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: center;
@@ -312,7 +312,7 @@
 
         .user-message {
             margin-top: 2em;
-            background-color: #3498db;
+            background-color: #1f87cd;
             color: #eee;
             cursor: pointer;
             --background: rgba(0, 0, 0, .1);
@@ -400,7 +400,7 @@
         }
 
         @keyframes load {
-            0%, 50% {
+            0%, 60% {
                 opacity: 0;
             }
             100% {
@@ -500,7 +500,7 @@
             box-sizing: border-box;
             width: 32px;
             height: 34px;
-            background-color: #3498db;
+            background-color: #1f87cd;
             color: #eee;
             border: none;
             font-size: 16px;
