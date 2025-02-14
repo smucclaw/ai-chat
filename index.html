@@ -212,10 +212,11 @@
             display: block;
             width: 100%;
             box-sizing: border-box;
-            padding: 5px 8px;
+            padding: 4px 8px 3px;
             margin: 8px 0 10px;
             border: none;
             background: #333333cc;
+            border: 1px solid #444;
             border-radius: 5px;
             font-size: 16px;
             outline: none;
@@ -293,7 +294,7 @@
         }
 
         .chat-messages {
-            padding: 2em 4px 4px;
+            padding: 1em 4px 4px;
             overflow-x: hidden;
             display: flex;
             flex-direction: column;
@@ -306,6 +307,7 @@
             padding: 0 1em;
             border-radius: 5px;
             margin-top: 1em;
+            animation: load .5s ease-in-out 1;
         }
 
         .user-message {
@@ -381,6 +383,7 @@
             padding: 10px 40px 60px 32px;
             border: none;
             box-shadow: 0 5px 25px #00000055;
+            border: 1px solid #444;
             background: #333333ee;
             backdrop-filter: blur(10px);
             border-radius: 5px 5px 0 0;
@@ -430,7 +433,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            padding: 3px 5px;
+            padding: 4px 5px;
             border-radius: 3px;
             min-width: 44px;
             max-width: 200px;
