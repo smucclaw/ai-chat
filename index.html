@@ -744,7 +744,7 @@
         }
 
         .new .chat-messages {
-            transform: translateY(calc(-40vh + 10px)) translateX(10px);
+            transform: translateY(calc(-40vh - 20px)) translateX(10px);
         }
 
         .new .ai-message {
@@ -756,6 +756,7 @@
         .new .status {
             opacity: 0;
             transform: translateY(-40vh);
+            margin-top: -26px;
         }
 
         .new footer {
@@ -943,6 +944,8 @@
             }
 
             const inputElem = document.getElementById('userInput');
+            inputElem.blur();
+
             let messageText = inputElem.value.trim();
 
             if (!messageText && !attachedFiles.length) return;
@@ -982,7 +985,6 @@
             appendMessage(messageText, 'user', attachedFiles);
 
             // Clear input and attachments
-            inputElem.blur();
             userInput.value = '';
             userInput.style.height = 'auto'
             attachedFiles = [];
@@ -1174,8 +1176,8 @@
 
         function scrollToEnd(noStatus) {
             const messagesDiv = document.getElementById('chatMessages');
-            if (window.scrollY + window.innerHeight - 96 > messagesDiv.scrollHeight || noStatus) {
-                window.scrollTo(0, messagesDiv.scrollHeight);
+            if (messagesDiv.scrollHeight < window.innerHeight || window.scrollY + window.innerHeight - 96 > messagesDiv.scrollHeight || noStatus) {
+                window.scrollTo(0, Math.max(messagesDiv.scrollHeight, window.innerHeight));
             }
 
             if (!noStatus && startWaiting) {
