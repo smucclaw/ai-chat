@@ -287,6 +287,7 @@
             overflow-x: hidden;
             display: flex;
             flex-direction: column;
+            transition: transform .5s ease-in-out;
         }
 
         .message {
@@ -295,6 +296,7 @@
             padding: 1px 12px;
             border-radius: 15px;
             margin-top: 10px;
+            box-shadow: 0 5px 25px #00000033;
         }
 
         .user-message {
@@ -329,12 +331,15 @@
 
         .input-container {
             position: fixed;
+            z-index: 1;
             bottom: -4px;
             padding: 10px 10px var(--offset);
             margin: 0 -10px;
             max-width: var(--max-width);
             width: var(--width);
             --background: #222;
+            transition: transform .5s ease-in-out;
+            animation: load 1s ease-in-out 1;
         }
 
         .input-container button#scrolldown {
@@ -379,6 +384,15 @@
             max-height: 45vh;
             overflow-y: hidden;
             margin-bottom: -20px;
+        }
+
+        @keyframes load {
+            0%, 50% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
         }
 
         textarea:focus {
@@ -508,6 +522,8 @@
             white-space: nowrap;
             overflow: hidden;
             overflow-x: auto;
+            opacity: 1;
+            transition: all .5s ease-in-out;
         }
 
         .status:empty {
@@ -696,6 +712,55 @@
             overflow: hidden;
             overflow-x: auto;
         }
+
+        footer {
+            position: absolute;
+            margin: 0 auto;
+            z-index: 0;
+            opacity: 0;
+            width: 400px;
+            left: 50%;
+            margin: 0 -200px;
+            bottom: 50px;
+            color: rgba(255,255,255,.2);
+            text-align: center;
+            font-size: .8em;
+            transition: opacity .5s ease-in-out;
+            animation: load 1.6s ease-in-out 1;
+        }
+
+        footer a {
+            color: rgba(255,255,255,.2);
+        }
+
+
+        .new .input-container {
+            transform: translateY(-40vh);
+        }
+
+        .new .input-container textarea {
+            border-radius: 5px;
+            margin-bottom: 2px;
+        }
+
+        .new .chat-messages {
+            transform: translateY(calc(-40vh + 10px)) translateX(10px);
+        }
+
+        .new .ai-message {
+            background: transparent;
+            backdrop-filter: none;
+            box-shadow: none;
+        }
+
+        .new .status {
+            opacity: 0;
+            transform: translateY(-40vh);
+        }
+
+        .new footer {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -717,7 +782,7 @@
             </div>
         </div>
     </header>
-    <div class="aichat">
+    <div id="chat" class="aichat new">
         <div class="menus">
             <div class="menu" id="historyMenu"></div>
             <div class="menu" id="settingsMenu">
@@ -731,6 +796,9 @@
         <div class="chat-container">
             <div class="chat-messages" id="chatMessages"></div>
             <div class="status" id="statusInfo">Loading models ...</div>
+            <footer>
+                A project by <a href='https://github.com/serrynaimo/ai-chat' target='_blank' rel='noopener'>Thomas Gorissen</a> - MIT License
+            </footer>
         </div>
         <div class="input-container">
             <div class="attachments" id="fileAttachments"></div>
@@ -741,7 +809,6 @@
             <button id="scrolldown" onclick="window.scrollTo(0, document.documentElement.scrollHeight)"></button>
         </div>
     </div>
-
     <script>
         // Configuration
         const MAX_TOKENS = 32000;
@@ -766,9 +833,14 @@
 
         function adjustOffset(value) {
             if (!value) {
-                document.body.style.removeProperty('--offset')
+                document.body.style.removeProperty('--offset');
+                if (!chatMemory.length) {
+                    document.getElementById('chat').classList.add('new');
+                }
             } else {
-                document.body.style.setProperty('--offset', value)
+                document.body.style.setProperty('--offset', value);
+                document.getElementById('chat').classList.remove('new');
+                window.scrollTo(0, window.innerHeight)
             }
         }
 
@@ -874,6 +946,8 @@
             let messageText = inputElem.value.trim();
 
             if (!messageText && !attachedFiles.length) return;
+
+            document.getElementById('chat').classList.remove('new');
 
             const prompt = {
                 role: 'user',
@@ -1220,6 +1294,8 @@
 
             clearMemory();
 
+            document.getElementById('chat').classList.add('new');
+
             if (loadedModels.find(m => m.id === DEFAULT_MODEL)) {
                 let content = 'Say a funny hello and ask how to help. Sometimes be mildly cynical. Use less than 30 English words. Don\'t wrap you answer in quotes!';
                 const history = JSON.parse(localStorage.getItem('history')) || [];
@@ -1300,6 +1376,7 @@
             if (loadedChatID === chat.id) return;
             closeMenu();
             clearMemory();
+            document.getElementById('chat').classList.remove('new');
             loadedChatID = chat.id;
             chatMemory = chat.log;
             chatMemory.forEach(l => {
