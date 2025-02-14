@@ -521,13 +521,9 @@
         }
 
         .status {
-            flex-shrink: 0;
-            flex-basis: 20px;
             line-height: 20px;
             align-self: stretch;
-            color: #666;
-            filter: grayscale();
-            padding: 10px 5px 0px;
+            color: rgba(255, 255, 255, .2);
             font-size: .85em;
             opacity: .5;
             white-space: nowrap;
@@ -535,6 +531,7 @@
             overflow-x: auto;
             opacity: 1;
             transition: all .5s ease-in-out;
+            height: 24px;
         }
 
         .status:empty {
@@ -767,7 +764,7 @@
         .new .status {
             opacity: 0;
             transform: translateY(-40vh);
-            margin-top: -32px;
+            margin-top: -22px;
         }
 
         .new footer {
@@ -837,6 +834,7 @@
         let startGeneration = null;
         let loadedChatID = null;
         let selectedModel = DEFAULT_MODEL;
+        let generatingModel = null;
         let loadedModels = [];
         let cancelStreaming = false;
         let lastThrottleTime = 0
@@ -1006,12 +1004,15 @@
 
             chatMemory.push(prompt);
 
+            appendMessageChunk('');
+
             await streamResponse([systemPrompt, ...messages], selectedModel, function (agentResponse) {
                 if (!agentResponse || cancelStreaming) return;
 
                 chatMemory.push({
                     role: 'assistant',
-                    content: agentResponse
+                    content: agentResponse,
+                    status: statusString()
                 });
                 
                 const history = JSON.parse(localStorage.getItem('history')) || []
@@ -1050,6 +1051,7 @@
             preGenerating();
 
             let agentResponse = '';
+            generatingModel = model;
 
             try {
                 const response = await fetch(window.API_URL + '/v1/chat/completions', {
@@ -1059,7 +1061,7 @@
                         'Authorization': `Bearer ${window.API_KEY}`
                     },
                     body: JSON.stringify({
-                        model,
+                        model: model,
                         messages: messages.map(m => {
                             const n = {
                                 role: m.role,
@@ -1129,15 +1131,23 @@
             }
         }
 
-        function appendMessage(text, sender, files) {
+        function appendMessage(text, sender, files, status) {
             if (isGenerating) return;
-
+            console.log(status)
             const messagesDiv = document.getElementById('chatMessages');
             const message = document.createElement('div');
             message.className = `message ${sender === 'user' ? 'user-message' : sender === 'system' ? 'system-message' : 'ai-message'}`;
-            message.innerHTML = markdownToHtml(text);
+            const content = document.createElement('div');
+            content.innerHTML = markdownToHtml(text);
             if (files?.length) {
-                message.appendChild(appendFileElements(files));
+                content.appendChild(appendFileElements(files));
+            }
+            message.appendChild(content);
+            if (status) {
+                const statusElem = document.createElement('div');
+                statusElem.className = 'status';
+                statusElem.innerHTML = status;
+                message.appendChild(statusElem);
             }
             messagesDiv.appendChild(message);
             scrollToEnd(true);
@@ -1151,12 +1161,17 @@
                 message = document.createElement('div');
                 message.className = 'message ai-message';
                 message.dataset.raw = ''
+                const content = document.createElement('div');
+                const status = document.createElement('div');
+                status.className = 'status';
+                message.appendChild(content);
+                message.appendChild(status);
                 messagesDiv.appendChild(message);
             }
 
             // Update the text content
             message.dataset.raw += token;
-            message.innerHTML = markdownToHtml(message.dataset.raw);
+            message.firstElementChild.innerHTML = markdownToHtml(message.dataset.raw);
             hljs.highlightAll();
         }
 
@@ -1190,30 +1205,35 @@
 
         function scrollToEnd(noStatus) {
             const messagesDiv = document.getElementById('chatMessages');
-            if (messagesDiv.scrollHeight < window.innerHeight || window.scrollY + window.innerHeight - 96 > messagesDiv.scrollHeight || noStatus) {
+
+            if (messagesDiv.scrollHeight < window.innerHeight || window.scrollY + window.innerHeight - 78 > messagesDiv.scrollHeight || noStatus) {
                 window.scrollTo(0, Math.max(messagesDiv.scrollHeight, window.innerHeight));
             }
 
             if (!noStatus && startWaiting) {
-                const status = document.getElementById('statusInfo');
-                const wait = ((startGeneration || new Date()).getTime() - startWaiting.getTime()) / 1000;
-                const parts = [];
-                if (tokenAmount > 0) {
-                    const sec = (new Date().getTime() - startGeneration.getTime()) / 1000;
-                    parts.push(formatDuration(wait + sec));
-                    parts.push((tokenAmount / sec).toFixed(2) + ' tok/s &#183; ' + tokenAmount + ' token');
-                    parts.push(formatDuration(wait) + ' to first token');
-                } else if (isGenerating) {
-                    parts.push(formatDuration(wait));
-                    parts.push('Waiting for first token ...');
-                }
-                status.innerHTML = parts.join(' &#183; ');
-            }
+                const messagesDiv = document.getElementById('chatMessages');
+                let status = messagesDiv.lastElementChild?.lastElementChild;
 
-            if (noStatus) {
-                const status = document.getElementById('statusInfo');
-                status.textContent = ''
+                if (!status) return;
+
+                status.innerHTML = statusString();
             }
+        }
+
+        function statusString () {
+            const wait = ((startGeneration || new Date()).getTime() - startWaiting.getTime()) / 1000;
+            const parts = [];
+            if (tokenAmount > 0) {
+                const sec = (new Date().getTime() - startGeneration.getTime()) / 1000;
+                parts.push(formatDuration(wait + sec));
+                parts.push((tokenAmount / sec).toFixed(2) + ' tok/s &#183; ' + tokenAmount + ' token');
+                parts.push(formatDuration(wait) + ' to first token');
+            } else if (isGenerating) {
+                parts.push(formatDuration(wait));
+                parts.push('Waiting for first token ...');
+            }
+            parts.push(generatingModel)
+            return parts.join(' &#183; ')
         }
 
         function formatDuration (seconds) {
@@ -1396,7 +1416,7 @@
             loadedChatID = chat.id;
             chatMemory = chat.log;
             chatMemory.forEach(l => {
-                appendMessage(l.content, l.role, l.files);
+                appendMessage(l.content, l.role, l.files, l.status);
             });
             hljs.highlightAll();
         }
