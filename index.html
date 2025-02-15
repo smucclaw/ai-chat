@@ -842,7 +842,6 @@
         </div>
         <div class="chat-container">
             <div class="chat-messages" id="chatMessages"></div>
-            <div class="status" id="statusInfo">Loading models ...</div>
             <footer>
                 A project by <a href='https://github.com/serrynaimo/ai-chat' target='_blank' rel='noopener'>Thomas Gorissen</a> - MIT License
             </footer>
@@ -904,8 +903,6 @@
           loadedChatID = null;
           const messagesDiv = document.getElementById('chatMessages');
           messagesDiv.innerHTML = '';
-          const status = document.getElementById('statusInfo');
-          status.innerHTML = '';
           clearInterval(generatingInterval);
         }
 
@@ -1000,6 +997,10 @@
             let messageText = inputElem.value.trim();
 
             if (!messageText && !attachedFiles.length) return;
+
+            if (!chatMemory.length) {
+                clearMemory();
+            }
 
             document.body.classList.remove('new');
 
@@ -1172,7 +1173,7 @@
 
         function appendMessage(text, sender, files, status) {
             if (isGenerating) return;
-            console.log(status)
+
             const messagesDiv = document.getElementById('chatMessages');
             const message = document.createElement('div');
             message.className = `message ${sender === 'user' ? 'user-message' : sender === 'system' ? 'system-message' : 'ai-message'}`;
@@ -1245,7 +1246,7 @@
         function scrollToEnd(noStatus) {
             const messagesDiv = document.getElementById('chatMessages');
 
-            if (messagesDiv.scrollHeight < window.innerHeight || window.scrollY + window.innerHeight - 78 > messagesDiv.scrollHeight || noStatus) {
+            if (messagesDiv.scrollHeight < window.innerHeight || window.scrollY + window.innerHeight - 84 > messagesDiv.scrollHeight || noStatus) {
                 window.scrollTo(0, Math.max(messagesDiv.scrollHeight, window.innerHeight));
             }
 
@@ -1314,7 +1315,6 @@
           const ask = document.getElementById('ask');
           ask.disabled = true
 
-          const status = document.getElementById('statusInfo');
           const select = document.getElementById('modelSection');
           select.innerHTML = '';
           selectedModel = '';
@@ -1329,7 +1329,6 @@
             const models = await response.json();
 
             if (!models.data.length) {
-                status.textContent = '';
                 clearMemory()
                 appendMessage('There are no models loaded.', 'system');
                 return;
@@ -1388,7 +1387,6 @@
                 }], DEFAULT_MODEL, postGenerating);
             } else {
                 // If not, just ask
-                status.textContent = '';
                 appendMessage('Howdy, is it time to help again?');
 
                 const ask = document.getElementById('ask');
