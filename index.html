@@ -161,6 +161,9 @@
                 box-shadow: 0 5px 25px #00000055;
                 background: linear-gradient(to bottom, #111 0%, var(--background-color) 100%);
                 overflow: hidden;
+                opacity: 0;
+                transform: translateX(-150px);
+                transition: all .3s ease-out;
             }
 
             .menu {
@@ -179,22 +182,16 @@
                 transition: opacity .3s linear;
             }
 
-            .menu:hover {
+            .menu:hover,
+            .menus:hover {
                 opacity: 1;
+                transform: translateX(0);
             }
 
             .menu + .menu {
                 flex: 0 0 fit-content;
                 border-top: 1px solid #222;
                 max-height: 50vh;
-            }
-
-            header {
-                left: 320px;
-            }
-
-            body {
-                padding-left: 320px;
             }
         }
 
@@ -881,9 +878,11 @@
         let queuedTokens = ''
         let throttleInterval = null
         let attachedFiles = [];
+        let focussed = false;
 
         function adjustOffset(value) {
             if (!value) {
+                focussed = false;
                 document.body.style.removeProperty('--offset');
                 setTimeout(() => {
                     if (!chatMemory.length) {
@@ -891,10 +890,13 @@
                     }
                 }, 300);
             } else {
+                focussed = true;
                 document.body.style.setProperty('--offset', value);
                 if (isAvailable && window.innerWidth <= 768) {
                     document.body.classList.remove('new');
-                    window.scrollTo(0, window.innerHeight)
+                    setTimeout(() => {
+                        window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
+                    }, 100);
                 }
             }
         }
@@ -1250,7 +1252,7 @@
         function scrollToEnd(noStatus) {
             const messagesDiv = document.getElementById('chatMessages');
 
-            if (messagesDiv.scrollHeight < window.innerHeight || window.scrollY + window.innerHeight - 84 > messagesDiv.scrollHeight || noStatus) {
+            if (!focussed && (messagesDiv.scrollHeight < window.innerHeight || window.scrollY + window.innerHeight - 84 > messagesDiv.scrollHeight || noStatus)) {
                 window.scrollTo(0, Math.max(messagesDiv.scrollHeight, window.innerHeight));
             }
 
