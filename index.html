@@ -878,11 +878,11 @@
         let queuedTokens = ''
         let throttleInterval = null
         let attachedFiles = [];
-        let focussed = false;
+        let blockAutoScrolling = false;
 
         function adjustOffset(value) {
             if (!value) {
-                focussed = false;
+                blockAutoScrolling = false;
                 document.body.style.removeProperty('--offset');
                 setTimeout(() => {
                     if (!chatMemory.length) {
@@ -890,7 +890,7 @@
                     }
                 }, 300);
             } else {
-                focussed = true;
+                blockAutoScrolling = document.body.classList.contains('new');
                 document.body.style.setProperty('--offset', value);
                 if (isAvailable && window.innerWidth <= 768) {
                     document.body.classList.remove('new');
@@ -1252,7 +1252,7 @@
         function scrollToEnd(noStatus) {
             const messagesDiv = document.getElementById('chatMessages');
 
-            if (!focussed && (messagesDiv.scrollHeight < window.innerHeight || window.scrollY + window.innerHeight - 84 > messagesDiv.scrollHeight || noStatus)) {
+            if (!blockAutoScrolling && (messagesDiv.scrollHeight < window.innerHeight || window.scrollY + window.innerHeight - 84 > messagesDiv.scrollHeight || noStatus)) {
                 window.scrollTo(0, Math.max(messagesDiv.scrollHeight, window.innerHeight));
             }
 
