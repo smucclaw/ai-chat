@@ -895,7 +895,7 @@
                 if (isAvailable && window.innerWidth <= 768) {
                     document.body.classList.remove('new');
                     setTimeout(() => {
-                        window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
+                        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
                     }, 100);
                 }
             }
