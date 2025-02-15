@@ -1253,7 +1253,7 @@
             const messagesDiv = document.getElementById('chatMessages');
 
             if (!blockAutoScrolling && (messagesDiv.scrollHeight < window.innerHeight || window.scrollY + window.innerHeight - 84 > messagesDiv.scrollHeight || noStatus)) {
-                window.scrollTo(0, Math.max(messagesDiv.scrollHeight, window.innerHeight));
+                window.scrollTo({ top: Math.max(messagesDiv.scrollHeight, window.innerHeight), behavior: 'smooth' });
             }
 
             if (!noStatus && startWaiting) {
@@ -1682,7 +1682,7 @@
 
             window.addEventListener('scroll', function () {
                 const scrollButton = document.getElementById('scrolldown')
-                const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 26
+                const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 32
                 scrollButton.style.display = isAtBottom ? 'none' : 'block'
             })
 
