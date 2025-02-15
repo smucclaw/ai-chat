@@ -48,6 +48,7 @@
             width: var(--width);
             max-width: var(--max-width);
             margin: 0 auto;
+            transition: width .7s ease-in-out;
         }
 
         header {
@@ -302,7 +303,7 @@
             overflow-x: hidden;
             display: flex;
             flex-direction: column;
-            transition: transform .5s ease-in-out, padding .2s linear;
+            transition: transform .4s ease-out, padding .2s linear;
         }
 
         .message {
@@ -354,7 +355,7 @@
             max-width: var(--max-width);
             width: var(--width);
             --background: #222;
-            transition: transform .5s ease-in-out;
+            transition: transform .4s ease-out, width .7s ease-in-out;
             animation: load 1s ease-in-out 1;
         }
 
@@ -745,13 +746,19 @@
         footer a {
             color: rgba(255,255,255,.2);
         }
+        
+        .new .aichat {
+            --max-width: 680px;
+            --width: calc(min(var(--max-width), 100vw) - 20px);
+            transform-origin: 50% 100%;
+        }
 
         .new .header h1 {
-            transform: translateY(18vh) scale(3.2);
+            transform: translateY(14vh) scale(3.2);
         }
 
         .new .input-container {
-            transform: translateY(-40vh);
+            transform: translateY(-45vh);
         }
 
         .new .input-container textarea {
@@ -761,7 +768,7 @@
 
         .new .chat-messages {
             padding: 0 33px;
-            transform: translateY(calc(-40vh - 10px));
+            transform: translateY(calc(-45vh - 10px));
         }
 
         .new .message {
@@ -770,7 +777,7 @@
 
         .new .status {
             opacity: 0;
-            transform: translateY(-40vh);
+            transform: translateY(-45vh);
             margin-top: -22px;
         }
 
@@ -1342,7 +1349,7 @@
             document.body.classList.add('new');
 
             if (loadedModels.find(m => m.id === DEFAULT_MODEL)) {
-                let content = 'Say a funny hello and ask how to help. Sometimes be mildly cynical. You must use less than 30 English words. Don\'t wrap you answer in quotes!';
+                let content = 'Say a funny hello and ask how to help. Sometimes be mildly cynical. You must use less than 30 words. Don\'t wrap you answer in quotes!';
                 const history = JSON.parse(localStorage.getItem('history')) || [];
                 if (history.length) {
                     content += ' Here are some previous user questions you could subtly reference on the occasion:'
