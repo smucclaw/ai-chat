@@ -565,7 +565,7 @@
           display: block;
           font-size: 13px;
           line-height: 16px;
-          color: #888;
+          color: #777;
           padding: 10px 0;
           border-radius: 5px;
           overflow: hidden;
@@ -587,7 +587,7 @@
             width: 16px;
             height: 16px;
             transform: rotate(-90deg);
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' aria-hidden='true'%3E%3Cpath fill='%23bbb' d='M3.543 8.96l1.414-1.42L12 14.59l7.043-7.05 1.414 1.42L12 17.41 3.543 8.96z'%3E%3C/path%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' aria-hidden='true'%3E%3Cpath fill='%23888' d='M3.543 8.96l1.414-1.42L12 14.59l7.043-7.05 1.414 1.42L12 17.41 3.543 8.96z'%3E%3C/path%3E%3C/svg%3E");
         }
 
         think,
@@ -604,7 +604,7 @@
         .think:before {
           content: "Thinking ...";
           display: block;
-          color: #bbb;
+          color: #888;
           font-size: 1rem;
           font-style: italic;
           padding: 2px 0 6px 20px;
@@ -695,9 +695,14 @@
         }
 
         blockquote {
+            border-radius: 5px;
+            background: var(--content-box);
             font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
             font-style: italic;
+            font-size: 1.1em;
+            padding: 0 1.4em;
             margin: 1em 0;
+            color: #ddd;
         }
 
         p {
@@ -750,6 +755,64 @@
             background: var(--content-box);
             overflow: hidden;
             overflow-x: auto;
+        }
+/* 
+        .toolcall::before {
+            content: 'Tool call executed ...';
+            display: block;
+            color: #888;
+            font-size: 1rem;
+            font-style: italic;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' aria-hidden='true'%3E%3Cpath fill='%23888' d='M8.96 20.457l-1.42-1.414L14.59 12l-7.05-7.043 1.42-1.414L17.41 12l-8.45 8.457z'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: 0% 45%;
+            padding-left: 20px;
+            margin: 1em 0;
+        } */
+
+        .toolcall:empty:last-child::before,
+        .toolcall:empty:last-child::after,
+        .toolcall:empty:last-child {
+            content: '';
+            display: block;
+            position: relative;
+            margin-top: -6px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #888;
+            animation: jump 0.8s infinite ease-in-out;
+        }
+
+        .toolcall:empty:last-child::before {
+            /* padding-left: 0;
+            margin: 0; */
+            left: 12px;
+            animation-delay: -0.12s;
+        }
+
+        .toolcall:empty:last-child {
+            margin: 1.8em 0;
+            animation-delay: -0.24s;
+        }
+
+        .toolcall:empty:last-child::after {
+            left: 24px;
+        }
+
+        .toolcall > br:first-child {
+            display: none;
+        }
+
+        @keyframes jump {
+            0%, 80%, 100% { 
+                transform: translateY(0);
+                opacity: 1;
+            }
+            40% { 
+                transform: translateY(-8px);
+                opacity: 0.5;
+            }
         }
 
         footer {
@@ -868,12 +931,41 @@
     <script>
         // Configuration
         const MAX_TOKENS = 20000;
+        const TEMPERATURE = 0.7;
         const DEFAULT_MODEL = 'llama-3.2-3b-instruct';
         const MAX_STORAGE_CHARS = 5242880 // 5MB character limit for localStorage
+        const TOOLS = [{
+            type: "function",
+            function: {
+                name: "get_current_time",
+                description: "Get the current time and/or date, only if asked",
+                parameters: {
+                    type: "object",
+                    properties: {}
+                },
+            }
+        }, {
+            type: "function",
+            function: {
+                name: "get_user_insights",
+                description: "Learn more about the user! Get an array of previous user questions and prompts to you. Use if necessary to personalise or find additional context",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        keywords: {
+                            type: "string",
+                            description: "A white-space separated list of keywords that can help find a relevant content"
+                        }
+                    },
+                    required: ['keywords']
+                },
+            }
+        }]
 
         let isAvailable = false;
         let isGenerating = false;
         let chatMemory = [];
+        let toolCalls = [];
         let tokenAmount = 0;
         let generatingInterval = null;
         let startWaiting = null
@@ -888,7 +980,23 @@
         let throttleInterval = null
         let attachedFiles = [];
         let blockAutoScrolling = false;
+       
+        // TOOL FUNCTIONS
+        async function get_current_time() {
+            return { time: new Date().toString() };
+        }
 
+        async function get_user_insights({ keywords }) {
+            keywords = (keywords || '').toString().toLowerCase().split(' ');
+            const history = JSON.parse(localStorage.getItem('history')) || [];
+            const matching_prompts = history.filter(h => keywords.find(k => h.log[0].content.toLowerCase().includes(k.trim()))).map(h => h.log[0].content);
+            return {
+                matching_prompts,
+                history: history.length + ' total chat logs queried'
+            }
+        }
+        // TOOL FUNCTIONS END
+        
         function adjustOffset(value) {
             if (!value) {
                 blockAutoScrolling = false;
@@ -1103,87 +1211,157 @@
         }
 
         async function streamResponse(messages, model, postFunc) {
-            preGenerating();
+            const ask = document.getElementById('ask');
+            ask.classList.add('stop');
 
-            let agentResponse = '';
+            tokenAmount = 0;
+            startGeneration = null;
+            startWaiting = new Date();
+            isGenerating = true;
+            generatingInterval = setInterval(scrollToEnd, 200);
+            cancelStreaming = false;
             generatingModel = model;
+            toolCalls = [];
+
+            let agentResponse = ''
 
             try {
-                const response = await fetch(window.API_URL + '/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${window.API_KEY}`
-                    },
-                    body: JSON.stringify({
-                        model: model,
-                        messages: messages.map(m => {
-                            const n = {
-                                role: m.role,
-                                content: m.content
+                agentResponse = await completionsCall(messages, model, TOOLS);
+
+                while (toolCalls.length && !cancelStreaming) {
+                    // Add the assistant's response and tool calls to messages
+                    messages = [...messages, {
+                        role: 'assistant',
+                        content: agentResponse,
+                        tool_calls: toolCalls.slice()
+                    }];
+
+                    // Process all tool calls sequentially
+                    for (const tc of toolCalls) {
+                        if (typeof window[tc.function.name] === 'function') {
+                            const args = tc.function.arguments ? JSON.parse(tc.function.arguments) : undefined;
+
+                            try {
+                                const result = await window[tc.function.name](args);
+                                console.log(`Tool call executed: ${tc.function.name})`, args, result);
+
+                                messages.push({
+                                    role: 'tool',
+                                    content: JSON.stringify(result),
+                                    tool_call_id: tc.id
+                                });
+                            } catch (e) {
+                                console.error(`Tool call error: ${tc.function.name}`, args, e);
                             }
-                            if (m.files?.length) {
-                                let i = 1;
-                                n.content = `${n.content}\n\n${m.files.length} file(s) are attached for context:\n${m.files.map(f => `[File ${i++}: ${f.name}]:\n${f.text}`).join('\n\n')}`;
-                            }
-                            return n;
-                        }),
-                        stream: true,
-                        max_tokens: MAX_TOKENS,
-                        temperature: 0.7
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                // Inside sendMessage function, after fetching response
-
-                cancelStreaming = false;
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let buffer = '';
-
-                while (true) {
-                    const {done, value} = await reader.read();
-                    if (done || cancelStreaming) break;
-
-                    const chunk = decoder.decode(value);
-                    buffer += chunk;
-
-                    // Split the buffer into lines
-                    while (buffer.includes('\n')) {
-                        const index = buffer.indexOf('\n');
-                        const line = buffer.substring(0, index + 1); // Include newline character
-                        buffer = buffer.substring(index + 1);
-
-                        try {
-                          if (line.match(/^Data: \{.*\}/i)) {
-                            const data = JSON.parse(line.substring(6));
-                            const content = data.choices[0].delta.content;
-                            if (content) {
-                                if (!tokenAmount) {
-                                    startGeneration = new Date()
-                                }
-                                tokenAmount++;
-                                agentResponse += content;
-                                throttleAppendMessageChunk(content);
-                            }
-                          }
-                        } catch (e) {
-                            console.error('JSON Parse Error:', e.message, 'Data:', line);
-                            // Log the problematic chunk for debugging but continue processing
                         }
                     }
+
+                    // Clear tool calls and get next response
+                    toolCalls = [];
+                    agentResponse += await completionsCall(messages, model);
                 }
             } catch (error) {
                 console.error('Error:', error);
                 appendMessage('There was a network error.', 'system');
             } finally {
-                postFunc(agentResponse);
-                postGenerating();
+                postFunc?.(agentResponse);
+                
+                isGenerating = false;
+                const ask = document.getElementById('ask');
+                ask.classList.remove('stop');
+                setTimeout(() => clearInterval(generatingInterval), 150);
             }
+        }
+
+        async function completionsCall (messages, model, toolList) {
+            let agentResponse = '';
+
+            const response = await fetch(window.API_URL + '/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${window.API_KEY}`
+                },
+                body: JSON.stringify({
+                    model,
+                    messages: messages.map(m => {
+                        const n = {
+                            role: m.role,
+                            content: m.content,
+                            tool_call_id: m.tool_call_id,
+                            tool_calls: m.tool_calls
+                        }
+                        if (m.files?.length) {
+                            let i = 1;
+                            n.content = `${n.content}\n\n${m.files.length} file(s) are attached for context:\n${m.files.map(f => `[File ${i++}: ${f.name}]:\n${f.text}`).join('\n\n')}`;
+                        }
+                        return n;
+                    }),
+                    tools: toolList,
+                    stream: true,
+                    max_tokens: MAX_TOKENS,
+                    temperature: TEMPERATURE
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const {done, value} = await reader.read();
+                if (done || cancelStreaming) break;
+
+                const chunk = decoder.decode(value);
+                buffer += chunk;
+
+                // Split the buffer into lines
+                while (buffer.includes('\n')) {
+                    const index = buffer.indexOf('\n');
+                    const line = buffer.substring(0, index + 1); // Include newline character
+                    buffer = buffer.substring(index + 1);
+
+                    try {
+                        if (line.match(/^Data: \{.*\}/i)) {
+                            const data = JSON.parse(line.substring(6));
+                            const delta = data.choices[0].delta;
+
+                            if (!tokenAmount && !startGeneration) {
+                                startGeneration = new Date();
+                            }
+                            tokenAmount++;
+
+                            if (delta.content) {
+                                agentResponse += delta.content;
+                                throttleAppendMessageChunk(delta.content);
+                            }
+                            else if (delta.tool_calls?.length) {
+                                delta.tool_calls.forEach(tc => {
+                                    if (toolCalls.length <= tc.index) {
+                                        toolCalls.push({
+                                            id: '',
+                                            type: 'function',
+                                            function: { name: '', arguments: '' }
+                                        });
+                                    }
+                                    const call = toolCalls[tc.index];
+                                    call.id += tc.id || '';
+                                    call.function.name += tc.function.name || '';
+                                    call.function.arguments += tc.function.arguments || '';
+                                });
+                            }
+                        }
+                    } catch (e) {
+                        console.error('JSON Parse Error:', e.message, 'Data:', line);
+                    }
+                }
+            }
+            throttleAppendMessageChunk('\n ');
+            return agentResponse + '\n ';
         }
 
         function appendMessage(text, sender, files, status) {
@@ -1307,23 +1485,6 @@
             return parts.join('');
         }
 
-        function preGenerating() {
-            const ask = document.getElementById('ask');
-            ask.classList.add('stop');
-            tokenAmount = 0;
-            startGeneration = null;
-            startWaiting = new Date();
-            isGenerating = true;
-            generatingInterval = setInterval(scrollToEnd, 200);
-        }
-
-        function postGenerating() {
-            isGenerating = false;
-            const ask = document.getElementById('ask');
-            ask.classList.remove('stop');
-            setTimeout(() => clearInterval(generatingInterval), 150);
-        }
-
         async function loadModels() {
           isAvailable = false;
           
@@ -1391,7 +1552,7 @@
                 if (history.length) {
                     content += ' Here are some previous user questions you could subtly reference on the occasion:'
                     let i = 1;
-                    history.forEach(h => {
+                    history.slice(0, 10).forEach(h => {
                         content += `\n${1}.: ${h.log[0].content.substring(0, 255)}`;
                     })
                 }
@@ -1399,7 +1560,7 @@
                 streamResponse([{
                     role: 'user',
                     content,
-                }], DEFAULT_MODEL, postGenerating);
+                }], DEFAULT_MODEL);
             } else {
                 // If not, just ask
                 appendMessage('Howdy, is it time to help again?');
@@ -1591,7 +1752,9 @@
                     postprocess(html) {
                         return html
                             .replace(/(<table>[\s\S]*?<\/table>)/g, '<div class="table">$1</div>')
-                            .replace(/(<pre><code(?: class="language-(\S+)")?>[\s\S]*?<\/code><\/pre>)/g, '<div class="code">$1<div class="meta"><span>$2</span><button class="copy" /></div></div>');
+                            .replace(/(<pre><code(?: class="language-(\S+)")?>[\s\S]*?<\/code><\/pre>)/g, '<div class="code">$1<div class="meta"><span>$2</span><button class="copy" /></div></div>')
+                            .replace(/\[TOOL_REQUEST([^\]])/g, '<p class="toolcall" />$1')
+                            .replace(/\[TOOL_RESULT\]([\s\S]*?)\[END_TOOL_RESULT\]/g, '<blockquote>$1<br/></blockquote>');
                     }
                 }
             };
@@ -1691,7 +1854,7 @@
 
             window.addEventListener('scroll', function () {
                 const scrollButton = document.getElementById('scrolldown')
-                const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 32
+                const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 48
                 scrollButton.style.display = isAtBottom ? 'none' : 'block'
             })
 
