@@ -1102,8 +1102,8 @@
             const matching = history.filter(h => list.find(k => h.log[0].content.toLowerCase().includes(k.trim())));
             const results = (matching?.length ? matching : history).slice(0, limit).map(h => h.log)
             return {
-                result_description: (matching?.length ? `${matching.length} chat logs matching the keywords "${keywords}"` : `Latest ${results.length} chat logs`) + ' of ' + history.length + ' total chat logs',
-                results
+                description: 'The logs array contains the ' + (matching?.length ? `${matching.length} previous conversations matching the keywords "${keywords}"` : `latest ${results.length} conversations`) + ' of ' + history.length + ' total past conversations with this user.',
+                logs: results
             }
         }
         // TOOL FUNCTIONS END
@@ -1444,6 +1444,7 @@
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
+            let thinking = false;
 
             while (true) {
                 const {done, value} = await reader.read();
@@ -1468,10 +1469,15 @@
                             tokenAmount++;
 
                             if (delta.content) {
+                                if(delta.content === '<think>') {
+                                    thinking = true;
+                                } else if (delta.content === '</think>') {
+                                    thinking = false;
+                                }
                                 agentResponse += delta.content;
                                 throttleAppendMessageChunk(delta.content);
                             }
-                            else if (delta.tool_calls?.length) {
+                            else if (!thinking && delta.tool_calls?.length) {
                                 delta.tool_calls.forEach(tc => {
                                     if (toolCalls.length <= tc.index) {
                                         toolCalls.push({
