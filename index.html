@@ -1304,7 +1304,7 @@
 
             chatMemory.push(prompt);
 
-            appendMessageChunk(' ');
+            appendMessageChunk('');
 
             await streamResponse([systemPrompt, ...messages], selectedModel, function (agentResponse) {
                 if (!agentResponse || cancelStreaming) return;
@@ -1774,7 +1774,7 @@
                         return src.indexOf('<think>');
                     },
                     tokenizer(src) {
-                        const match = src.match(/^<think>([\s\S]*?)<\/think>/);
+                        const match = src.match(/^<think>([\s\S]*?)(<\/think>|\[TOOL_REQUEST$)/);
                         if (match) {
                             return {
                                 type: 'think',
@@ -1798,7 +1798,7 @@
                         const match = src.match(/^\\\[([\s\S]+?)\\\]/);
                         if (match) {
                             const raw = match[0];
-                            const text = katex?.renderToString(match[1].replace(/\\\\/g, '\\'), { displayMode: true }) || match[1];
+                            const text = katex?.renderToString(match[1].replace(/\\\\/g, '\\'), { displayMode: true }) || match[0];
                             return {
                                 type: 'katexBlock',
                                 raw,
@@ -1820,7 +1820,7 @@
                         const match = src.match(/^\$\$([\s\S]+?)\$\$(\s|$)/);
                         if (match) {
                             const raw = match[0];
-                            const text = katex?.renderToString(match[1].replace(/\\\\/g, '\\'), { displayMode: true }) || match[1];
+                            const text = katex?.renderToString(match[1].replace(/\\\\/g, '\\'), { displayMode: true }) || match[0];
                             return {
                                 type: 'katexDollarBlock',
                                 raw,
@@ -1842,7 +1842,7 @@
                         const match = src.match(/^\\\(([\s\S]+?)\\\)/);
                         if (match) {
                             const raw = match[0];
-                            const text = katex?.renderToString(match[1].replace(/\\\\/g, '\\'), { displayMode: false }) || match[1];
+                            const text = katex?.renderToString(match[1].replace(/\\\\/g, '\\'), { displayMode: false }) || match[0];
                             return {
                                 type: 'katexInline',
                                 raw,
@@ -1864,7 +1864,7 @@
                         const match = src.match(/^\$([\s\S]+?)\$([\s.,'"]|$)/);
                         if (match) {
                             const raw = match[0];
-                            const text = katex?.renderToString(match[1].replace(/\\\\/g, '\\'), { displayMode: false }) + match[2] || match[1];
+                            const text = katex?.renderToString(match[1].replace(/\\\\/g, '\\'), { displayMode: false }) + match[2] || match[0];
                             return {
                                 type: 'katexDollarInline',
                                 raw,
@@ -1882,7 +1882,7 @@
                         return html
                             .replace(/(<table>[\s\S]*?<\/table>)/g, '<div class="table">$1</div>')
                             .replace(/(<pre><code(?: class="language-(\S+)")?>[\s\S]*?<\/code><\/pre>)/g, '<div class="code">$1<div class="meta"><span>$2</span><button class="copy" /></div></div>')
-                            .replace(/\[(END_)?TOOL_(REQUEST|RESULT)\]/g, '').replace(/\[TOOL_REQUEST/g, '</think>');
+                            .replace(/\[(END_)?TOOL_(REQUEST|RESULT)\]?/g, '');
                     }
                 }
             };
