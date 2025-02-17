@@ -103,9 +103,9 @@
             position: fixed;
             top: 0;
             --max-width: 966px;
-            left: calc(calc(calc(max(100vw, var(--max-width)) - var(--max-width)) / 2) - 20px);
+            left: calc(calc(max(100vw, calc(var(--max-width) + 10px)) - calc(var(--max-width) + 10px)) / 2);
             width: 100vw;
-            max-width: calc(var(--max-width) + 40px);
+            max-width: calc(var(--max-width) + 20px);
             margin: 0;
             z-index: 2;
         }
@@ -858,7 +858,7 @@
 
         .new footer {
             opacity: 1;
-            transition: opacity .5s ease-in-out;
+            transition: opacity .3s ease-in-out;
         }
     </style>
 </head>
