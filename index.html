@@ -1363,8 +1363,12 @@
 
             try {
                 agentResponse = await completionsCall(messages, model, TOOLS);
+                
+                const filterFunc = (tc, index) => {
+                  return !!tc.id && toolCalls.findIndex(i => i.function?.name === tc.function?.name && i.function?.arguments === tc.function?.arguments) === index
+                };
 
-                while (toolCalls.length && !cancelStreaming) {
+                while (!cancelStreaming && (toolCalls = toolCalls.filter(filterFunc)).length) {
                     messages.push({
                         role: 'assistant',
                         content: agentResponse,
@@ -1372,7 +1376,7 @@
                     });
 
                     for (const tc of toolCalls) {
-                        if (typeof window[tc.function.name] === 'function') {
+                        if (typeof window[tc.function?.name] === 'function') {
                             const args = tc.function.arguments ? JSON.parse(tc.function.arguments) : undefined;
 
                             try {
@@ -1471,11 +1475,11 @@
                             tokenAmount++;
 
                             if (delta.content) {
-                                if(delta.content === '<think>') {
-                                    thinking = true;
-                                } else if (delta.content === '</think>') {
-                                    thinking = false;
-                                }
+                                // if(delta.content === '<think>') {
+                                //     thinking = true;
+                                // } else if (delta.content === '</think>') {
+                                //     thinking = false;
+                                // }
                                 agentResponse += delta.content;
                                 throttleAppendMessageChunk(delta.content);
                             }
