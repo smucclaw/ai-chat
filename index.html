@@ -1096,7 +1096,7 @@
             return { now: new Date().toString() };
         }
 
-        async function get_user_history({ keywords, limit = 0 }) {
+        async function get_user_history({ keywords, limit = 5 }) {
             keywords = (keywords || '').toString().toLowerCase().split(' ');
             const history = JSON.parse(localStorage.getItem('history')) || [];
             const matching_prompts = history.filter(h => keywords.find(k => h.log[0].content.toLowerCase().includes(k.trim())));
