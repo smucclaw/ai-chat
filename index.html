@@ -1096,15 +1096,14 @@
             return { now: new Date().toString() };
         }
 
-        async function get_user_history({ keywords, limit = 5 }) {
-            keywords = (keywords || '').toString().toLowerCase().split(' ');
+        async function get_user_history({ keywords, limit = 3 }) {
+            list = (keywords || '').toString().toLowerCase().split(' ');
             const history = JSON.parse(localStorage.getItem('history')) || [];
-            const matching_prompts = history.filter(h => keywords.find(k => h.log[0].content.toLowerCase().includes(k.trim())));
-            const result_strings = (matching_prompts?.length ? matching_prompts : history).slice(0, limit).map(h => h.log)
+            const matching = history.filter(h => list.find(k => h.log[0].content.toLowerCase().includes(k.trim())));
+            const results = (matching?.length ? matching : history).slice(0, limit).map(h => h.log)
             return {
-                keywords,
-                result_string_description: (matching_prompts?.length ? 'Chat logs matching the provided keywords' : 'Past 5 chat logs') + ' of ' + history.length + ' total',
-                result_strings
+                result_description: (matching?.length ? `${matching.length} chat logs matching the keywords "${keywords}"` : `Latest ${results.length} chat logs`) + ' of ' + history.length + ' total chat logs',
+                results
             }
         }
         // TOOL FUNCTIONS END
