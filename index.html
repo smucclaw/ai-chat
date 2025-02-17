@@ -1511,7 +1511,6 @@
             const message = document.createElement('div');
             message.className = `message ${sender === 'user' ? 'user-message' : sender === 'system' ? 'system-message' : 'ai-message'}`;
             const content = document.createElement('div');
-            console.log(text)
             content.innerHTML = markdownToHtml(text);
             if (files?.length) {
                 content.appendChild(appendFileElements(files));
