@@ -69,7 +69,7 @@
 
         .header .menu-container {
             display: flex;
-            gap: 5px;
+            gap: 8px;
             flex: 1;
         }
 
@@ -102,10 +102,10 @@
         .menus {
             position: fixed;
             top: 0;
-            --max-width: 986px;
-            left: calc(calc(max(100vw, var(--max-width)) - var(--max-width)) / 2);
+            --max-width: 966px;
+            left: calc(calc(calc(max(100vw, var(--max-width)) - var(--max-width)) / 2) - 20px);
             width: 100vw;
-            max-width: calc(var(--max-width) + 20px);
+            max-width: calc(var(--max-width) + 40px);
             margin: 0;
             z-index: 2;
         }
@@ -438,6 +438,15 @@
             max-height: 45vh;
             overflow-y: hidden;
             margin-bottom: -20px;
+        }
+
+        .input-container #modelInfo {
+            position: absolute;
+            z-index: 2;
+            right: 18px;
+            bottom: calc(14px + var(--offset));
+            font-size: 13px;
+            color: rgba(255, 255, 255, .2);
         }
 
         .input-container .attachments {
@@ -893,6 +902,7 @@
             </footer>
         </div>
         <div class="input-container">
+            <div id="modelInfo"></div>
             <div class="attachments" id="fileAttachments"></div>
             <textarea id="userInput" placeholder="What's on your mind ..." rows="1" onfocus="adjustOffset('0px')" onblur="adjustOffset()"></textarea>
             <input type="file" id="fileInput" accept=".pdf,.txt,.csv,.tsv,.js,.json,.jsx,.ts,.tsx,.css,.scss,.less,.html,.htm,.xml,.yaml,.yml,.md,.py,.rb,.java,.c,.cpp,.h,.hpp,.cs,.php,.sql,.sh,.bash,.zsh" multiple>
@@ -1096,7 +1106,7 @@
 
         async function search_user_history({ keywords }) {
             list = (keywords || '').toString().toLowerCase().split(' ');
-            const history = JSON.parse(localStorage.getItem('history')) || [];
+            const history = (JSON.parse(localStorage.getItem('history')) || []).filter(h => h.id !== loadedChatID);
             const matching = history.filter(h => list.find(k => h.log[0].content.toLowerCase().includes(k.trim())));
             const results = (matching?.length ? matching : history).slice(0, 3).map(h => h.log)
             return {
@@ -1654,6 +1664,7 @@
               const onclick = function (e) {
                 selectedModel = m.id;
                 Array.from(document.getElementById('modelSection').children).forEach(n => n.classList[n.dataset.id === m.id ? 'add' : 'remove']('checked'));
+                document.getElementById('modelInfo').textContent = m.name || m.id;
               };
               const option = document.createElement('button');
               option.dataset.id = m.id;
@@ -1952,9 +1963,25 @@
             })
             
             textarea.addEventListener('keypress', e => {
+                e.stopPropagation();
                 if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey && !e.altKey) {
                     e.preventDefault();
                     sendMessage();
+                }
+            });
+
+            document.addEventListener('keypress', e => {
+                console.log(e.key)
+                if (e.key === 'n' && (e.ctrlKey || e.altKey)) {
+                    e.preventDefault();
+                    startNew();
+                } else if (e.key === 'h' && (e.ctrlKey || e.altKey)) {
+                    openMenu('historyMenu');
+                } else if (e.key === 's' && (e.ctrlKey || e.altKey)) {
+                    openMenu('settingsMenu');
+                }else if (e.keyCode === 9) {
+                    e.preventDefault();
+                    textarea.focus();
                 }
             });
 
