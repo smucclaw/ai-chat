@@ -615,6 +615,12 @@
           padding: 2px 0 6px 20px;
         }
 
+        think + p + think:before,
+        .think + p + think:before,
+        .think + p + .think:before {
+          content: "Considering additional information ...";
+        }
+
         think:before {
             padding-bottom: 12px;
         }
@@ -705,7 +711,7 @@
             font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
             font-style: italic;
             font-size: 1.1em;
-            padding: 0 1.4em;
+            padding: .4em 1.4em;
             margin: 1em 0;
             color: #ddd;
         }
@@ -919,12 +925,12 @@
                 parameters: {
                     type: "object",
                     properties: {
-                        keywords: {
+                        query: {
                             type: "string",
-                            description: "The search query keywords"
+                            description: "The search query or keywords"
                         }
                     },
-                    required: ["keywords"]
+                    required: ["query"]
                 }
             }
         }, {
@@ -1008,13 +1014,13 @@
             return await new Promise(resolve => script.onload = () => resolve('I\'m now ready to receive your KaTeX formulas and make them look pretty.'))
         }
 
-        async function search_web_info({ keywords }) {
+        async function search_web_info({ query }) {
             try {
-                if (!keywords.trim()) {
-                    throw new Error('No keywords provided. Try again?')
+                if (!query.trim()) {
+                    throw new Error('No query or keywords provided. Try again?')
                 }
                 const response = await fetch(
-                    `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_CUSTOMSEARCH_API_KEY}&cx=${GOOGLE_CUSTOMSEARCH_ENGINE_ID}&q=${encodeURIComponent(keywords)}`
+                    `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_CUSTOMSEARCH_API_KEY}&cx=${GOOGLE_CUSTOMSEARCH_ENGINE_ID}&q=${encodeURIComponent(query)}`
                 )
                 if (response.status === 403) {
                     throw new Error('Please tell the user that they have not set up their Google Custom Search key in the source code, yet.')
@@ -1024,7 +1030,7 @@
                 }
                 const data = await response.json()  
                 return {
-                    keywords,
+                    query,
                     results: data.items.map(i => ({ title: i.title, snippet: i.snippet, link: i.link }))
                 }
             } catch (e) {
@@ -1876,7 +1882,7 @@
                         return html
                             .replace(/(<table>[\s\S]*?<\/table>)/g, '<div class="table">$1</div>')
                             .replace(/(<pre><code(?: class="language-(\S+)")?>[\s\S]*?<\/code><\/pre>)/g, '<div class="code">$1<div class="meta"><span>$2</span><button class="copy" /></div></div>')
-                            .replace(/\[(END_)?TOOL_(REQUEST|RESULT)(\])?/g, '');
+                            .replace(/\[(END_)?TOOL_(REQUEST|RESULT)\]/g, '').replace(/\[TOOL_REQUEST/g, '</think>');
                     }
                 }
             };
@@ -1971,7 +1977,7 @@
 
             window.addEventListener('scroll', function () {
                 const scrollButton = document.getElementById('scrolldown')
-                const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 60
+                const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 150
                 scrollButton.style.display = isAtBottom ? 'none' : 'block'
             })
 
