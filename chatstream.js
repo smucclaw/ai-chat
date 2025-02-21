@@ -105,7 +105,7 @@ const ChatStream = (function() {
           }
 
           this.#toolCalls = []
-          await this.#completionsCall(messages)
+          await this.#completionsCall(messages, tools)
         }
 
         if (!this.#_isCancelled) {
