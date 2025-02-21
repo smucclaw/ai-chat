@@ -112,7 +112,9 @@ const ChatStream = (function() {
           this.#onError?.(error)
         }
       } finally {
-        this.stop()
+        clearInterval(this.#statusInterval)
+        this.#_isGenerating = false
+        this.#onEnd?.()
       }
     }
 
