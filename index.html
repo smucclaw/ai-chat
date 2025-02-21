@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./highlight.css">
-    <script src="./chat-stream.js"></script>
+    <script src="./chatstream.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.6/marked.min.js" crossorigin="anonymous"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js" crossorigin="anonymous"></script>
     <link rel="manifest" href="manifest.json">
@@ -1324,8 +1324,6 @@
 
             chatMemory.push(prompt);
 
-            onToken('');
-
             chatStream = ChatStream.create({
                 apiUrl: window.API_URL,
                 apiKey: window.API_KEY,
@@ -1392,10 +1390,10 @@
                 content.appendChild(appendFileElements(files));
             }
             message.appendChild(content);
-            if (status) {
+            if (sender === 'assistant') {
                 const statusElem = document.createElement('div');
                 statusElem.className = 'status';
-                statusElem.innerHTML = status;
+                statusElem.innerHTML = status ? formatStatus(status) : 'Starting stream ...';
                 message.appendChild(statusElem);
             }
             messagesDiv.appendChild(message);
@@ -1479,6 +1477,7 @@
         function onStart() {
             const ask = document.getElementById('ask');
             ask.classList.add('stop');
+            appendMessage('', 'assistant');
         }
 
         function onEnd() {
@@ -1489,10 +1488,10 @@
         }
 
         function onStatus(status) {
-            const messagesDiv = document.getElementById('chatMessages');
-            let statusElem = messagesDiv.lastElementChild?.lastElementChild;
-            if (statusElem) {
-                statusElem.innerHTML = status;
+            const messagesDiv = document.getElementById('chatMessages')
+            let statusElem = messagesDiv.lastElementChild?.lastElementChild
+            if (statusElem.classList.contains('status')) {
+                statusElem.innerHTML = formatStatus(status)
             }
             scrollToEnd();
         }
@@ -1504,23 +1503,30 @@
         function onToken(token) {
             const messagesDiv = document.getElementById('chatMessages');
             let message = messagesDiv.lastElementChild;
-
-            if (!message || !message.classList.contains('ai-message')) {
-                message = document.createElement('div');
-                message.className = 'message ai-message';
-                message.dataset.raw = ''
-                const content = document.createElement('div');
-                const status = document.createElement('div');
-                status.className = 'status';
-                status.textContent = 'Starting stream ...'
-                message.appendChild(content);
-                message.appendChild(status);
-                messagesDiv.appendChild(message);
-            }
-
-            message.dataset.raw += token;
-            message.firstElementChild.innerHTML = markdownToHtml(message.dataset.raw);
+            message.firstElementChild.innerHTML = markdownToHtml(chatStream?.response);
             hljs.highlightAll();
+        }
+
+        function formatStatus(status) {
+            if (typeof status !== 'object') {
+                return status.toString()
+            }
+            const { state, generationTimeString, tokenPerSecond, tokens, timeToFirstTokenString, model } = status
+            const parts = []
+            if(state.startsWith('Waiting')) {
+                parts.push(generationTimeString)
+                parts.push(state)
+            } else {
+                if (!state.startsWith('Generating')) {
+                    parts.push(state)
+                }
+                parts.push(generationTimeString)
+                parts.push(tokenPerSecond + ' tok/s')
+                parts.push(tokens + ' token')
+                parts.push(timeToFirstTokenString + ' to first token')
+            }
+            parts.push(model)
+            return parts.join(' &#183; ')
         }
         
         function sayHello() {
@@ -1543,7 +1549,6 @@
                     })
                 }
 
-                onToken('');
                 chatStream = ChatStream.create({
                     apiUrl: window.API_URL,
                     apiKey: window.API_KEY,

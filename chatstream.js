@@ -1,7 +1,10 @@
 const ChatStream = (function() {
   class StreamController {
     #_isGenerating = false
-    #cancelStreaming = false
+    #_isDone = false
+    #_isError = false
+    #_response = ''
+    #_isCancelled = false
     #tokenAmount = 0
     #startWaiting = null
     #startGeneration = null
@@ -11,32 +14,36 @@ const ChatStream = (function() {
     #throttleTimeout = null
     #statusInterval = null
 
-    #apiUrl = ''
-    #apiKey = ''
     #model = null
     #max_tokens = 4096
     #temperature = 0.7
 
     #options = {}
     #onToken = null
-    #onComplete = null
-    #onError = null
-    #onStatus = null
-    #onStart = null
     #onEnd = null
 
     get isGenerating() {
       return this.#_isGenerating
     }
 
+    get isDone() {
+      return this.#_isDone
+    }
+
+    get isError() {
+      return this.#_isError
+    }
+
+    get isCancelled() {
+      return this.#_isCancelled
+    }
+
+    get response() {
+      return this.#_response
+    }
+
     constructor(options = {}) {
       this.#options = options
-      this.#apiUrl = options.apiUrl || ''
-      this.#apiKey = options.apiKey || ''
-      this.#onComplete = options.onComplete
-      this.#onError = options.onError
-      this.#onStatus = options.onStatus
-      this.#onStart = options.onStart
     }
 
     async stream({ messages, model, tools, max_tokens, temperature }) {
@@ -49,34 +56,32 @@ const ChatStream = (function() {
       this.#tokenAmount = 0
       this.#toolCalls = []
       this.#startGeneration = null 
-      this.#cancelStreaming = false
       this.#startWaiting = new Date()
+      this.#_response = ''
+      this.#_isCancelled = false
+      this.#_isError = false
+      this.#_isDone = false
       this.#_isGenerating = true
 
       this.#model = model
       this.#max_tokens = max_tokens || this.#max_tokens
       this.#temperature = temperature || this.#temperature
 
-
-      let agentResponse = ''
-
       try {
-        this.#onStart?.()
-        this.#statusInterval = this.#onStatus ? setInterval(() => this.#onStatus?.(this.#getStatusString()), 180) : null;
+        this.#options.onStart?.()
+        this.#statusInterval = this.#options.onStatus ? setInterval(() => {
+          this.#options.onStatus?.(this.#status())
+          if (!this.#_isGenerating) {
+            clearInterval(this.#statusInterval)
+          }
+        }, 180) : null;
 
-        agentResponse = await this.#completionsCall(messages, tools)
-        
-        const filterFunc = (tc, index) => {
-          return !!tc.id && this.#toolCalls.findIndex(i => 
-            i.function?.name === tc.function?.name && 
-            i.function?.arguments === tc.function?.arguments
-          ) === index
-        }
+        await this.#completionsCall(messages, tools)
 
-        while (!this.#cancelStreaming && (this.#toolCalls = this.#toolCalls.filter(filterFunc)).length) {
+        while (!this.#_isCancelled && (this.#toolCalls = this.#toolCalls.filter(this.#filterTools.bind(this))).length) {
           messages.push({
             role: 'assistant',
-            content: agentResponse,
+            content: this.#_response,
             tool_calls: this.#toolCalls.slice()
           })
 
@@ -100,38 +105,37 @@ const ChatStream = (function() {
           }
 
           this.#toolCalls = []
-          agentResponse += await this.#completionsCall(messages)
+          await this.#completionsCall(messages)
         }
 
-        if (!this.#cancelStreaming) {
-          this.#onComplete?.(agentResponse, this.#getStatusString())
+        if (!this.#_isCancelled) {
+          this.#_isDone = true
+          this.#options.onComplete?.(this.#_response, this.#status())
         }
       } catch (error) {
-        if (!this.#cancelStreaming) {
+        if (!this.#_isCancelled) {
           console.error('Error:', error)
-          this.#onError?.(error)
+          this.#_isError = true
+          this.#options.onError?.(error)
         }
       } finally {
-        clearInterval(this.#statusInterval)
         this.#_isGenerating = false
         this.#onEnd?.()
       }
     }
 
     async #completionsCall(messages, tools) {
-      let agentResponse = ''
-
-      const response = await fetch(this.#apiUrl + '/v1/chat/completions', {
+      const response = await fetch(this.#options.apiUrl + '/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.#apiKey}`
+          'Authorization': `Bearer ${this.#options.apiKey}`
         },
         body: JSON.stringify({
           model: this.#model,
           messages: messages.map(m => ({
             role: m.role,
-            content: this.#formatContent(m),
+            content: this.#formatFileContent(m),
             tool_call_id: m.tool_call_id,
             tool_calls: m.tool_calls
           })),
@@ -143,7 +147,7 @@ const ChatStream = (function() {
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error(`HTTP error! Status: ${response.status}`)
       }
 
       const reader = response.body.getReader()
@@ -153,7 +157,7 @@ const ChatStream = (function() {
 
       while (true) {
         const { done, value } = await reader.read()
-        if (done || this.#cancelStreaming) break
+        if (done || this.#_isCancelled) break
 
         const chunk = decoder.decode(value)
         buffer += chunk
@@ -174,7 +178,7 @@ const ChatStream = (function() {
               this.#tokenAmount++
 
               if (delta.content) {
-                agentResponse += delta.content
+                this.#_response += delta.content
                 this.#throttleAppendToken(delta.content)
               } else if (!thinking && delta.tool_calls?.length) {
                 delta.tool_calls.forEach(tc => {
@@ -197,12 +201,19 @@ const ChatStream = (function() {
           }
         }
       }
-      
+
+      this.#_response += '\n '
       this.#throttleAppendToken('\n ')
-      return agentResponse + '\n '
     }
 
-    #formatContent(message) {
+    #filterTools(tc, index) {
+      return !!tc.id && this.#toolCalls.findIndex(i => 
+        i.function?.name === tc.function?.name && 
+        i.function?.arguments === tc.function?.arguments
+      ) === index
+    }
+
+    #formatFileContent(message) {
       if (!message.files?.length) return message.content
       
       return `${message.content}\n\n${message.files.length} file(s) are attached for context:\n${
@@ -226,22 +237,20 @@ const ChatStream = (function() {
       this.#lastThrottleTime = now
     }
 
-    #getStatusString() {
-      const wait = ((this.#startGeneration || new Date()).getTime() - this.#startWaiting.getTime()) / 1000
-      const parts = []
-      
-      if (this.#tokenAmount > 0) {
-        const sec = (new Date().getTime() - this.#startGeneration.getTime()) / 1000
-        parts.push(this.#formatDuration(wait + sec))
-        parts.push((this.#tokenAmount / sec).toFixed(2) + ' tok/s &#183; ' + this.#tokenAmount + ' token')
-        parts.push(this.#formatDuration(wait) + ' to first token')
-      } else if (this.#_isGenerating) {
-        parts.push(this.#formatDuration(wait))
-        parts.push('Waiting for first token ...')
+    #status() {
+      const timeToFirstToken = this.#startWaiting ? ((this.#startGeneration || new Date()).getTime() - this.#startWaiting.getTime()) / 1000 : null
+      const generationTime = this.#startGeneration ? (new Date().getTime() - this.#startGeneration.getTime()) / 1000 : null
+
+      return {
+        state: this.#_isError ? 'Error' : (this.#_isCancelled ? 'Cancelled' : (this.#_isDone ? 'Done' : (this.#tokenAmount > 0 ? 'Generating ...' : 'Waiting for first token ...'))),
+        generationTime: timeToFirstToken + generationTime,
+        generationTimeString: this.#formatDuration(timeToFirstToken + generationTime),
+        tokenPerSecond: (this.#tokenAmount / generationTime).toFixed(2),
+        tokens: this.#tokenAmount,
+        timeToFirstToken,
+        timeToFirstTokenString: this.#formatDuration(timeToFirstToken),
+        model: this.#model
       }
-      
-      parts.push(this.#model)
-      return parts.join(' &#183; ')
     }
 
     #formatDuration(seconds) {
@@ -262,13 +271,11 @@ const ChatStream = (function() {
 
     async stop() {
       return new Promise(resolve => {
-        const cancelled = this.#cancelStreaming
+        const cancelled = this.#_isCancelled
 
-        this.#cancelStreaming = true
-        clearInterval(this.#statusInterval)
-
-        this.#onToken = null
+        this.#_isCancelled = true
         this.#_isGenerating = false
+        this.#onToken = null
 
         if (!cancelled) {
           this.#onEnd?.(true)
