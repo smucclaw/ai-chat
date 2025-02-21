@@ -13,11 +13,7 @@ const ChatStream = (function() {
     #queuedTokens = ''
     #throttleTimeout = null
     #statusInterval = null
-
     #model = null
-    #max_tokens = 4096
-    #temperature = 0.7
-
     #options = {}
     #onToken = null
     #onEnd = null
@@ -62,10 +58,7 @@ const ChatStream = (function() {
       this.#_isError = false
       this.#_isDone = false
       this.#_isGenerating = true
-
       this.#model = model
-      this.#max_tokens = max_tokens || this.#max_tokens
-      this.#temperature = temperature || this.#temperature
 
       try {
         this.#options.onStart?.()
@@ -76,7 +69,7 @@ const ChatStream = (function() {
           }
         }, 180) : null;
 
-        await this.#completionsCall(messages, tools)
+        await this.#completionsCall(messages, model, tools, max_tokens, temperature)
 
         while (!this.#_isCancelled && (this.#toolCalls = this.#toolCalls.filter(this.#filterTools.bind(this))).length) {
           messages.push({
@@ -105,7 +98,7 @@ const ChatStream = (function() {
           }
 
           this.#toolCalls = []
-          await this.#completionsCall(messages, tools)
+          await this.#completionsCall(messages, model, tools, max_tokens, temperature)
         }
 
         if (!this.#_isCancelled) {
@@ -124,7 +117,7 @@ const ChatStream = (function() {
       }
     }
 
-    async #completionsCall(messages, tools) {
+    async #completionsCall(messages, model, tools, max_tokens, temperature) {
       const response = await fetch(this.#options.apiUrl + '/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -132,7 +125,7 @@ const ChatStream = (function() {
           'Authorization': `Bearer ${this.#options.apiKey}`
         },
         body: JSON.stringify({
-          model: this.#model,
+          model,
           messages: messages.map(m => ({
             role: m.role,
             content: this.#formatFileContent(m),
@@ -141,8 +134,8 @@ const ChatStream = (function() {
           })),
           tools,
           stream: true,
-          max_tokens: this.#max_tokens,
-          temperature: this.#temperature
+          max_tokens,
+          temperature
         })
       })
 
