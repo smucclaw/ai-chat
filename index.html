@@ -334,6 +334,7 @@
         .message {
             width: fit-content;
             max-width: 85%;
+            line-height: 1.5em;
             padding: 0 1em;
             border-radius: 5px;
             margin-top: .5em;
@@ -349,11 +350,16 @@
             box-shadow: 0 5px 25px #00000033;
         }
 
+        .user-message .content {
+            margin: -.3em 0;
+        }
+
         .user-message .attachments {
             margin: 1em 0;
             display: flex;
             flex-wrap: wrap;
             justify-content: flex-start;
+            line-height: 1em;
             gap: 4px;
         }
 
@@ -364,7 +370,6 @@
         .ai-message {
             color: #aaa;
             max-width: 100%;
-            line-height: 1.5em;
             padding: 0;
         }
 
@@ -1385,6 +1390,7 @@
             const message = document.createElement('div');
             message.className = `message ${sender === 'user' ? 'user-message' : sender === 'system' ? 'system-message' : 'ai-message'}`;
             const content = document.createElement('div');
+            content.className = 'content'
             content.innerHTML = markdownToHtml(text);
             if (files?.length) {
                 content.appendChild(appendFileElements(files));
