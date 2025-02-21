@@ -1326,7 +1326,7 @@
 
             onToken('');
 
-            chatStream = ChatStream.createStream({
+            chatStream = ChatStream.create({
                 apiUrl: window.API_URL,
                 apiKey: window.API_KEY,
                 onComplete: (content, status) => {
@@ -1485,6 +1485,7 @@
             const ask = document.getElementById('ask');
             ask.disabled = false;
             ask.classList.remove('stop');
+            scrollToEnd();
         }
 
         function onStatus(status) {
@@ -1511,6 +1512,7 @@
                 const content = document.createElement('div');
                 const status = document.createElement('div');
                 status.className = 'status';
+                status.textContent = 'Starting stream ...'
                 message.appendChild(content);
                 message.appendChild(status);
                 messagesDiv.appendChild(message);
@@ -1542,7 +1544,7 @@
                 }
 
                 onToken('');
-                chatStream = ChatStream.createStream({
+                chatStream = ChatStream.create({
                     apiUrl: window.API_URL,
                     apiKey: window.API_KEY,
                     onToken,

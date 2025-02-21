@@ -5,14 +5,15 @@ const ChatStream = (function() {
     #tokenAmount = 0
     #startWaiting = null
     #startGeneration = null
-    #generatingModel = null
     #toolCalls = []
     #lastThrottleTime = 0
     #queuedTokens = ''
     #throttleTimeout = null
     #statusInterval = null
+
     #apiUrl = ''
     #apiKey = ''
+    #model = null
     #max_tokens = 4096
     #temperature = 0.7
 
@@ -32,15 +33,13 @@ const ChatStream = (function() {
       this.#options = options
       this.#apiUrl = options.apiUrl || ''
       this.#apiKey = options.apiKey || ''
-      this.#max_tokens = options.max_tokens || 4096
-      this.#temperature = options.temperature || 0.7
       this.#onComplete = options.onComplete
       this.#onError = options.onError
       this.#onStatus = options.onStatus
       this.#onStart = options.onStart
     }
 
-    async stream({ messages, model, tools }) {
+    async stream({ messages, model, tools, max_tokens, temperature }) {
       if (this.#_isGenerating) {
         return
       }
@@ -48,12 +47,16 @@ const ChatStream = (function() {
       this.#onToken = this.#options.onToken
       this.#onEnd = this.#options.onEnd
       this.#tokenAmount = 0
-      this.#startGeneration = null  
+      this.#toolCalls = []
+      this.#startGeneration = null 
+      this.#cancelStreaming = false
       this.#startWaiting = new Date()
       this.#_isGenerating = true
-      this.#cancelStreaming = false
-      this.#generatingModel = model
-      this.#toolCalls = []
+
+      this.#model = model
+      this.#max_tokens = max_tokens || this.#max_tokens
+      this.#temperature = temperature || this.#temperature
+
 
       let agentResponse = ''
 
@@ -61,7 +64,7 @@ const ChatStream = (function() {
         this.#onStart?.()
         this.#statusInterval = this.#onStatus ? setInterval(() => this.#onStatus?.(this.#getStatusString()), 180) : null;
 
-        agentResponse = await this.#completionsCall({ messages, model, tools })
+        agentResponse = await this.#completionsCall(messages, tools)
         
         const filterFunc = (tc, index) => {
           return !!tc.id && this.#toolCalls.findIndex(i => 
@@ -97,7 +100,7 @@ const ChatStream = (function() {
           }
 
           this.#toolCalls = []
-          agentResponse += await this.#completionsCall({ messages, model })
+          agentResponse += await this.#completionsCall(messages)
         }
 
         if (!this.#cancelStreaming) {
@@ -113,7 +116,7 @@ const ChatStream = (function() {
       }
     }
 
-    async #completionsCall({ messages, model, tools }) {
+    async #completionsCall(messages, tools) {
       let agentResponse = ''
 
       const response = await fetch(this.#apiUrl + '/v1/chat/completions', {
@@ -123,7 +126,7 @@ const ChatStream = (function() {
           'Authorization': `Bearer ${this.#apiKey}`
         },
         body: JSON.stringify({
-          model,
+          model: this.#model,
           messages: messages.map(m => ({
             role: m.role,
             content: this.#formatContent(m),
@@ -235,7 +238,7 @@ const ChatStream = (function() {
         parts.push('Waiting for first token ...')
       }
       
-      parts.push(this.#generatingModel)
+      parts.push(this.#model)
       return parts.join(' &#183; ')
     }
 
@@ -276,7 +279,7 @@ const ChatStream = (function() {
   }
 
   return {
-    createStream: function(options) {
+    create: function(options) {
       return new StreamController(options)
     }
   }
