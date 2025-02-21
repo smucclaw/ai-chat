@@ -4,15 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./highlight.css">
+    <script src="./chat-stream.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.6/marked.min.js" crossorigin="anonymous"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js" crossorigin="anonymous"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#111111">
     <link rel="apple-touch-icon" href="icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-</script>
     <title>AI</title>
     <style>
         body {
@@ -931,7 +930,7 @@
     </div>
     <script>
         // Configuration
-        const DEFAULT_MODELS = ['llama-3.2-3b-instruct', 'grok-2-1212']; // Use a non-reasoning very fast conversation model
+        const DEFAULT_MODELS = ['llama-3.2-3b-instruct', 'meta-llama-3.1-8b-instruct', 'grok-2-1212']; // Use a non-reasoning very fast conversation model
         const MAX_TOKENS = 20000;
         const TEMPERATURE = 0.7;
         const MAX_STORAGE_CHARS = 5242880; // 5MB character limit for localStorage
@@ -940,12 +939,12 @@
         const TOOLS = [{
             type: "function",
             function: {
-                name: "render_equations",
-                description: "Call this tool before you start rendering math equations in KaTeX to allow them to render nicely.",
+                name: "render_math_equations",
+                description: "Call when needed BEFORE you start outputting math equations in KaTeX to allow them to render nicely.",
                 parameters: {
                     type: "object",
                     properties: {}
-                },
+                }
             }
         }, {
             type: "function", 
@@ -1025,7 +1024,7 @@
         }]
 
         // TOOL FUNCTIONS
-        async function render_equations() {
+        async function render_math_equations() {
             const style = document.createElement('link')
             style.rel = 'stylesheet'
             style.href = 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css'
@@ -1134,26 +1133,15 @@
         }
         // TOOL FUNCTIONS END
 
-
         // Globals. Don't touch.
         let isAvailable = false;
-        let isGenerating = false;
         let chatMemory = [];
-        let toolCalls = [];
-        let tokenAmount = 0;
-        let generatingInterval = null;
-        let startWaiting = null
-        let startGeneration = null;
         let loadedChatID = null;
         let selectedModel = null;
-        let generatingModel = null;
         let loadedModels = [];
-        let cancelStreaming = false;
-        let lastThrottleTime = 0
-        let queuedTokens = ''
-        let throttleInterval = null
         let attachedFiles = [];
         let blockAutoScrolling = false;
+        let chatStream = null;
 
         
         function adjustOffset(value) {
@@ -1178,14 +1166,13 @@
         }
 
         function clearMemory() {
-          if (isGenerating) return;
+            if (chatStream?.isGenerating) return;
 
-          chatMemory = [];
-          startWaiting = null;
-          loadedChatID = null;
-          const messagesDiv = document.getElementById('chatMessages');
-          messagesDiv.innerHTML = '';
-          clearInterval(generatingInterval);
+            chatMemory = [];
+            startWaiting = null;
+            loadedChatID = null;
+            const messagesDiv = document.getElementById('chatMessages');
+            messagesDiv.innerHTML = '';
         }
 
         async function handleFileUpload(event) {
@@ -1239,19 +1226,27 @@
         }
 
         async function extractTextFromPDF(file) {
-            const pdfjsLib = window['pdfjs-dist/build/pdf'];
-            
-            const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
-            
-            let text = '';
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const content = await page.getTextContent();
-                text += content.items.map(item => item.str).join(' ') + '\n';
+            // Load PDF.js only when needed
+            if (!window['pdfjs-dist/build/pdf']) {
+                const script = document.createElement('script')
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'
+                document.head.appendChild(script)
+                await new Promise(resolve => script.onload = resolve)
             }
             
-            return text;
+            const pdfjsLib = window['pdfjs-dist/build/pdf']
+            
+            const arrayBuffer = await file.arrayBuffer()
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+            
+            let text = ''
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i)
+                const content = await page.getTextContent()
+                text += content.items.map(item => item.str).join(' ') + '\n'
+            }
+            
+            return text
         }
 
         function removeFile(filename) {
@@ -1271,8 +1266,8 @@
         async function sendMessage() {
             if (!isAvailable) return;
 
-            if (isGenerating) {
-                cancelStreaming = true;
+            if (chatStream?.isGenerating) {
+                chatStream.stop();
                 return;
             }
 
@@ -1329,214 +1324,65 @@
 
             chatMemory.push(prompt);
 
-            appendMessageChunk('');
+            onToken('');
 
-            await streamResponse([systemPrompt, ...messages], selectedModel, function (agentResponse) {
-                if (!agentResponse || cancelStreaming) return;
+            chatStream = ChatStream.createStream({
+                apiUrl: window.API_URL,
+                apiKey: window.API_KEY,
+                onComplete: (content, status) => {
+                    if(!content) return
 
-                chatMemory.push({
-                    role: 'assistant',
-                    content: agentResponse,
-                    status: statusString()
-                });
-                
-                const history = JSON.parse(localStorage.getItem('history')) || []
-                const index = history.findIndex(h => h.id === loadedChatID);
-
-                const newID = new Date().getTime().toString();
-                const chat = {
-                    id: newID,
-                    log: chatMemory
-                };
-
-                if (index >= 0) {
-                    history[index] = chat;
-                } else {
-                    history.unshift(chat)
-                }
-                
-                try {
-                    while (history.length > 0 && JSON.stringify(history).length >= MAX_STORAGE_CHARS) {
-                        history.pop();
-                    }
-                    const toStore = JSON.stringify(history);
-                    localStorage.setItem('history', toStore)
-                    console.log(`Saved ${toStore.length} characters to history.`)
-                } catch (error) {
-                    console.error('Error:', error)
-                }
-
-                appendHistoryItem(chat, loadedChatID || newID);
-
-                loadedChatID = newID;
-            });
-        }
-
-        async function streamResponse(messages, model, postFunc) {
-            const ask = document.getElementById('ask');
-            ask.classList.add('stop');
-
-            tokenAmount = 0;
-            startGeneration = null;
-            startWaiting = new Date();
-            isGenerating = true;
-            generatingInterval = setInterval(scrollToEnd, 200);
-            cancelStreaming = false;
-            generatingModel = model;
-            toolCalls = [];
-
-            let agentResponse = ''
-
-            try {
-                agentResponse = await completionsCall(messages, model, TOOLS);
-                
-                const filterFunc = (tc, index) => {
-                  return !!tc.id && toolCalls.findIndex(i => i.function?.name === tc.function?.name && i.function?.arguments === tc.function?.arguments) === index
-                };
-
-                while (!cancelStreaming && (toolCalls = toolCalls.filter(filterFunc)).length) {
-                    messages.push({
+                    chatMemory.push({
                         role: 'assistant',
-                        content: agentResponse,
-                        tool_calls: toolCalls.slice()
+                        content,
+                        status
                     });
+                    
+                    const history = JSON.parse(localStorage.getItem('history')) || []
+                    const index = history.findIndex(h => h.id === loadedChatID);
 
-                    for (const tc of toolCalls) {
-                        if (typeof window[tc.function?.name] === 'function') {
-                            const args = tc.function.arguments ? JSON.parse(tc.function.arguments) : undefined;
+                    const newID = new Date().getTime().toString();
+                    const chat = {
+                        id: newID,
+                        log: chatMemory
+                    };
 
-                            try {
-                                const result = await window[tc.function.name](args);
-                                console.log(`Tool call executed: ${tc.function.name}`, args, result);
-
-                                messages.push({
-                                    role: 'tool',
-                                    content: JSON.stringify(result),
-                                    tool_call_id: tc.id
-                                });
-                            } catch (e) {
-                                console.error(`Tool call error: ${tc.function.name}`, args, e);
-                            }
+                    if (index >= 0) {
+                        history[index] = chat;
+                    } else {
+                        history.unshift(chat)
+                    }
+                    
+                    try {
+                        while (history.length > 0 && JSON.stringify(history).length >= MAX_STORAGE_CHARS) {
+                            history.pop();
                         }
+                        const toStore = JSON.stringify(history);
+                        localStorage.setItem('history', toStore)
+                        console.log(`Saved ${toStore.length} characters to history.`)
+                    } catch (error) {
+                        console.error('Error:', error)
                     }
 
-                    toolCalls = [];
-                    agentResponse += await completionsCall(messages, model);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                appendMessage('There was a network error.', 'system');
-            } finally {
-                postFunc?.(agentResponse);
-                
-                setTimeout(() => {
-                    clearInterval(generatingInterval);
-                    isGenerating = false;
-                    const ask = document.getElementById('ask');
-                    ask.classList.remove('stop');
-                }, 200);
-            }
-        }
+                    appendHistoryItem(chat, loadedChatID || newID);
 
-        async function completionsCall (messages, model, toolList) {
-            let agentResponse = '';
-
-            const response = await fetch(window.API_URL + '/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${window.API_KEY}`
+                    loadedChatID = newID;
                 },
-                body: JSON.stringify({
-                    model,
-                    messages: messages.map(m => {
-                        const n = {
-                            role: m.role,
-                            content: m.content,
-                            tool_call_id: m.tool_call_id,
-                            tool_calls: m.tool_calls
-                        }
-                        if (m.files?.length) {
-                            let i = 1;
-                            n.content = `${n.content}\n\n${m.files.length} file(s) are attached for context:\n${m.files.map(f => `[File ${i++}: ${f.name}]:\n${f.text}`).join('\n\n')}`;
-                        }
-                        return n;
-                    }),
-                    tools: toolList,
-                    stream: true,
-                    max_tokens: MAX_TOKENS,
-                    temperature: TEMPERATURE
-                })
+                onToken,
+                onError,
+                onStatus,
+                onStart,
+                onEnd
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-            let thinking = false;
-
-            while (true) {
-                const {done, value} = await reader.read();
-                if (done || cancelStreaming) break;
-
-                const chunk = decoder.decode(value);
-                buffer += chunk;
-
-                while (buffer.includes('\n')) {
-                    const index = buffer.indexOf('\n');
-                    const line = buffer.substring(0, index + 1);
-                    buffer = buffer.substring(index + 1);
-
-                    try {
-                        if (line.match(/^Data: \{.*\}/i)) {
-                            const data = JSON.parse(line.substring(6));
-                            const delta = data.choices[0].delta;
-
-                            if (!tokenAmount && !startGeneration) {
-                                startGeneration = new Date();
-                            }
-                            tokenAmount++;
-
-                            if (delta.content) {
-                                // if(delta.content === '<think>') {
-                                //     thinking = true;
-                                // } else if (delta.content === '</think>') {
-                                //     thinking = false;
-                                // }
-                                agentResponse += delta.content;
-                                throttleAppendMessageChunk(delta.content);
-                            }
-                            else if (!thinking && delta.tool_calls?.length) {
-                                delta.tool_calls.forEach(tc => {
-                                    if (toolCalls.length <= tc.index) {
-                                        toolCalls.push({
-                                            id: '',
-                                            type: 'function',
-                                            function: { name: '', arguments: '' }
-                                        });
-                                    }
-                                    const call = toolCalls[tc.index];
-                                    call.id += tc.id || '';
-                                    call.function.name += tc.function.name || '';
-                                    call.function.arguments += tc.function.arguments || '';
-                                });
-                            }
-                        }
-                    } catch (e) {
-                        console.error('JSON Parse Error:', e.message, 'Data:', line);
-                    }
-                }
-            }
-            throttleAppendMessageChunk('\n ');
-            return agentResponse + '\n ';
+            await chatStream.stream({
+                messages: [systemPrompt, ...messages],
+                model: selectedModel,
+                tools: TOOLS
+            });
         }
 
         function appendMessage(text, sender, files, status) {
-            if (isGenerating) return;
-
             const messagesDiv = document.getElementById('chatMessages');
             const message = document.createElement('div');
             message.className = `message ${sender === 'user' ? 'user-message' : sender === 'system' ? 'system-message' : 'ai-message'}`;
@@ -1553,44 +1399,7 @@
                 message.appendChild(statusElem);
             }
             messagesDiv.appendChild(message);
-            scrollToEnd(true);
-        }
-
-        function appendMessageChunk(token) {
-            const messagesDiv = document.getElementById('chatMessages');
-            let message = messagesDiv.lastElementChild;
-
-            if (!message || !message.classList.contains('ai-message')) {
-                message = document.createElement('div');
-                message.className = 'message ai-message';
-                message.dataset.raw = ''
-                const content = document.createElement('div');
-                const status = document.createElement('div');
-                status.className = 'status';
-                message.appendChild(content);
-                message.appendChild(status);
-                messagesDiv.appendChild(message);
-            }
-
-            message.dataset.raw += token;
-            message.firstElementChild.innerHTML = markdownToHtml(message.dataset.raw);
-            hljs.highlightAll();
-        }
-
-        function throttleAppendMessageChunk (token) {
-          const now = Date.now()
-          const timeSinceLastCall = now - lastThrottleTime
-          queuedTokens += token || ''
-
-          if (timeSinceLastCall < 80) {
-            throttleInterval = setTimeout(throttleAppendMessageChunk, timeSinceLastCall)
-            return
-          }
-
-          clearTimeout(throttleInterval)
-          appendMessageChunk(queuedTokens)
-          queuedTokens = ''
-          lastThrottleTime = now
+            scrollToEnd();
         }
 
         function markdownToHtml(markdown) {
@@ -1604,51 +1413,12 @@
             return html.trim()
         }
 
-        function scrollToEnd(noStatus) {
+        function scrollToEnd() {
             const messagesDiv = document.getElementById('chatMessages');
 
-            if (!blockAutoScrolling && (messagesDiv.scrollHeight < window.innerHeight || window.scrollY + window.innerHeight > messagesDiv.scrollHeight || noStatus)) {
+            if (!blockAutoScrolling && (messagesDiv.scrollHeight < window.innerHeight || window.scrollY + window.innerHeight > messagesDiv.scrollHeight)) {
                 window.scrollTo({ top: Math.max(messagesDiv.scrollHeight, window.innerHeight), behavior: 'smooth' });
             }
-
-            if (!noStatus && startWaiting) {
-                const messagesDiv = document.getElementById('chatMessages');
-                let status = messagesDiv.lastElementChild?.lastElementChild;
-                if (!status) return;
-                status.innerHTML = statusString();
-            }
-        }
-
-        function statusString () {
-            const wait = ((startGeneration || new Date()).getTime() - startWaiting.getTime()) / 1000;
-            const parts = [];
-            if (tokenAmount > 0) {
-                const sec = (new Date().getTime() - startGeneration.getTime()) / 1000;
-                parts.push(formatDuration(wait + sec));
-                parts.push((tokenAmount / sec).toFixed(2) + ' tok/s &#183; ' + tokenAmount + ' token');
-                parts.push(formatDuration(wait) + ' to first token');
-            } else if (isGenerating) {
-                parts.push(formatDuration(wait));
-                parts.push('Waiting for first token ...');
-            }
-            parts.push(generatingModel)
-            return parts.join(' &#183; ')
-        }
-
-        function formatDuration (seconds) {
-            const ms = Math.floor((seconds % 1) * 10).toFixed(0);
-            const s = Math.floor(seconds % 60);
-            const m = Math.floor((seconds / 60) % 60);
-            const h = Math.floor(seconds / 3600);
-
-            const parts = [];
-            
-            if (h > 0) parts.push(`${h}h `);
-            if (m > 0) parts.push(`${m}m `);
-            parts.push(`${s}.`);
-            parts.push(`${ms}s`);
-
-            return parts.join('');
         }
 
         async function loadModels() {
@@ -1705,9 +1475,54 @@
             appendMessage('Configure a valid OpenAI v1 compatible API in the server settings.', 'system');
           }
         }
+
+        function onStart() {
+            const ask = document.getElementById('ask');
+            ask.classList.add('stop');
+        }
+
+        function onEnd() {
+            const ask = document.getElementById('ask');
+            ask.disabled = false;
+            ask.classList.remove('stop');
+        }
+
+        function onStatus(status) {
+            const messagesDiv = document.getElementById('chatMessages');
+            let statusElem = messagesDiv.lastElementChild?.lastElementChild;
+            if (statusElem) {
+                statusElem.innerHTML = status;
+            }
+            scrollToEnd();
+        }
         
-        function sayHello () {
-            if (!isAvailable || isGenerating) return;
+        function onError(error) {
+            appendMessage('There was a network error.', 'system');
+        }
+
+        function onToken(token) {
+            const messagesDiv = document.getElementById('chatMessages');
+            let message = messagesDiv.lastElementChild;
+
+            if (!message || !message.classList.contains('ai-message')) {
+                message = document.createElement('div');
+                message.className = 'message ai-message';
+                message.dataset.raw = ''
+                const content = document.createElement('div');
+                const status = document.createElement('div');
+                status.className = 'status';
+                message.appendChild(content);
+                message.appendChild(status);
+                messagesDiv.appendChild(message);
+            }
+
+            message.dataset.raw += token;
+            message.firstElementChild.innerHTML = markdownToHtml(message.dataset.raw);
+            hljs.highlightAll();
+        }
+        
+        function sayHello() {
+            if (!isAvailable || chatStream?.isGenerating) return;
 
             clearMemory();
 
@@ -1725,13 +1540,27 @@
                         content += `\n${1}.: ${h.log[0].content.substring(0, 255)}`;
                     })
                 }
-                streamResponse([{
-                    role: 'user',
-                    content: content + getUserInfo(),
-                }], model);
+
+                onToken('');
+                chatStream = ChatStream.createStream({
+                    apiUrl: window.API_URL,
+                    apiKey: window.API_KEY,
+                    onToken,
+                    onError,
+                    onStatus,
+                    onStart,
+                    onEnd
+                });
+
+                chatStream.stream({
+                    messages: [{
+                        role: 'user',
+                        content: content + getUserInfo(),
+                    }],
+                    model
+                });
             } else {
                 appendMessage(DEFAULT_GREETING);
-
                 const ask = document.getElementById('ask');
                 ask.disabled = false;
             }
@@ -1786,11 +1615,10 @@
             select[replaceID ? 'prepend' : 'appendChild'](option);
         }
 
-        function loadHistoryLog (chat) {
-            if (isGenerating) {
-                cancelStreaming = true;
-                return
-            };
+        async function loadHistoryLog(chat) {
+            if (chatStream?.isGenerating) {
+                await chatStream.stop();
+            }
             if (loadedChatID === chat.id) return;
             closeMenu();
             clearMemory();
