@@ -1423,7 +1423,7 @@
             if (sender === 'assistant') {
                 const statusElem = document.createElement('div')
                 statusElem.className = 'status'
-                statusElem.innerHTML = status ? formatStatus(status) : 'Starting stream ...'
+                statusElem.innerHTML = status ? formatStatus(status) : ''
                 message.appendChild(statusElem)
             }
             messagesDiv.appendChild(message)
