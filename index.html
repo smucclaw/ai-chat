@@ -1156,7 +1156,7 @@
         let attachedFiles = []
         let blockAutoScrolling = false
         let chatStreams = {}
-
+        let namingStream = null
         
         function adjustOffset(value) {
             if (!value) {
@@ -1332,7 +1332,7 @@
             attachedFiles = []
             document.getElementById('fileAttachments').innerHTML = ''
 
-            const newId = updateHistory(prompt, loadedChatId)
+            const newId = await updateHistory(prompt, loadedChatId)
 
             chatStreams[newId] = ChatStream.create({
                 apiUrl: window.API_URL,
@@ -1370,7 +1370,7 @@
             })
         }
 
-        function updateHistory(message, previousId) {
+        async function updateHistory(message, previousId) {
             const history = JSON.parse(localStorage.getItem('history')) || []
             const index = history?.findIndex(h => h.id === previousId)
 
@@ -1379,8 +1379,11 @@
             if (message.role === 'user' && log[log.length - 1]?.role === 'user') {
                 log.pop()
             }
+
+            const name = await createChatLogName(log)
+            
             log.push(message)
-            const chat = { id, log }
+            const chat = { id, name, log }
 
             if (index >= 0) {
                 history[index] = chat
@@ -1405,6 +1408,32 @@
             manageHistoryItemElem(chat, previousId)
 
             return loadedChatId
+        }
+
+        async function createChatLogName(log) {
+            if (!log?.length) return
+            let name
+            let i = 0
+            try {
+                const json = await namingStream.call({
+                    messages: [{
+                        role: 'system',
+                        content: 'You\'re an AI with the sole purpose to summarise user prompts as a title to identify them again later quickly.'
+                    }, {
+                        role: 'user',
+                        content: 'Summarise the following prompts in one title with less than 10 words:\n\n' + log.reduce((a, l) => {
+                            if (l.role === 'user') {
+                                a.push(`#${++i}: "${l.content}"\n`)
+                            }
+                            return a
+                        }, [])
+                    }]
+                })
+                name = json.choices[0].message.content
+            } catch (e) {
+                console.error('Could not summarise prompt', e)
+            }
+            return name
         }
 
         async function appendMessage(text, sender, files, status) {
@@ -1650,6 +1679,12 @@
                     }],
                     model
                 });
+
+                namingStream = ChatStream.create({
+                    apiUrl: window.API_URL,
+                    apiKey: window.API_KEY,
+                    model
+                })
             } else {
                 await appendMessage(DEFAULT_GREETING)
                 const ask = document.getElementById('ask')
@@ -1699,11 +1734,7 @@
             }
             const option = document.createElement('button')
             option.dataset.id = chat.id
-            let content = chat.log[0].content
-            if (!content && chat.log[0].files?.length) {
-                content = chat.log[0].files[0].type.toUpperCase() + ': ' + chat.log[0].files[0].name
-            }
-            option.textContent = content
+            option.textContent = chat.name || chat.log[0].content
             option.className = chat.log[chat.log.length - 1].role === 'user' && parseInt(chat.id) > (new Date().getTime() - 4e5) ? 'generating' : ''
             option.onclick = () => loadHistoryLog(chat)
             select.prepend(option)

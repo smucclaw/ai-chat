@@ -42,9 +42,33 @@ const ChatStream = (function() {
 
     constructor(options = {}) {
       this.#options = options
+      this.#model = options.model
     }
 
-    async stream({ id, messages, model, tools, max_tokens, temperature }) {
+    async call({ messages, model = this.#model, tools, max_tokens = this.#options.max_tokens, temperature = this.#options.temperature }) {
+      const response = await fetch(this.#options.apiUrl + '/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.#options.apiKey}`
+        },
+        body: JSON.stringify({
+          model,
+          messages: messages.map(m => ({
+            role: m.role,
+            content: this.#formatFileContent(m),
+            tool_call_id: m.tool_call_id,
+            tool_calls: m.tool_calls
+          })),
+          tools,
+          max_tokens,
+          temperature
+        })
+      })
+      return await response.json()
+    }
+
+    async stream({ id, messages, model = this.#options.model, tools = this.#options.tools, max_tokens = this.#options.max_tokens, temperature = this.#options.temperature }) {
       if (this.#_isGenerating) {
         return
       }
