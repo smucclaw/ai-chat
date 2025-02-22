@@ -1593,7 +1593,7 @@
             if (typeof status !== 'object') {
                 return status.toString()
             }
-            const { state, tokenPerSecond, tokens, model } = status
+            const { state, generationTime, tokenPerSecond, tokens, model } = status
             const parts = []
             if(state.startsWith('Waiting')) {
                 parts.push(formatDuration(generationTime))
