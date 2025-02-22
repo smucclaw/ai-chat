@@ -101,12 +101,16 @@ const ChatStream = (function() {
           await this.#completionsCall(messages, model, tools, max_tokens, temperature)
         }
 
-        if (!this.#_isCancelled) {
-          setTimeout(() => {
+        setTimeout(() => {
+          if (!this.#_isCancelled) {
             this.#_isDone = true
+            if (this.#queuedTokens) {
+              this.#onToken?.(this.#queuedTokens, id)
+              this.#queuedTokens = ''
+            }
             this.#options.onComplete?.(this.#_response, this.#status(), id)
-          }, this.#tokenThrottleMS)
-        }
+          }
+        }, this.#tokenThrottleMS)
       } catch (error) {
         if (!this.#_isCancelled) {
           console.error('Error:', error)
@@ -216,18 +220,20 @@ const ChatStream = (function() {
     }
 
     #throttleAppendToken(token) {
-      if (!token && !this.#queuedTokens) return
-      const now = Date.now()
-      const timeSinceLastCall = now - this.#lastThrottleTime
+      clearTimeout(this.#throttleTimeout)
+      this.#throttleTimeout = null
 
+      if (!token && !this.#queuedTokens) return
+      
       this.#queuedTokens += token || ''
-      if (timeSinceLastCall < this.#tokenThrottleMS) {
-        this.#throttleTimeout = setTimeout(() => this.#throttleAppendToken(), timeSinceLastCall)
+      const now = Date.now()
+      const timeSinceLast = now - this.#lastThrottleTime
+      
+      if (timeSinceLast < this.#tokenThrottleMS) {
+        this.#throttleTimeout = setTimeout(() => this.#throttleAppendToken(), timeSinceLast)
         return
       }
 
-      clearTimeout(this.#throttleTimeout)
-      this.#throttleTimeout = null
       this.#onToken?.(this.#queuedTokens, this.#id)
       this.#queuedTokens = ''
       this.#lastThrottleTime = now
