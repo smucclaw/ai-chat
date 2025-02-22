@@ -294,6 +294,30 @@
             margin-bottom: 14px;
         }
 
+        #historyMenu button.generating {
+            position: relative;
+            padding-right: 28px;
+        }
+
+        #historyMenu button.generating:after {
+            content: '';
+            position: absolute;
+            right: 8px;
+            top: 47%;
+            margin-top: -6px;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #1f87cd;
+            border-left-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
         #settingsMenu {
             left: auto;
             right: 0px;
@@ -948,21 +972,10 @@
         // Configuration
         const DEFAULT_MODELS = ['llama-3.2-3b-instruct', 'meta-llama-3.1-8b-instruct', 'grok-2-1212']; // Use a non-reasoning very fast conversation model
         const MAX_TOKENS = 20000;
-        const TEMPERATURE = 0.7;
         const MAX_STORAGE_CHARS = 5242880; // 5MB character limit for localStorage
         const DEFAULT_GREETING = 'Howdy, is it time to help again?';
 
         const TOOLS = [{
-            type: "function",
-            function: {
-                name: "render_math_equations",
-                description: "Call when needed BEFORE you start outputting math equations in KaTeX to allow them to render nicely.",
-                parameters: {
-                    type: "object",
-                    properties: {}
-                }
-            }
-        }, {
             type: "function", 
             function: {
                 name: "search_web_info",
@@ -1040,21 +1053,6 @@
         }]
 
         // TOOL FUNCTIONS
-        async function render_math_equations() {
-            const style = document.createElement('link')
-            style.rel = 'stylesheet'
-            style.href = 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css'
-            style.crossOrigin = 'anonymous'
-            document.head.appendChild(style)
-
-            const script = document.createElement('script')
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js'
-            script.crossOrigin = 'anonymous'
-            document.head.appendChild(script)
-            
-            return await new Promise(resolve => script.onload = () => resolve('I\'m now ready to receive your KaTeX formulas and make them look pretty.'))
-        }
-
         async function search_web_info({ query }) {
             try {
                 if (!query.trim()) {
@@ -1139,7 +1137,7 @@
 
         async function search_user_history({ keywords }) {
             list = (keywords || '').toString().toLowerCase().split(' ');
-            const history = (JSON.parse(localStorage.getItem('history')) || []).filter(h => h.id !== loadedChatID);
+            const history = (JSON.parse(localStorage.getItem('history')) || []).filter(h => h.id !== loadedChatId);
             const matching = history.filter(h => list.find(k => h.log[0].content.toLowerCase().includes(k.trim())));
             const results = (matching?.length ? matching : history).slice(0, 3).map(h => h.log)
             return {
@@ -1150,45 +1148,42 @@
         // TOOL FUNCTIONS END
 
         // Globals. Don't touch.
-        let isAvailable = false;
-        let chatMemory = [];
-        let loadedChatID = null;
-        let selectedModel = null;
-        let loadedModels = [];
-        let attachedFiles = [];
-        let blockAutoScrolling = false;
-        let chatStream = null;
+        let isAvailable = false
+        let chatMemory = []
+        let loadedChatId = null
+        let selectedModel = null
+        let loadedModels = []
+        let attachedFiles = []
+        let blockAutoScrolling = false
+        let chatStreams = {}
 
         
         function adjustOffset(value) {
             if (!value) {
-                blockAutoScrolling = false;
-                document.body.style.removeProperty('--offset');
+                blockAutoScrolling = false
+                document.body.style.removeProperty('--offset')
                 setTimeout(() => {
                     if (!chatMemory.length) {
-                        document.body.classList.add('new');
+                        document.body.classList.add('new')
                     }
                 }, 300);
             } else {
-                blockAutoScrolling = document.body.classList.contains('new');
-                document.body.style.setProperty('--offset', value);
+                blockAutoScrolling = document.body.classList.contains('new')
+                document.body.style.setProperty('--offset', value)
                 if (isAvailable && window.innerWidth <= 768) {
-                    document.body.classList.remove('new');
+                    document.body.classList.remove('new')
                     setTimeout(() => {
-                        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
-                    }, 100);
+                        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
+                    }, 100)
                 }
             }
         }
 
         function clearMemory() {
-            if (chatStream?.isGenerating) return;
-
-            chatMemory = [];
-            startWaiting = null;
-            loadedChatID = null;
-            const messagesDiv = document.getElementById('chatMessages');
-            messagesDiv.innerHTML = '';
+            chatMemory = []
+            loadedChatId = null
+            const messagesDiv = document.getElementById('chatMessages')
+            messagesDiv.innerHTML = ''
         }
 
         async function handleFileUpload(event) {
@@ -1266,12 +1261,12 @@
         }
 
         function removeFile(filename) {
-            attachedFiles = attachedFiles.filter(f => f.name !== filename);
-            const fileAttachments = document.getElementById('fileAttachments');
+            attachedFiles = attachedFiles.filter(f => f.name !== filename)
+            const fileAttachments = document.getElementById('fileAttachments')
             const attachment = Array.from(fileAttachments.children)
-                .find(el => el.querySelector('.name').textContent === filename);
+                .find(el => el.querySelector('.name').textContent === filename)
             if (attachment) {
-                fileAttachments.removeChild(attachment);
+                fileAttachments.removeChild(attachment)
             }
         }
 
@@ -1280,152 +1275,193 @@
         }
 
         async function sendMessage() {
-            if (!isAvailable) return;
+            if (!isAvailable) return
 
-            if (chatStream?.isGenerating) {
-                chatStream.stop();
-                return;
+            if (chatStreams[loadedChatId]?.isGenerating) {
+                chatStreams[loadedChatId].stop()
+                return
             }
 
-            const inputElem = document.getElementById('userInput');
-            inputElem.blur();
+            const inputElem = document.getElementById('userInput')
+            inputElem.blur()
 
-            let messageText = inputElem.value.trim();
+            let messageText = inputElem.value.trim()
 
-            if (!messageText && !attachedFiles.length) return;
+            if (!messageText && !attachedFiles.length) return
 
             if (!chatMemory.length) {
-                clearMemory();
+                clearMemory()
             }
 
-            document.body.classList.remove('new');
+            document.body.classList.remove('new')
 
             const prompt = {
                 role: 'user',
                 content: messageText,
                 files: attachedFiles
-            };
+            }
 
             const systemPrompt = {
-                role: "system",
+                role: 'system',
                 content: (window.SYSTEM_PROMPT || '') + getUserInfo()
-                    
-            };
+            }
 
-            const messages = [...chatMemory, prompt];
+            const messages = [...chatMemory, prompt]
 
-            let tokenLength = JSON.stringify(systemPrompt).length + 40;
+            let tokenLength = JSON.stringify(systemPrompt).length + 40
             for (let i = messages.length - 1; i >= 0; i--) {
-                tokenLength += JSON.stringify(messages[i]).length + 1;
+                tokenLength += JSON.stringify(messages[i]).length + 1
                 if (tokenLength > MAX_TOKENS) {
                     while (i >= 0) {
-                        messages.shift();
-                        i--;
+                        messages.shift()
+                        i--
                     }
-                    continue;
+                    continue
                 }
             }
 
             if (!messages.length) {
-                appendMessage('Prompt size is too large.', 'system')
-                return;
+                await appendMessage('Prompt size is too large.', 'system')
+                return
             }
 
-            appendMessage(messageText, 'user', attachedFiles);
+            await appendMessage(messageText, 'user', attachedFiles)
 
-            userInput.value = '';
+            userInput.value = ''
             userInput.style.height = 'auto'
-            attachedFiles = [];
-            document.getElementById('fileAttachments').innerHTML = '';
+            attachedFiles = []
+            document.getElementById('fileAttachments').innerHTML = ''
 
-            chatMemory.push(prompt);
+            const newId = updateHistory(prompt, loadedChatId)
 
-            chatStream = ChatStream.create({
+            chatStreams[newId] = ChatStream.create({
                 apiUrl: window.API_URL,
                 apiKey: window.API_KEY,
-                onComplete: (content, status) => {
+                onComplete: (content, status, id) => {
+                    const ask = document.getElementById('ask')
+                    ask.classList.remove('stop')
+
                     if(!content) return
 
-                    chatMemory.push({
+                    updateHistory({
                         role: 'assistant',
                         content,
                         status
-                    });
-                    
-                    const history = JSON.parse(localStorage.getItem('history')) || []
-                    const index = history.findIndex(h => h.id === loadedChatID);
-
-                    const newID = new Date().getTime().toString();
-                    const chat = {
-                        id: newID,
-                        log: chatMemory
-                    };
-
-                    if (index >= 0) {
-                        history[index] = chat;
-                    } else {
-                        history.unshift(chat)
-                    }
-                    
-                    try {
-                        while (history.length > 0 && JSON.stringify(history).length >= MAX_STORAGE_CHARS) {
-                            history.pop();
-                        }
-                        const toStore = JSON.stringify(history);
-                        localStorage.setItem('history', toStore)
-                        console.log(`Saved ${toStore.length} characters to history.`)
-                    } catch (error) {
-                        console.error('Error:', error)
-                    }
-
-                    appendHistoryItem(chat, loadedChatID || newID);
-
-                    loadedChatID = newID;
+                    }, id)
                 },
                 onToken,
                 onError,
                 onStatus,
                 onStart,
-                onEnd
-            });
+                onEnd,
+                onToolCall: async (func, args, id) => {
+                    // if (loadedChatId === id) {
+                    //     await appendMessage(`Querying for additional information: <code>${func}</code>`, 'system')
+                    // }
+                    return await window[func](args)
+                }
+            })
 
-            await chatStream.stream({
+            await chatStreams[newId].stream({
+                id: newId,
                 messages: [systemPrompt, ...messages],
                 model: selectedModel,
                 tools: TOOLS
-            });
-        }
-
-        function appendMessage(text, sender, files, status) {
-            const messagesDiv = document.getElementById('chatMessages');
-            const message = document.createElement('div');
-            message.className = `message ${sender === 'user' ? 'user-message' : sender === 'system' ? 'system-message' : 'ai-message'}`;
-            const content = document.createElement('div');
-            content.className = 'content'
-            content.innerHTML = markdownToHtml(text);
-            if (files?.length) {
-                content.appendChild(appendFileElements(files));
-            }
-            message.appendChild(content);
-            if (sender === 'assistant') {
-                const statusElem = document.createElement('div');
-                statusElem.className = 'status';
-                statusElem.innerHTML = status ? formatStatus(status) : 'Starting stream ...';
-                message.appendChild(statusElem);
-            }
-            messagesDiv.appendChild(message);
-            scrollToEnd();
-        }
-
-        function markdownToHtml(markdown) {
-            const html = marked.parse(markdown, {
-              breaks: true,
-              gfm: true,
-              headerIds: false,
-              mangle: false
             })
+        }
 
-            return html.trim()
+        function updateHistory(message, previousId) {
+            const history = JSON.parse(localStorage.getItem('history')) || []
+            const index = history?.findIndex(h => h.id === previousId)
+
+            const id = new Date().getTime().toString()
+            const log = history[index]?.log || chatMemory
+            if (message.role === 'user' && log[log.length - 1]?.role === 'user') {
+                log.pop()
+            }
+            log.push(message)
+            const chat = { id, log }
+
+            if (index >= 0) {
+                history[index] = chat
+            } else {
+                history.unshift(chat)
+            }
+            
+            try {
+                while (history.length > 0 && JSON.stringify(history).length >= MAX_STORAGE_CHARS) {
+                    history.pop()
+                }
+                history.sort((a, b) => a.id - b.id)
+                const toStore = JSON.stringify(history)
+                localStorage.setItem('history', toStore)
+                console.log(`Saved ${toStore.length} characters to history.`)
+            } catch (error) {
+                console.error('Error:', error)
+            }
+
+            loadedChatId = id
+
+            manageHistoryItemElem(chat, previousId)
+
+            return loadedChatId
+        }
+
+        async function appendMessage(text, sender, files, status) {
+            const messagesDiv = document.getElementById('chatMessages')
+            const message = sender === 'user' && messagesDiv.lastElementChild?.classList.contains('user-message') ? messagesDiv.lastElementChild : document.createElement('div')
+            message.className = `message ${sender === 'user' ? 'user-message' : sender === 'system' ? 'system-message' : 'ai-message'}`
+            const content = message.firstElementChild || document.createElement('div')
+            content.className = 'content'
+            content.innerHTML = await markdownToHtml(text)
+            if (files?.length) {
+                content.appendChild(appendFileElements(files))
+            }
+            if (!message.parentElement) {
+                message.appendChild(content)
+            }
+            if (sender === 'assistant') {
+                const statusElem = document.createElement('div')
+                statusElem.className = 'status'
+                statusElem.innerHTML = status ? formatStatus(status) : 'Starting stream ...'
+                message.appendChild(statusElem)
+            }
+            messagesDiv.appendChild(message)
+            return message
+        }
+
+        async function markdownToHtml(markdown) {
+            let html
+            const parse = () => marked.parse(markdown, {
+                    breaks: true,
+                    gfm: true,
+                    headerIds: false,
+                    mangle: false
+                }).trim()
+            try {
+                html = parse()
+            } catch (error) {
+                if (error.toString().match(/katex/) && typeof window.katex === 'undefined') {
+                    const style = document.createElement('link')
+                    style.rel = 'stylesheet'
+                    style.href = 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css'
+                    style.crossOrigin = 'anonymous'
+                    document.head.appendChild(style)
+
+                    const script = document.createElement('script')
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js'
+                    script.crossOrigin = 'anonymous'
+                    document.head.appendChild(script)
+            
+                    await new Promise(resolve => script.onload = () => resolve())
+
+                    if (typeof window.katex !== 'undefined') {
+                        return parse()
+                    }
+                } 
+                console.error('Markdown rendering error:', error)
+            }
+            return html
         }
 
         function scrollToEnd() {
@@ -1457,7 +1493,7 @@
 
             if (!models.data.length) {
                 clearMemory()
-                appendMessage('There are no models loaded.', 'system');
+                await appendMessage('There are no models loaded.', 'system');
                 return;
             }
 
@@ -1487,41 +1523,54 @@
           } catch (error) {
             console.error(error)
             clearMemory()
-            appendMessage('Configure a valid OpenAI v1 compatible API in the server settings.', 'system');
+            await appendMessage('Configure a valid OpenAI v1 compatible API in the server settings.', 'system');
           }
         }
 
-        function onStart() {
-            const ask = document.getElementById('ask');
-            ask.classList.add('stop');
-            appendMessage('', 'assistant');
+        function onStart(id) {
+            if (loadedChatId !== id) return
+
+            const ask = document.getElementById('ask')
+            ask.classList.add('stop')
         }
 
-        function onEnd() {
-            const ask = document.getElementById('ask');
-            ask.disabled = false;
-            ask.classList.remove('stop');
-            scrollToEnd();
+        function onEnd(id) {
+            document.querySelector(`#historyMenu .generating[data-id="${id}"]`)?.classList.remove('generating')
+
+            if (loadedChatId !== id) return
+
+            const ask = document.getElementById('ask')
+            ask.classList.remove('stop')
         }
 
-        function onStatus(status) {
+        async function onStatus(status, id) {
+            if (loadedChatId !== id) return
+
             const messagesDiv = document.getElementById('chatMessages')
-            let statusElem = messagesDiv.lastElementChild?.lastElementChild
-            if (statusElem.classList.contains('status')) {
-                statusElem.innerHTML = formatStatus(status)
-            }
-            scrollToEnd();
+            let message = messagesDiv.lastElementChild;
+            if (!message?.classList.contains('ai-message')) {
+                message = await appendMessage('', 'assistant')
+            }  
+            message.lastElementChild.innerHTML = formatStatus(status)
+            scrollToEnd()
         }
         
-        function onError(error) {
-            appendMessage('There was a network error.', 'system');
+        async function onError(error, id) {
+            if (loadedChatId !== id) return
+
+            await appendMessage('There was a network error.', 'system')
         }
 
-        function onToken(token) {
-            const messagesDiv = document.getElementById('chatMessages');
-            let message = messagesDiv.lastElementChild;
-            message.firstElementChild.innerHTML = markdownToHtml(chatStream?.response);
-            hljs.highlightAll();
+        async function onToken(token, id) {
+            if (loadedChatId !== id) return
+
+            const messagesDiv = document.getElementById('chatMessages')
+            let message = messagesDiv.lastElementChild
+            if (!message?.classList.contains('ai-message')) {
+                message = await appendMessage('', 'assistant')
+            }   
+            message.firstElementChild.innerHTML = await markdownToHtml(chatStreams[id]?.response)
+            hljs.highlightAll()
         }
 
         function formatStatus(status) {
@@ -1546,27 +1595,27 @@
             return parts.join(' &#183; ')
         }
         
-        function sayHello() {
-            if (!isAvailable || chatStream?.isGenerating) return;
+        async function sayHello() {
+            if (!isAvailable) return
 
-            clearMemory();
+            clearMemory()
 
-            document.body.classList.add('new');
+            document.body.classList.add('new')
 
             const model = loadedModels.find(m => DEFAULT_MODELS.includes(m.id))?.id
 
             if (model) {
-                let content = 'You\'re a professional entertainer. Say hello and ask how to help. It\'s okay to be mildly cynical. You must always use less than 30 words!';
-                const history = JSON.parse(localStorage.getItem('history')) || [];
+                let content = 'You\'re a professional entertainer. Say hello and ask how to help. It\'s okay to be mildly cynical. You must always use less than 30 words!'
+                const history = JSON.parse(localStorage.getItem('history')) || []
                 if (history.length) {
                     content += '\nHere are some previous user chat logs with you that you could reference on the occasion:'
                     let i = 1;
                     history.slice(0, 10).forEach(h => {
-                        content += `\n${1}.: ${h.log[0].content.substring(0, 255)}`;
+                        content += `\n${1}.: ${h.log[0].content.substring(0, 255)}`
                     })
                 }
 
-                chatStream = ChatStream.create({
+                chatStreams[loadedChatId] = ChatStream.create({
                     apiUrl: window.API_URL,
                     apiKey: window.API_KEY,
                     onToken,
@@ -1574,9 +1623,10 @@
                     onStatus,
                     onStart,
                     onEnd
-                });
+                })
 
-                chatStream.stream({
+                chatStreams[loadedChatId].stream({
+                    id: loadedChatId,
                     messages: [{
                         role: 'user',
                         content: content + getUserInfo(),
@@ -1584,75 +1634,80 @@
                     model
                 });
             } else {
-                appendMessage(DEFAULT_GREETING);
-                const ask = document.getElementById('ask');
-                ask.disabled = false;
+                await appendMessage(DEFAULT_GREETING)
+                const ask = document.getElementById('ask')
+                ask.disabled = false
             }
         }
 
         function enableClearHistory() {
-            if (document.getElementById('clearHistory')) return;
+            if (document.getElementById('clearHistory')) return
 
-            const select = document.getElementById('historyMenu');
-            const option = document.createElement('button');
-            option.id = 'clearHistory';
-            option.textContent = 'Clear history';
-            option.onclick = function () {
-                if (!confirm('Are you sure?\nI won\'t be able reference your previous queries anymore. *sadface*')) return;
+            const select = document.getElementById('historyMenu')
+            const option = document.createElement('button')
+            option.id = 'clearHistory'
+            option.textContent = 'Clear history'
+            option.onclick = () => {
+                if (!confirm('Are you sure?\nI won\'t be able reference your previous queries anymore. *sadface*')) return
                 try {
-                    localStorage.setItem('history', '[]');
-                    select.innerHTML = '';
+                    localStorage.setItem('history', '[]')
+                    select.innerHTML = ''
+                    startNew()
                 } catch (error) {
                     console.error('Error:', error)
                 }
             }
-            select.appendChild(option);
+            select.appendChild(option)
         }
 
         function loadHistory () {
-            const history = JSON.parse(localStorage.getItem('history')) || [];
-            history.forEach(chat => appendHistoryItem(chat))
+            const history = JSON.parse(localStorage.getItem('history')) || []
+            history.forEach(chat => manageHistoryItemElem(chat))
             
-            if (!history.length) return;
+            if (!history.length) return
 
-            enableClearHistory();
+            enableClearHistory()
         }
 
-        function appendHistoryItem(chat, replaceID) {
-            const select = document.getElementById('historyMenu');
-            if (replaceID) {
+        function manageHistoryItemElem(chat, previousId) {
+            if (!chat.log?.[0]) return
+            const select = document.getElementById('historyMenu')
+            if (previousId) {
                 Array.from(select.children).forEach(c => {
-                    if (c.dataset.id === replaceID) {
-                        select.removeChild(c);
+                    if (c.dataset.id === previousId) {
+                        select.removeChild(c)
                     }
                 })
-                enableClearHistory();
+                enableClearHistory()
             }
-            const option = document.createElement('button');
-            option.dataset.id = chat.id;
-            let content = chat.log[0].content;
+            const option = document.createElement('button')
+            option.dataset.id = chat.id
+            let content = chat.log[0].content
             if (!content && chat.log[0].files?.length) {
-                content = chat.log[0].files[0].type.toUpperCase() + ': ' + chat.log[0].files[0].name;
+                content = chat.log[0].files[0].type.toUpperCase() + ': ' + chat.log[0].files[0].name
             }
-            option.textContent = content;
-            option.onclick = () => loadHistoryLog(chat);
-            select[replaceID ? 'prepend' : 'appendChild'](option);
+            option.textContent = content
+            option.className = chat.log[chat.log.length - 1].role === 'user' && parseInt(chat.id) > (new Date().getTime() - 4e5) ? 'generating' : ''
+            option.onclick = () => loadHistoryLog(chat)
+            select.prepend(option)
         }
 
         async function loadHistoryLog(chat) {
-            if (chatStream?.isGenerating) {
-                await chatStream.stop();
+            // if (loadedChatId === chat.id) return
+            closeMenu()
+            clearMemory()
+            document.body.classList.remove('new')
+            for (const l of chat.log) {
+              await appendMessage(l.content, l.role, l.files, l.status)
             }
-            if (loadedChatID === chat.id) return;
-            closeMenu();
-            clearMemory();
-            document.body.classList.remove('new');
-            loadedChatID = chat.id;
-            chatMemory = chat.log;
-            chatMemory.forEach(l => {
-                appendMessage(l.content, l.role, l.files, l.status);
-            });
-            hljs.highlightAll();
+            hljs.highlightAll()
+            const ask = document.getElementById('ask')
+            ask.classList[chatStreams[chat.id]?.isGenerating ? 'add' : 'remove']('stop')
+            chatMemory = chat.log
+            loadedChatId = chat.id
+            chatStreams[chat.id]?.isGenerating && onToken('', chat.id)
+            window.scrollTo(0, document.documentElement.scrollHeight)
+            setTimeout(() => window.scrollTo(0, document.documentElement.scrollHeight), 280)
         }
 
         function addThinkingAndKatexSupport () {
@@ -1781,12 +1836,12 @@
         }
 
         function startNew() {
-            closeMenu();
-            sayHello();
+            closeMenu()
+            sayHello()
         }
 
         function openMenu(menu) {
-            closeMenu(menu);
+            closeMenu(menu)
             document.getElementById(menu).classList.toggle('open')
         }
 

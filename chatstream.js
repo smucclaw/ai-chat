@@ -5,6 +5,7 @@ const ChatStream = (function() {
     #_isError = false
     #_response = ''
     #_isCancelled = false
+    #id = null
     #tokenAmount = 0
     #startWaiting = null
     #startGeneration = null
@@ -16,7 +17,8 @@ const ChatStream = (function() {
     #model = null
     #options = {}
     #onToken = null
-    #onEnd = null
+    #tokenThrottleMS = 80
+    #statusIntervalMS = 250
 
     get isGenerating() {
       return this.#_isGenerating
@@ -42,13 +44,13 @@ const ChatStream = (function() {
       this.#options = options
     }
 
-    async stream({ messages, model, tools, max_tokens, temperature }) {
+    async stream({ id, messages, model, tools, max_tokens, temperature }) {
       if (this.#_isGenerating) {
         return
       }
 
+      this.#id = id
       this.#onToken = this.#options.onToken
-      this.#onEnd = this.#options.onEnd
       this.#tokenAmount = 0
       this.#toolCalls = []
       this.#startGeneration = null 
@@ -61,39 +63,37 @@ const ChatStream = (function() {
       this.#model = model
 
       try {
-        this.#options.onStart?.()
+        this.#options.onStart?.(id)
         this.#statusInterval = this.#options.onStatus ? setInterval(() => {
-          this.#options.onStatus?.(this.#status())
-          if (!this.#_isGenerating) {
+          this.#options.onStatus?.(this.#status(), id)
+          if (!this.#_isGenerating && !this.#throttleTimeout) {
             clearInterval(this.#statusInterval)
+            this.#options.onEnd?.(id)
           }
-        }, 180) : null;
+        }, this.#statusIntervalMS) : null;
 
         await this.#completionsCall(messages, model, tools, max_tokens, temperature)
 
-        while (!this.#_isCancelled && (this.#toolCalls = this.#toolCalls.filter(this.#filterTools.bind(this))).length) {
+        while (this.#options.onToolCall && !this.#_isCancelled && (this.#toolCalls = this.#toolCalls.filter(this.#filterTools.bind(this))).length) {
           messages.push({
             role: 'assistant',
             content: this.#_response,
             tool_calls: this.#toolCalls.slice()
           })
 
-          for (const tc of this.#toolCalls) {
-            if (typeof window[tc.function?.name] === 'function') {
+          for (const tc of this.#toolCalls) {              
+            try {
               const args = tc.function.arguments ? JSON.parse(tc.function.arguments) : undefined
-              
-              try {
-                const result = await window[tc.function.name](args)
-                console.log(`Tool call executed: ${tc.function.name}`, args, result)
-
+              const result = await this.#options.onToolCall(tc.function.name, args, id)
+              if (result) {
                 messages.push({
                   role: 'tool',
                   content: JSON.stringify(result),
                   tool_call_id: tc.id
                 })
-              } catch (e) {
-                console.error(`Tool call error: ${tc.function.name}`, args, e)
               }
+            } catch (e) {
+              console.warn(`Tool call failed: ${tc.function.name}`, tc.function.arguments, e)
             }
           }
 
@@ -102,18 +102,19 @@ const ChatStream = (function() {
         }
 
         if (!this.#_isCancelled) {
-          this.#_isDone = true
-          this.#options.onComplete?.(this.#_response, this.#status())
+          setTimeout(() => {
+            this.#_isDone = true
+            this.#options.onComplete?.(this.#_response, this.#status(), id)
+          }, this.#tokenThrottleMS)
         }
       } catch (error) {
         if (!this.#_isCancelled) {
           console.error('Error:', error)
           this.#_isError = true
-          this.#options.onError?.(error)
+          this.#options.onError?.(error, id)
         }
       } finally {
         this.#_isGenerating = false
-        this.#onEnd?.()
       }
     }
 
@@ -215,17 +216,19 @@ const ChatStream = (function() {
     }
 
     #throttleAppendToken(token) {
+      if (!token && !this.#queuedTokens) return
       const now = Date.now()
       const timeSinceLastCall = now - this.#lastThrottleTime
-      this.#queuedTokens += token || ''
 
-      if (timeSinceLastCall < 80) {
+      this.#queuedTokens += token || ''
+      if (timeSinceLastCall < this.#tokenThrottleMS) {
         this.#throttleTimeout = setTimeout(() => this.#throttleAppendToken(), timeSinceLastCall)
         return
       }
 
       clearTimeout(this.#throttleTimeout)
-      this.#onToken?.(this.#queuedTokens)
+      this.#throttleTimeout = null
+      this.#onToken?.(this.#queuedTokens, this.#id)
       this.#queuedTokens = ''
       this.#lastThrottleTime = now
     }
@@ -264,18 +267,11 @@ const ChatStream = (function() {
 
     async stop() {
       return new Promise(resolve => {
-        const cancelled = this.#_isCancelled
-
         this.#_isCancelled = true
-        this.#_isGenerating = false
         this.#onToken = null
+        this.#_isGenerating = false
 
-        if (!cancelled) {
-          this.#onEnd?.(true)
-          this.#onEnd = null
-        }
-
-        setTimeout(resolve, 200)
+        setTimeout(resolve, Math.max(this.#statusIntervalMS, this.#tokenThrottleMS))
       })
     }
   }
