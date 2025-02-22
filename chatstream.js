@@ -240,30 +240,14 @@ const ChatStream = (function() {
       return {
         state: this.#_isError ? 'Error' : (this.#_isCancelled ? 'Cancelled' : (this.#_isDone ? 'Done' : (this.#tokenAmount > 0 ? 'Generating ...' : 'Waiting for first token ...'))),
         generationTime: timeToFirstToken + generationTime,
-        generationTimeString: this.#formatDuration(timeToFirstToken + generationTime),
         tokenPerSecond: (this.#tokenAmount / generationTime).toFixed(2),
         tokens: this.#tokenAmount,
         timeToFirstToken,
-        timeToFirstTokenString: this.#formatDuration(timeToFirstToken),
         model: this.#model
       }
     }
 
-    #formatDuration(seconds) {
-      const ms = Math.floor((seconds % 1) * 10).toFixed(0)
-      const s = Math.floor(seconds % 60)
-      const m = Math.floor((seconds / 60) % 60)
-      const h = Math.floor(seconds / 3600)
 
-      const parts = []
-      
-      if (h > 0) parts.push(`${h}h `)
-      if (m > 0) parts.push(`${m}m `)
-      parts.push(`${s}.`)
-      parts.push(`${ms}s`)
-
-      return parts.join('')
-    }
 
     async stop() {
       return new Promise(resolve => {

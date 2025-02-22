@@ -1430,6 +1430,22 @@
             return message
         }
 
+        function formatDuration(seconds) {
+            const ms = Math.floor((seconds % 1) * 10).toFixed(0)
+            const s = Math.floor(seconds % 60)
+            const m = Math.floor((seconds / 60) % 60)
+            const h = Math.floor(seconds / 3600)
+
+            const parts = []
+            
+            if (h > 0) parts.push(`${h}h `)
+            if (m > 0) parts.push(`${m}m `)
+            parts.push(`${s}.`)
+            parts.push(`${ms}s`)
+
+            return parts.join('')
+        }
+
         async function markdownToHtml(markdown) {
             let html
             const parse = () => marked.parse(markdown, {
@@ -1577,19 +1593,19 @@
             if (typeof status !== 'object') {
                 return status.toString()
             }
-            const { state, generationTimeString, tokenPerSecond, tokens, timeToFirstTokenString, model } = status
+            const { state, tokenPerSecond, tokens, model } = status
             const parts = []
             if(state.startsWith('Waiting')) {
-                parts.push(generationTimeString)
+                parts.push(formatDuration(generationTime))
                 parts.push(state)
             } else {
                 if (!state.startsWith('Generating')) {
                     parts.push(state)
                 }
-                parts.push(generationTimeString)
+                parts.push(formatDuration(generationTime))
                 parts.push(tokenPerSecond + ' tok/s')
                 parts.push(tokens + ' token')
-                parts.push(timeToFirstTokenString + ' to first token')
+                // parts.push(timeToFirstTokenString + ' to first token')
             }
             parts.push(model)
             return parts.join(' &#183; ')
