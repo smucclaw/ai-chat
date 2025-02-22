@@ -1557,6 +1557,7 @@
 
             const ask = document.getElementById('ask')
             ask.classList.remove('stop')
+            scrollToEnd()
         }
 
         async function onStatus(status, id) {
@@ -1953,7 +1954,7 @@
 
             window.addEventListener('scroll', function () {
                 const scrollButton = document.getElementById('scrolldown')
-                const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 150
+                const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 200
                 scrollButton.style.display = isAtBottom ? 'none' : 'block'
             })
 
