@@ -1433,7 +1433,7 @@
             } catch (e) {
                 console.error('Could not summarise prompt', e)
             }
-            return name
+            return name?.replace(/['"]/g, '')
         }
 
         async function appendMessage(text, sender, files, status) {
