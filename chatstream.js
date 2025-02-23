@@ -45,7 +45,7 @@ const ChatStream = (function() {
       this.#model = options.model
     }
 
-    async call({ messages, model = this.#model, tools, max_tokens = this.#options.max_tokens, temperature = this.#options.temperature }) {
+    async call({ messages, model = this.#model, tools = this.#options.tools, max_tokens = this.#options.max_tokens, temperature = this.#options.temperature }) {
       const response = await fetch(this.#options.apiUrl + '/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -68,7 +68,7 @@ const ChatStream = (function() {
       return await response.json()
     }
 
-    async stream({ id, messages, model = this.#options.model, tools = this.#options.tools, max_tokens = this.#options.max_tokens, temperature = this.#options.temperature }) {
+    async stream({ id, messages, model = this.#model, tools = this.#options.tools, max_tokens = this.#options.max_tokens, temperature = this.#options.temperature }) {
       if (this.#_isGenerating) {
         return
       }
