@@ -1189,18 +1189,17 @@
                 if (!query.trim()) {
                     throw new Error('No query or keywords provided. Try again?')
                 }
-                // const response = await fetch(
-                //     `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_CUSTOMSEARCH_API_KEY}&cx=${GOOGLE_CUSTOMSEARCH_ENGINE_ID}&q=${encodeURIComponent(query)}`
-                // )
-                // if (response.status === 403) {
-                //     throw new Error('Please tell the user that they have not set up their Google Custom Search key in the source code, yet.')
-                // }
-                // if (!response.ok) {
-                //     throw new Error(data.error?.message)
-                // }
-                // const data = await response.json()  
-                // const results = data.items.map(i => ({ title: i.title, snippet: i.snippet, url: i.link }))
-                const results = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => ({ title: 'A title for testing ', snippet: 'Some snippet for testing', url: 'http://google.com' }))
+                const response = await fetch(
+                    `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_CUSTOMSEARCH_API_KEY}&cx=${GOOGLE_CUSTOMSEARCH_ENGINE_ID}&q=${encodeURIComponent(query)}`
+                )
+                if (response.status === 403) {
+                    throw new Error('Please tell the user that they have not set up their Google Custom Search key in the source code, yet.')
+                }
+                if (!response.ok) {
+                    throw new Error(data.error?.message)
+                }
+                const data = await response.json()  
+                const results = data.items.map(i => ({ title: i.title, snippet: i.snippet, url: i.link }))
 
                 if (loadedChatId.toString() === id.split('-')[0]) {
                     const elem = document.getElementById(id)
