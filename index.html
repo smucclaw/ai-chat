@@ -1194,6 +1194,8 @@
                 )
                 if (response.status === 403) {
                     throw new Error('Please tell the user that they have not set up their Google Custom Search key in the source code, yet.')
+                } else if (response.status === 429) {
+                    throw new Error('Please tell the user that we have made too many requests for the day.')
                 }
                 if (!response.ok) {
                     throw new Error(data.error?.message)
@@ -1203,7 +1205,7 @@
 
                 if (loadedChatId.toString() === id.split('-')[0]) {
                     const elem = document.getElementById(id)
-                    appendMessage({ text: `Web search: ${query}<ul class='items'>${results.slice(0, 5).map(r => `<li><img src='${new URL(r.url).origin}/favicon.ico' onerror="this.style.display='none'" /><a href='${r.url}' rel='noopener nofollow noreferrer' target='_blank' title='${r.title}'>${new URL(r.url).hostname.replace('www.','')}</a></li>`).join('')}</ul>`, sender: 'tool', elem })
+                    appendMessage({ text: `Web search: ${query}<ul class="items">${results.slice(0, 5).map(r => `<li><img src="${new URL(r.url).origin}/favicon.ico" onerror="this.style.display='none'" /><a href="${r.url}" rel="noopener nofollow noreferrer" target="_blank" title="${r.title.replace(/"/, '\"')}">${new URL(r.url).hostname.replace('www.','')}</a></li>`).join('')}</ul>`, sender: 'tool', elem })
                 }
 
                 return { query, results }
