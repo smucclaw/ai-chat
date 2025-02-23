@@ -269,11 +269,11 @@ const ChatStream = (function() {
     #status() {
       const timeToFirstToken = this.#startWaiting ? ((this.#startGeneration || new Date()).getTime() - this.#startWaiting.getTime()) / 1000 : null
       const generationTime = this.#startGeneration ? (new Date().getTime() - this.#startGeneration.getTime()) / 1000 : null
-
+      const tokenPerSecond = this.#tokenAmount / generationTime
       return {
         state: this.#_isError ? 'Error' : (this.#_isCancelled ? 'Cancelled' : (this.#_isDone ? 'Done' : (this.#tokenAmount > 0 ? 'Generating ...' : 'Waiting for first token ...'))),
         generationTime: timeToFirstToken + generationTime,
-        tokenPerSecond: (this.#tokenAmount / generationTime).toFixed(2),
+        tokenPerSecond: isNaN(tokenPerSecond) ? 0 : tokenPerSecond.toFixed(2),
         tokens: this.#tokenAmount,
         timeToFirstToken,
         model: this.#model
