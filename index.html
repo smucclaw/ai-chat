@@ -225,8 +225,8 @@
             cursor: pointer;
             color: #ddd;
             font-size: 1em;
-            margin: 20px 0;
-            padding: 0 8px;
+            margin: 16px 0;
+            padding: 2px 8px;
             display: block;
             text-align: left;
             max-height: 3.54em;
@@ -296,14 +296,14 @@
 
         #historyMenu button {
             position: relative;
-            padding-right: 32px;
+            padding-right: 34px;
         }
 
         #historyMenu button.generating:after {
             content: '';
             position: absolute;
             right: 8px;
-            top: 47%;
+            top: 36%;
             margin-top: -6px;
             width: 16px;
             height: 16px;
@@ -382,6 +382,10 @@
             cursor: pointer;
             --background: rgba(0, 0, 0, .1);
             box-shadow: 0 5px 25px #00000033;
+        }
+
+        .user-message:last-child {
+            margin-bottom: 2em;
         }
 
         .user-message .content {
@@ -1293,6 +1297,8 @@
                 clearMemory()
             }
 
+            const ask = document.getElementById('ask')
+            ask.classList.add('stop')
             document.body.classList.remove('new')
 
             const prompt = {
@@ -1421,7 +1427,7 @@
                         content: 'You\'re an AI with the sole purpose to summarise user prompts as a title to identify them again later quickly.'
                     }, {
                         role: 'user',
-                        content: 'Summarise the following prompts in one title with less than 10 words:\n\n' + log.reduce((a, l) => {
+                        content: 'Summarise the following prompts in one title with less than 10 words. Output only the title!\n\n' + log.reduce((a, l) => {
                             if (l.role === 'user') {
                                 a.push(`#${++i}: "${l.content}"\n`)
                             }
