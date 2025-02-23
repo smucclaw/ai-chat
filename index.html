@@ -967,7 +967,7 @@
             <div class="attachments" id="fileAttachments"></div>
             <textarea id="userInput" placeholder="What's on your mind ..." rows="1" onfocus="adjustOffset('0px')" onblur="adjustOffset()"></textarea>
             <input type="file" id="fileInput" accept=".pdf,.txt,.csv,.tsv,.js,.json,.jsx,.ts,.tsx,.css,.scss,.less,.html,.htm,.xml,.yaml,.yml,.md,.py,.rb,.java,.c,.cpp,.h,.hpp,.cs,.php,.sql,.sh,.bash,.zsh" multiple>
-            <button id="addFiles" onclick="document.getElementById('fileInput').click()" title="Attach PDF or Text files"></button>
+            <button id="addFiles" onclick="fileInputElem.click()" title="Attach PDF or Text files"></button>
             <button id="ask" onclick="sendMessage()" disabled title="Start/stop answer generation"></button>
             <button id="scrolldown" onclick="window.scrollTo(0, document.documentElement.scrollHeight)"></button>
         </div>
@@ -1186,8 +1186,7 @@
         function clearMemory() {
             chatMemory = []
             loadedChatId = null
-            const messagesDiv = document.getElementById('chatMessages')
-            messagesDiv.innerHTML = ''
+            chatMessagesElem.innerHTML = ''
         }
 
         async function handleFileUpload(event) {
@@ -1216,8 +1215,7 @@
                     });
                 }
             }
-            const attachmentsElem = document.getElementById('fileAttachments');
-            appendFileElements(attachedFiles, attachmentsElem);
+            appendFileElements(attachedFiles, fileAttachmentsElem);
             event.target.value = '';
         }
 
@@ -1266,11 +1264,10 @@
 
         function removeFile(filename) {
             attachedFiles = attachedFiles.filter(f => f.name !== filename)
-            const fileAttachments = document.getElementById('fileAttachments')
-            const attachment = Array.from(fileAttachments.children)
+            const attachment = Array.from(fileAttachmentsElem.children)
                 .find(el => el.querySelector('.name').textContent === filename)
             if (attachment) {
-                fileAttachments.removeChild(attachment)
+                fileAttachmentsElem.removeChild(attachment)
             }
         }
 
@@ -1286,10 +1283,9 @@
                 return
             }
 
-            const inputElem = document.getElementById('userInput')
-            inputElem.blur()
+            userInputElem.blur()
 
-            let messageText = inputElem.value.trim()
+            let messageText = userInputElem.value.trim()
 
             if (!messageText && !attachedFiles.length) return
 
@@ -1297,8 +1293,7 @@
                 clearMemory()
             }
 
-            const ask = document.getElementById('ask')
-            ask.classList.add('stop')
+            askButtonElem.classList.add('stop')
             document.body.classList.remove('new')
             window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
 
@@ -1334,10 +1329,10 @@
 
             await appendMessage(messageText, 'user', attachedFiles)
 
-            userInput.value = ''
-            userInput.style.height = 'auto'
+            userInputElem.value = ''
+            userInputElem.style.height = 'auto'
             attachedFiles = []
-            document.getElementById('fileAttachments').innerHTML = ''
+            fileAttachmentsElem.innerHTML = ''
 
             const newId = await updateHistory(prompt, loadedChatId)
 
@@ -1345,8 +1340,7 @@
                 apiUrl: window.API_URL,
                 apiKey: window.API_KEY,
                 onComplete: (content, status, id) => {
-                    const ask = document.getElementById('ask')
-                    ask.classList.remove('stop')
+                    askButtonElem.classList.remove('stop')
 
                     if(!content) return
 
@@ -1362,6 +1356,7 @@
                 onStart,
                 onEnd,
                 onToolCall: async (func, args, id) => {
+                    console.log('ToolCall', func, args)
                     // if (loadedChatId === id) {
                     //     await appendMessage(`Querying for additional information: <code>${func}</code>`, 'system')
                     // }
@@ -1428,7 +1423,7 @@
                         content: 'You\'re an AI with the sole purpose to summarise user prompts as a title to identify them again later quickly.'
                     }, {
                         role: 'user',
-                        content: 'Summarise the following prompts in one title with less than 10 words. Output only the title!\n\n' + log.reduce((a, l) => {
+                        content: 'Summarise the following prompts in one title with less than 10 words. Output only the title without any further explanation or added context!\n\n' + log.reduce((a, l) => {
                             if (l.role === 'user') {
                                 a.push(`#${++i}: "${l.content}"\n`)
                             }
@@ -1444,8 +1439,7 @@
         }
 
         async function appendMessage(text, sender, files, status) {
-            const messagesDiv = document.getElementById('chatMessages')
-            const message = sender === 'user' && messagesDiv.lastElementChild?.classList.contains('user-message') ? messagesDiv.lastElementChild : document.createElement('div')
+            const message = sender === 'user' && chatMessagesElem.lastElementChild?.classList.contains('user-message') ? chatMessagesElem.lastElementChild : document.createElement('div')
             message.className = `message ${sender === 'user' ? 'user-message' : sender === 'system' ? 'system-message' : 'ai-message'}`
             const content = message.firstElementChild || document.createElement('div')
             content.className = 'content'
@@ -1462,7 +1456,7 @@
                 statusElem.innerHTML = status ? formatStatus(status) : ''
                 message.appendChild(statusElem)
             }
-            messagesDiv.appendChild(message)
+            chatMessagesElem.appendChild(message)
             return message
         }
 
@@ -1517,21 +1511,17 @@
         }
 
         function scrollToEnd() {
-            const messagesDiv = document.getElementById('chatMessages');
-
-            if (!blockAutoScrolling && (messagesDiv.scrollHeight < window.innerHeight || window.scrollY + window.innerHeight > messagesDiv.scrollHeight)) {
-                window.scrollTo({ top: Math.max(messagesDiv.scrollHeight, window.innerHeight), behavior: 'smooth' });
+            if (!blockAutoScrolling && (chatMessagesElem.scrollHeight < window.innerHeight || window.scrollY + window.innerHeight > chatMessagesElem.scrollHeight)) {
+                window.scrollTo({ top: Math.max(chatMessagesElem.scrollHeight, window.innerHeight), behavior: 'smooth' });
             }
         }
 
         async function loadModels() {
           isAvailable = false;
           
-          const ask = document.getElementById('ask');
-          ask.disabled = true
+          askButtonElem.disabled = true
 
-          const select = document.getElementById('modelSection');
-          select.innerHTML = '';
+          modelSectionElem.innerHTML = '';
           selectedModel = '';
 
           try {
@@ -1554,14 +1544,14 @@
             loadedModels.forEach(m => {
               const onclick = function (e) {
                 selectedModel = m.id;
-                Array.from(document.getElementById('modelSection').children).forEach(n => n.classList[n.dataset.id === m.id ? 'add' : 'remove']('checked'));
-                document.getElementById('modelInfo').textContent = m.name || m.id;
+                Array.from(modelSectionElem.children).forEach(n => n.classList[n.dataset.id === m.id ? 'add' : 'remove']('checked'));
+                modelInfoElem.textContent = m.name || m.id;
               };
               const option = document.createElement('button');
               option.dataset.id = m.id;
               option.textContent = m.name || m.id;
               option.onclick = onclick;
-              select.appendChild(option);
+              modelSectionElem.appendChild(option);
 
               if (!selectedModel || DEFAULT_MODELS.includes(m.id)) {
                 onclick();
@@ -1582,8 +1572,7 @@
         function onStart(id) {
             if (loadedChatId !== id) return
 
-            const ask = document.getElementById('ask')
-            ask.classList.add('stop')
+            askButtonElem.classList.add('stop')
         }
 
         function onEnd(id) {
@@ -1591,16 +1580,14 @@
 
             if (loadedChatId !== id) return
 
-            const ask = document.getElementById('ask')
-            ask.classList.remove('stop')
+            askButtonElem.classList.remove('stop')
             scrollToEnd()
         }
 
         async function onStatus(status, id) {
             if (loadedChatId !== id) return
 
-            const messagesDiv = document.getElementById('chatMessages')
-            let message = messagesDiv.lastElementChild;
+            let message = chatMessagesElem.lastElementChild;
             if (!message?.classList.contains('ai-message')) {
                 message = await appendMessage('', 'assistant')
             }  
@@ -1617,8 +1604,7 @@
         async function onToken(token, id) {
             if (loadedChatId !== id) return
 
-            const messagesDiv = document.getElementById('chatMessages')
-            let message = messagesDiv.lastElementChild
+            let message = chatMessagesElem.lastElementChild
             if (!message?.classList.contains('ai-message')) {
                 message = await appendMessage('', 'assistant')
             }   
@@ -1694,15 +1680,13 @@
                 })
             } else {
                 await appendMessage(DEFAULT_GREETING)
-                const ask = document.getElementById('ask')
-                ask.disabled = false
+                askButtonElem.disabled = false
             }
         }
 
         function enableClearHistory() {
             if (document.getElementById('clearHistory')) return
 
-            const select = document.getElementById('historyMenu')
             const option = document.createElement('button')
             option.id = 'clearHistory'
             option.textContent = 'Clear history'
@@ -1710,13 +1694,13 @@
                 if (!confirm('Are you sure?\nI won\'t be able reference your previous queries anymore. *sadface*')) return
                 try {
                     localStorage.setItem('history', '[]')
-                    select.innerHTML = ''
+                    historyMenuElem.innerHTML = ''
                     startNew()
                 } catch (error) {
                     console.error('Error:', error)
                 }
             }
-            select.appendChild(option)
+            historyMenuElem.appendChild(option)
         }
 
         function loadHistory () {
@@ -1730,11 +1714,10 @@
 
         function manageHistoryItemElem(chat, previousId) {
             if (!chat.log?.[0]) return
-            const select = document.getElementById('historyMenu')
             if (previousId) {
-                Array.from(select.children).forEach(c => {
+                Array.from(historyMenuElem.children).forEach(c => {
                     if (c.dataset.id === previousId) {
-                        select.removeChild(c)
+                        historyMenuElem.removeChild(c)
                     }
                 })
                 enableClearHistory()
@@ -1744,7 +1727,7 @@
             option.textContent = chat.name || chat.log[0].content
             option.className = chat.log[chat.log.length - 1].role === 'user' && parseInt(chat.id) > (new Date().getTime() - 4e5) ? 'generating' : ''
             option.onclick = () => loadHistoryLog(chat)
-            select.prepend(option)
+            historyMenuElem.prepend(option)
         }
 
         async function loadHistoryLog(chat) {
@@ -1756,8 +1739,7 @@
               await appendMessage(l.content, l.role, l.files, l.status)
             }
             hljs.highlightAll()
-            const ask = document.getElementById('ask')
-            ask.classList[chatStreams[chat.id]?.isGenerating ? 'add' : 'remove']('stop')
+            askButtonElem.classList[chatStreams[chat.id]?.isGenerating ? 'add' : 'remove']('stop')
             chatMemory = chat.log
             loadedChatId = chat.id
             chatStreams[chat.id]?.isGenerating && onToken('', chat.id)
@@ -1930,25 +1912,34 @@
         }
 
         window.addEventListener('DOMContentLoaded', function () {
-            addThinkingAndKatexSupport();
-            loadSettings();
-            loadModels();
-            loadHistory();
+            window.askButtonElem = document.getElementById('ask')
+            window.userInputElem = document.getElementById('userInput')
+            window.chatMessagesElem = document.getElementById('chatMessages')
+            window.fileInputElem = document.getElementById('fileInput')
+            window.fileAttachmentsElem = document.getElementById('fileAttachments')
+            window.modelSectionElem = document.getElementById('modelSection')
+            window.modelInfoElem = document.getElementById('modelInfo')
+            window.historyMenuElem = document.getElementById('historyMenu')
+            window.settingsMenuElem = document.getElementById('settingsMenu')
+            window.scrolldownElem = document.getElementById('scrolldown')
 
-            const textarea = document.getElementById('userInput');
-            
-            textarea.addEventListener('input', function () {
-                textarea.style.height = 'auto';
-                textarea.style.height = Math.min(200, textarea.scrollHeight) + 'px';
+            addThinkingAndKatexSupport()
+            loadSettings()
+            loadModels()
+            loadHistory()
+
+            userInputElem.addEventListener('input', function () {
+                userInputElem.style.height = 'auto'
+                userInputElem.style.height = Math.min(200, userInputElem.scrollHeight) + 'px'
             })
             
-            textarea.addEventListener('keypress', e => {
-                e.stopPropagation();
+            userInputElem.addEventListener('keypress', e => {
+                e.stopPropagation()
                 if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey && !e.altKey) {
-                    e.preventDefault();
-                    sendMessage();
+                    e.preventDefault()
+                    sendMessage()
                 }
-            });
+            })
 
             document.addEventListener('keypress', e => {
                 if (e.key === 'n' && (e.ctrlKey || e.altKey)) {
@@ -1960,7 +1951,7 @@
                     openMenu('settingsMenu');
                 }else if (e.keyCode === 9) {
                     e.preventDefault();
-                    textarea.focus();
+                    userInputElem.focus();
                 }
             });
 
@@ -1972,7 +1963,7 @@
 
                 const userElement = e.target.closest('.user-message')
                 if (userElement) {
-                    document.getElementById('userInput').value = userElement.innerText;
+                    userInputElem.value = userElement.innerText;
                 }
 
                 const inputElement = e.target.closest('.input-container')
@@ -1991,12 +1982,11 @@
             });
 
             window.addEventListener('scroll', function () {
-                const scrollButton = document.getElementById('scrolldown')
                 const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 200
-                scrollButton.style.display = isAtBottom ? 'none' : 'block'
+                scrolldownElem.style.display = isAtBottom ? 'none' : 'block'
             })
 
-            document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+            fileInputElem.addEventListener('change', handleFileUpload);
         });
 
         if ('serviceWorker' in navigator) {
