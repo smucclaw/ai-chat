@@ -1160,7 +1160,6 @@
         let attachedFiles = []
         let blockAutoScrolling = false
         let chatStreams = {}
-        let namingStream = null
         
         function adjustOffset(value) {
             if (!value) {
@@ -1408,11 +1407,11 @@
         }
 
         async function createChatLogName(log) {
-            if (!log?.length) return
+            if (!log?.length || !chatStreams[null]) return
             let name
             let i = 0
             try {
-                const json = await namingStream.call({
+                const json = await chatStreams[null].call({
                     messages: [{
                         role: 'system',
                         content: 'You\'re an AI with the sole purpose to summarise user prompts as a title to identify them again later quickly.'
@@ -1653,6 +1652,7 @@
                 chatStreams[loadedChatId] = ChatStream.create({
                     apiUrl: window.API_URL,
                     apiKey: window.API_KEY,
+                    model,
                     onToken,
                     onError,
                     onStatus,
@@ -1665,14 +1665,7 @@
                     messages: [{
                         role: 'user',
                         content: content + getUserInfo(),
-                    }],
-                    model
-                });
-
-                namingStream = ChatStream.create({
-                    apiUrl: window.API_URL,
-                    apiKey: window.API_KEY,
-                    model
+                    }]
                 })
             } else {
                 await appendMessage(DEFAULT_GREETING)
