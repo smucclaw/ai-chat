@@ -101,11 +101,10 @@ const ChatStream = (function() {
         while (this.#options.onToolCall && !this.#_isCancelled && (this.#toolCalls = this.#toolCalls.filter(this.#filterTools.bind(this))).length) {
           messages.push({
             role: 'assistant',
-            content: this.#_response,
             tool_calls: this.#toolCalls.slice()
           })
 
-          for (const tc of this.#toolCalls) {              
+          for (const tc of this.#toolCalls) {
             try {
               const args = tc.function.arguments ? JSON.parse(tc.function.arguments) : undefined
               const result = await this.#options.onToolCall(tc.function.name, args, id)

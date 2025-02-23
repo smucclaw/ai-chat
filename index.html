@@ -1373,13 +1373,13 @@
 
             const id = new Date().getTime().toString()
             const log = history[index]?.log || chatMemory
-            if (messages[messages.length - 1].role === 'user' && log[log.length - 1]?.role === 'user') {
-                log.pop()
+            
+            if (messages[messages.length - 1].role !== 'user') {
+                messages = messages.slice(messages.findLastIndex(m => m.role === 'user') + 1)
             }
+            log.push(...messages)
 
             const name = await createChatLogName(log)
-            
-            log.push(...messages.filter(m => m.role !== 'system'))
             const chat = { id, name, log }
 
             if (index >= 0) {
