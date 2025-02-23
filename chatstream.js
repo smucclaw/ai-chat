@@ -46,21 +46,20 @@ const ChatStream = (function() {
       this.#id = options.id
     }
 
-    async call({ messages, model = this.#model, tools = this.#options.tools, max_tokens = this.#options.max_tokens, temperature = this.#options.temperature }) {
-        let toolCalls
-        let result = await this.#completionsCall(messages, model, tools, max_tokens, temperature)
+    async call({ id = this.#id, messages, model = this.#model, tools = this.#options.tools, max_tokens = this.#options.max_tokens, temperature = this.#options.temperature }) {
+        let result = await this.#completionsCall(id, messages, model, tools, max_tokens, temperature)
         this.#tokenAmount += JSON.stringify(result).length
 
-        while (this.#options.onToolCall && (toolCalls = result?.tool_calls?.filter(this.#filterTools.bind(result?.tool_calls)))?.length) {
+        while (!this.#_isCancelled && this.#options.onToolCall && result?.tool_calls?.filter(this.#filterTools.bind(result.tool_calls))?.length) {
           messages.push({
             role: 'assistant',
-            tool_calls: toolCalls.slice()
+            tool_calls: result.tool_calls.slice()
           })
 
-          for (const tc of toolCalls) {
+          for (const tc of result.tool_calls) {
             try {
               const args = tc.function.arguments ? JSON.parse(tc.function.arguments) : undefined
-              const result = await this.#options.onToolCall(tc.function.name, args, this.#id)
+              const result = await this.#options.onToolCall(tc.function.name, args, id)
               if (result) {
                 messages.push({
                   role: 'tool',
@@ -73,15 +72,14 @@ const ChatStream = (function() {
             }
           }
 
-          toolCalls = []
-          result = await this.#completionsCall(messages, model, tools, max_tokens, temperature)
+          result = await this.#completionsCall(id, messages, model, tools, max_tokens, temperature)
           this.#tokenAmount += JSON.stringify(result).length
         }
 
         return result
     }
 
-    async stream({ messages, model = this.#model, tools = this.#options.tools, max_tokens = this.#options.max_tokens, temperature = this.#options.temperature }) {
+    async stream({ id = this.#id, messages, model = this.#model, tools = this.#options.tools, max_tokens = this.#options.max_tokens, temperature = this.#options.temperature }) {
       if (this.#_isGenerating) {
         return
       }
@@ -99,16 +97,16 @@ const ChatStream = (function() {
       this.#model = model
 
       try {
-        this.#options.onStart?.(this.#id)
+        this.#options.onStart?.(id)
         this.#statusInterval = this.#options.onStatus ? setInterval(() => {
-          this.#options.onStatus?.(this.#status(), this.#id)
+          this.#options.onStatus?.(this.#status(), id)
           if (!this.#_isGenerating && !this.#throttleTimeout) {
             clearInterval(this.#statusInterval)
-            this.#options.onEnd?.(this.#id)
+            this.#options.onEnd?.(id)
           }
         }, this.#statusIntervalMS) : null;
 
-        await this.#completionsCall(messages, model, tools, max_tokens, temperature, true)
+        await this.#completionsCall(id, messages, model, tools, max_tokens, temperature, true)
 
         while (this.#options.onToolCall && !this.#_isCancelled && (this.#toolCalls = this.#toolCalls.filter(this.#filterTools.bind(this.#toolCalls))).length) {
           messages.push({
@@ -119,7 +117,7 @@ const ChatStream = (function() {
           for (const tc of this.#toolCalls) {
             try {
               const args = tc.function.arguments ? JSON.parse(tc.function.arguments) : undefined
-              const result = await this.#options.onToolCall(tc.function.name, args, this.#id)
+              const result = await this.#options.onToolCall(tc.function.name, args, id)
               if (result) {
                 messages.push({
                   role: 'tool',
@@ -128,40 +126,40 @@ const ChatStream = (function() {
                 })
               }
             } catch (e) {
-              console.warn(`Tool call failed for ${this.#id}: ${tc.function.name}`, tc.function.arguments, e)
+              console.warn(`Tool call failed for ${id}: ${tc.function.name}`, tc.function.arguments, e)
             }
           }
 
           this.#toolCalls = []
-          await this.#completionsCall(messages, model, tools, max_tokens, temperature, true)
+          await this.#completionsCall(id, messages, model, tools, max_tokens, temperature, true)
         }
 
         setTimeout(() => {
           if (!this.#_isCancelled) {
             this.#_isDone = true
             if (this.#queuedTokens) {
-              this.#onToken?.(this.#queuedTokens, this.#id)
+              this.#onToken?.(this.#queuedTokens, id)
               this.#queuedTokens = ''
             }
             messages.push({
               role: 'assistant',
               content: this.#_response
             })
-            this.#options.onComplete?.(messages, this.#status(), this.#id)
+            this.#options.onComplete?.(messages, this.#status(), id)
           }
         }, this.#tokenThrottleMS)
       } catch (error) {
         if (!this.#_isCancelled) {
           console.error('Error:', error)
           this.#_isError = true
-          this.#options.onError?.(error, this.#id)
+          this.#options.onError?.(error, id)
         }
       } finally {
         this.#_isGenerating = false
       }
     }
 
-    async #completionsCall(messages, model, tools, max_tokens, temperature, stream) {
+    async #completionsCall(id, messages, model, tools, max_tokens, temperature, stream) {
       const response = await fetch(this.#options.apiUrl + '/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -221,7 +219,7 @@ const ChatStream = (function() {
 
               if (delta.content) {
                 this.#_response += delta.content
-                this.#throttleAppendToken(delta.content)
+                this.#throttleAppendToken(id, delta.content)
               } else if (!thinking && delta.tool_calls?.length) {
                 delta.tool_calls.forEach(tc => {
                   if (this.#toolCalls.length <= tc.index) {
@@ -245,7 +243,7 @@ const ChatStream = (function() {
       }
 
       this.#_response += '\n '
-      this.#throttleAppendToken('\n ')
+      this.#throttleAppendToken(id, '\n ')
     }
 
     #filterTools(tc, index) {
@@ -263,7 +261,7 @@ const ChatStream = (function() {
       }`
     }
 
-    #throttleAppendToken(token) {
+    #throttleAppendToken(id, token) {
       clearTimeout(this.#throttleTimeout)
       this.#throttleTimeout = null
 
@@ -274,11 +272,11 @@ const ChatStream = (function() {
       const timeSinceLast = now - this.#lastThrottleTime
       
       if (timeSinceLast < this.#tokenThrottleMS) {
-        this.#throttleTimeout = setTimeout(() => this.#throttleAppendToken(), timeSinceLast)
+        this.#throttleTimeout = setTimeout(() => this.#throttleAppendToken(id), timeSinceLast)
         return
       }
 
-      this.#onToken?.(this.#queuedTokens, this.#id)
+      this.#onToken?.(this.#queuedTokens, id)
       this.#queuedTokens = ''
       this.#lastThrottleTime = now
     }
