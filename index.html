@@ -1241,7 +1241,7 @@
         // TOOL FUNCTIONS END
 
         // Globals. Don't touch.
-        let isAvailable = false
+        let isAvailable = null
         let chatMemory = []
         let loadedChatId = null
         let selectedModel = null
@@ -1601,7 +1601,7 @@
         }
 
         async function loadModels() {
-          isAvailable = false;
+          isAvailable = null;
           
           askButtonElem.disabled = true
 
@@ -1642,7 +1642,7 @@
               }
             });
 
-            isAvailable = true;
+            isAvailable = new Date().getTime();
             askButtonElem.disabled = false;
 
             sayHello();
@@ -1993,7 +1993,7 @@
         }
 
         window.addEventListener('focus', function handleFocus() {
-          if (loadedChatId === null) {
+          if (loadedChatId === null && new Date().getTime() - 60000 > isAvailable) {
             loadModels()
           }
         })
