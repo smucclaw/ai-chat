@@ -1732,7 +1732,9 @@
             clearMemory()
             document.body.classList.remove('new')
             for (const l of chat.log) {
-              await appendMessage(l.content, l.role, l.files, l.status)
+                if (!l.tool_calls) {
+                    await appendMessage(l.content, l.role, l.files, l.status)
+                }
             }
             hljs.highlightAll()
             askButtonElem.classList[chatStreams[chat.id]?.isGenerating ? 'add' : 'remove']('stop')
