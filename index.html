@@ -526,7 +526,6 @@
 
         .input-container button#scrolldown {
             position: absolute;
-            display: none;
             right: 14px;
             top: -36px;
             border: 0;
@@ -540,6 +539,14 @@
             box-shadow: 0 -2px 25px #00000055;
             border-radius: 16px;
             cursor: pointer;
+            transition: all .2s linear;
+            opacity: 0;
+            transform: scale(.8);
+        }
+
+        .input-container button#scrolldown.visible {
+            opacity: 1;
+            transform: scale(1);
         }
 
         .embedded .input-container,
@@ -2162,7 +2169,7 @@
 
             window.addEventListener('scroll', function () {
                 const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 180
-                scrolldownElem.style.display = isAtBottom ? 'none' : 'block'
+                scrolldownElem.className = isAtBottom ? '' : 'visible'
             })
 
             fileInputElem.addEventListener('change', handleFileUpload);
