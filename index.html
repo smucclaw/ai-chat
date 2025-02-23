@@ -1310,7 +1310,7 @@
                         id: id + '-' + topic.i,
                         messages: [{
                             role: 'system',
-                            content: 'You\'re an AI agent with the sole purpose to research one specific topic in as much detail as possible, then summarize they key findings using data tables and only short paragraphs of text. Use the tools at your disposal. Today is ' + new Date().toDateString()
+                            content: 'You\'re an AI agent with the sole purpose to research one specific topic in as much detail as possible, then summarize they key findings using data tables and only short paragraphs of text. Use the tools at your disposal. Now is ' + new Date().toString()
                         }, {
                             role: 'user',
                             content: `Research this topic in detail and summarise your findings in short, information-dense structured output: "${topic.topic}" in the context of "${context}"`
@@ -1480,7 +1480,7 @@
 
             const systemPrompt = {
                 role: 'system',
-                content: (window.SYSTEM_PROMPT || '') + getUserInfo() + '\nNow is ' + new Date().toDateString()
+                content: (window.SYSTEM_PROMPT || '') + getUserInfo() + '\nNow is ' + new Date().toString()
             }
 
             const messages = [...chatMemory, prompt]
