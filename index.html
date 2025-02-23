@@ -1300,6 +1300,7 @@
             const ask = document.getElementById('ask')
             ask.classList.add('stop')
             document.body.classList.remove('new')
+            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
 
             const prompt = {
                 role: 'user',
