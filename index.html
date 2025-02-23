@@ -1433,7 +1433,7 @@
         }
 
         async function appendMessage(text, sender, files, status) {
-            if (['tool', 'system'].includes(sender)) return
+            if (['tool'].includes(sender)) return
             const message = sender === 'user' && chatMessagesElem.lastElementChild?.classList.contains('user-message') ? chatMessagesElem.lastElementChild : document.createElement('div')
             message.className = `message ${sender === 'user' ? 'user-message' : sender === 'system' ? 'system-message' : 'ai-message'}`
             if (!message.parentElement) {
@@ -1903,6 +1903,12 @@
             loadModels();
         }
 
+        window.addEventListener('focus', function handleFocus() {
+          if (loadedChatId === null) {
+            loadModels()
+          }
+        })
+        
         window.addEventListener('DOMContentLoaded', function () {
             window.askButtonElem = document.getElementById('ask')
             window.userInputElem = document.getElementById('userInput')
