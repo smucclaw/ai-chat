@@ -1334,21 +1334,18 @@
             attachedFiles = []
             fileAttachmentsElem.innerHTML = ''
 
-            const newId = await updateHistory(prompt, loadedChatId)
+            const newId = await updateHistory([prompt], loadedChatId)
 
             chatStreams[newId] = ChatStream.create({
                 apiUrl: window.API_URL,
                 apiKey: window.API_KEY,
-                onComplete: (content, status, id) => {
+                onComplete: (messages, status, id) => {
                     askButtonElem.classList.remove('stop')
 
-                    if(!content) return
+                    if(!messages?.length) return
 
-                    updateHistory({
-                        role: 'assistant',
-                        content,
-                        status
-                    }, id)
+                    messages[messages.length - 1].status = status
+                    updateHistory(messages, id)
                 },
                 onToken,
                 onError,
@@ -1356,11 +1353,9 @@
                 onStart,
                 onEnd,
                 onToolCall: async (func, args, id) => {
-                    console.log('ToolCall', func, args)
-                    // if (loadedChatId === id) {
-                    //     await appendMessage(`Querying for additional information: <code>${func}</code>`, 'system')
-                    // }
-                    return await window[func](args)
+                    const result = await window[func](args)
+                    console.log('ToolCall', func, args, result)
+                    return result
                 }
             })
 
@@ -1372,19 +1367,19 @@
             })
         }
 
-        async function updateHistory(message, previousId) {
+        async function updateHistory(messages, previousId) {
             const history = JSON.parse(localStorage.getItem('history')) || []
             const index = history?.findIndex(h => h.id === previousId)
 
             const id = new Date().getTime().toString()
             const log = history[index]?.log || chatMemory
-            if (message.role === 'user' && log[log.length - 1]?.role === 'user') {
+            if (messages[messages.length - 1].role === 'user' && log[log.length - 1]?.role === 'user') {
                 log.pop()
             }
 
             const name = await createChatLogName(log)
             
-            log.push(message)
+            log.push(...messages.filter(m => m.role !== 'system'))
             const chat = { id, name, log }
 
             if (index >= 0) {
@@ -1439,15 +1434,16 @@
         }
 
         async function appendMessage(text, sender, files, status) {
+            if (['tool', 'system'].includes(sender)) return
             const message = sender === 'user' && chatMessagesElem.lastElementChild?.classList.contains('user-message') ? chatMessagesElem.lastElementChild : document.createElement('div')
             message.className = `message ${sender === 'user' ? 'user-message' : sender === 'system' ? 'system-message' : 'ai-message'}`
-            const content = message.firstElementChild || document.createElement('div')
-            content.className = 'content'
-            content.innerHTML = await markdownToHtml(text)
-            if (files?.length) {
-                content.appendChild(appendFileElements(files))
-            }
             if (!message.parentElement) {
+                const content = message.firstElementChild || document.createElement('div')
+                content.className = 'content'
+                content.innerHTML = await markdownToHtml(text)
+                if (files?.length) {
+                    content.appendChild(appendFileElements(files))
+                }
                 message.appendChild(content)
             }
             if (sender === 'assistant') {
@@ -1864,7 +1860,8 @@
                         return html
                             .replace(/(<table>[\s\S]*?<\/table>)/g, '<div class="table">$1</div>')
                             .replace(/(<pre><code(?: class="language-(\S+)")?>[\s\S]*?<\/code><\/pre>)/g, '<div class="code">$1<div class="meta"><span>$2</span><button class="copy" /></div></div>')
-                            .replace(/\[(END_)?TOOL_(REQUEST|RESULT)\]?/g, '');
+                            .replace(/\[(END_)?TOOL_(REQUEST|RESULT)\]?/g, '')
+                            .replace(/<p>\s*<\/p>/g, '');
                     }
                 }
             };
