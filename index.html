@@ -572,7 +572,7 @@
         }
 
         .generating .tool-message li {
-            animation: load 3s ease-in-out 1;
+            animation: load 3.5s ease-in-out 1;
         }
         .generating .tool-message li:nth-child(1) {
             animation: load 1s ease-in-out 1;
@@ -585,6 +585,9 @@
         }
         .generating .tool-message li:nth-child(4) {
             animation: load 2.5s ease-in-out 1;
+        }
+        .generating .tool-message li:nth-child(5) {
+            animation: load 3s ease-in-out 1;
         }
 
         .tool-message .items img {
@@ -826,6 +829,7 @@
 
         p:empty,
         p > br:first-child,
+        p > br:first-child + br,
         .status:empty,
         .content:empty {
             display: none !important;
@@ -1376,7 +1380,7 @@
             const parts = id.split('-')
             if (loadedChatId.toString() === parts[0]) {
                 id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
-                appendTool({ html: `<p>Web search: ${results.query}</p><ul class="items">${results.results.slice(0, 5).map(r => `<li><img src="${new URL(r.url).origin}/favicon.png" onerror="faviconError(this)" /><a href="${r.url}" rel="noopener nofollow noreferrer" target="_blank" title="${r.title.replace(/"/, '\"')}">${new URL(r.url).hostname.replace('www.','')}</a></li>`).join('')}</ul>`, id })
+                appendTool({ html: `<p>Web search: ${results.query}</p><ul class="items">${results.results.slice(0, 5).map(r => `<li><img src="${new URL(r.url).origin}/favicon.png" onerror="faviconError(this)" /><a href="${r.url}" rel="noopener nofollow noreferrer" target="_blank" title="${r.title.replace(/"/, '\"')}">${new URL(r.url).hostname.replace('www.','')}</a></li>`).join('')}${results.results.length > 5 ? `<li><span>... ${results.results.length - 5} more</span></li>` : ''}</ul>`, id })
             }
         }
         async function render_get_weather(results, id) {
