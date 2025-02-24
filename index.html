@@ -458,7 +458,8 @@
             display: flex;
             overflow-x: auto;
             gap: 1em;
-            padding: .5em 0;
+            padding: .5em 0 1.5em;
+            margin-bottom: -1em;
             scroll-snap-type: x mandatory;
         }
 
@@ -470,6 +471,7 @@
         .tool-message > .content {
             flex: 1;
             width: 100%;
+            max-width: 100%;
             margin: 0 0 -.5em;
             line-height: 1.5em;
             padding: 0 1em 0 calc(1em + 28px);
@@ -513,7 +515,7 @@
             }
         }
 
-        .tool-message:has(.content + .content) > .content {
+        .tool-message:not(:has(.subcontent)):has(.content + .content) > .content {
             width: fit-content;
             max-width: 85%;
             flex: 0 0 auto;
@@ -1501,7 +1503,6 @@
         }
 
         async function extractTextFromPDF(file) {
-            // Load PDF.js only when needed
             if (!window['pdfjs-dist/build/pdf']) {
                 const script = document.createElement('script')
                 script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'
@@ -1588,7 +1589,6 @@
                 return
             }
 
-            document.querySelectorAll('.tool-message').forEach(elem => elem.parentElement.remove(elem))
             document.body.classList.add('generating')
             await appendMessage({ text: messageText, sender: 'user', files: attachedFiles })
 
@@ -1697,7 +1697,9 @@
         }
 
         async function appendTool({ html, id }) {
-            const toolElem = (id && document.getElementById(id)) || (chatMessagesElem.lastElementChild?.classList.contains('tool-message') && chatMessagesElem.lastElementChild)
+            const toolElem = (id && document.getElementById(id)) ||
+                (chatMessagesElem.lastElementChild?.classList.contains('tool-message') && chatMessagesElem.lastElementChild) ||
+                (chatMessagesElem.lastElementChild?.previousElementSibling?.classList.contains('tool-message') && chatMessagesElem.lastElementChild.previousElementSibling)
             if (toolElem) {
                 const content = document.createElement('div')
                 content.className = 'content'
@@ -2020,20 +2022,18 @@
             document.body.classList.remove('new')
             let toolCalls = []
             for (const l of chat.log) {
-                // More work needs to be done to load tool results back
-                // if (l.role === 'tool') {
-                //     const name = toolCalls.find(t => l.tool_call_id === t.id)?.function.name
-                //     if (name) {
-                //         try {
-                //             await window['render_' + name](JSON.parse(l.content), chat.id)
-                //         } catch (e) {
-                //             console.error('Failed rendering tool history for ' + chat.id, name, l, e)
-                //         }
-                //     }
-                // } else if (l.tool_calls) {
-                //     toolCalls.push(...l.tool_calls)
-                // } else {
-                if (l.role !== 'tool' && !l.tool_calls) {
+                if (l.role === 'tool') {
+                    const name = toolCalls.find(t => l.tool_call_id === t.id)?.function.name
+                    if (name) {
+                        try {
+                            await window['render_' + name](JSON.parse(l.content), chat.id)
+                        } catch (e) {
+                            console.error('Failed rendering tool history for ' + chat.id, name, l, e)
+                        }
+                    }
+                } else if (l.tool_calls) {
+                    toolCalls.push(...l.tool_calls)
+                } else {
                     await appendMessage({ 
                         text: l.content, 
                         sender: l.role, 
