@@ -23,6 +23,7 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
+            overflow-x: hidden;
             background-color: #111;
             background-size: cover;
             background-position: center;
@@ -30,8 +31,7 @@
             min-height: 100dvh;
             display: flex;
             flex-direction: column;
-            background-image: radial-gradient(circle at 50% 100%, #31435088 0%, #38444c11 32%, #38444c05 100%), radial-gradient(circle at center, #111111e8 0%, #111111f8 60%, #111111ff 100%), url(bg.jpg);
-            
+            background-image: radial-gradient(circle at center, #111111e8 0%, #111111f8 60%, #111111ff 100%), url(bg.jpg);
         }
 
         .standalone {
@@ -628,7 +628,7 @@
             width: 100%;
             box-sizing: border-box;
             border: 1px solid #444;
-            background: #33333388;
+            background: linear-gradient(to bottom, #33333388 0%, #222222ff 70%);
             backdrop-filter: blur(10px);
             border-radius: 6px;
             font-size: 16px;
@@ -1024,6 +1024,7 @@
 
         .new {
             --centering: calc(-55vh + 120px);
+            background-image: radial-gradient(circle at 50% 100%, #31435088 0%, #38444c11 32%, #38444c05 100%), radial-gradient(circle at center, #111111e8 0%, #111111f8 60%, #111111ff 100%), url(bg.jpg);
         }
         
         .new .aichat {
