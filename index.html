@@ -192,8 +192,8 @@
                 transition: opacity .3s linear;
             }
 
-            .menu:hover,
-            .menus:hover {
+            .menu,
+            .menus {
                 opacity: 1;
                 transform: translateX(0);
             }
@@ -262,7 +262,7 @@
             box-sizing: border-box;
             padding: 9px 12px 8px;
             margin: 8px 0 10px;
-            background: #333333cc;
+            background: #33333388;
             border: 1px solid #444;
             border-radius: 5px;
             font-size: 16px;
@@ -273,7 +273,7 @@
         }
 
         .menu input:focus {
-            background: #444444cc;
+            background: #44444488;
         }
 
         .menu textarea {
@@ -281,25 +281,50 @@
             margin: 8px 0 0;
         }
 
-        #historyMenu:before {
+        #historySearch {
+            padding-right: 32px;
+        }
+
+        #historySearch + .clear {
+            position: absolute;
+            right: 19px;
+            top: calc(18px + 1.45em);
+            width: 18px;
+            box-sizing: border-box;
+            height: 18px;
+            border-radius: 50%;
+            border: none;
+            background-color: #666;
+            color: #222;
+            font-size: 0.85em;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            opacity: 1;
+            transform: scale(1);
+            transition: all .2s linear;
+        }
+
+        #historySearch[data-q=""] + .clear {
+            opacity: 0;
+            transform: scale(.8);
+        }
+
+        #historyItems:empty:before {
             display: block;
-            content: 'History';
-            color: #555;
-            margin: 4px 0 -4px;
-        }
-
-        #historyMenu:empty:before {
             content: 'Your history is empty.';
+            color: #555;
             font-style: italic;
-            margin-bottom: 14px;
+            margin: 12px 0 14px;
         }
 
-        #historyMenu button {
+        #historyItems button {
             position: relative;
             padding-right: 34px;
         }
 
-        #historyMenu button.generating:after {
+        #historyItems button.generating:after {
             content: '';
             position: absolute;
             right: 8px;
@@ -1097,7 +1122,11 @@
     </header>
     <div class="aichat">
         <div class="menus">
-            <div class="menu" id="historyMenu"></div>
+            <div class="menu" id="historyMenu">
+                <input type="text" id="historySearch" placeholder="Search history ..." autocorrect="off" data-q="" onkeyup="searchHistory(this)" />
+                <button onclick="this.previousElementSibling.value = ''; searchHistory(this.previousElementSibling);" class="clear">&times;</button>
+                <div id="historyItems"></div>
+            </div>
             <div class="menu" id="settingsMenu">
                 <div id="modelSection"></div>
                 <div>
@@ -1811,7 +1840,7 @@
         }
 
         function onEnd(id) {
-            document.querySelector(`#historyMenu .generating[data-id="${id}"]`)?.classList.remove('generating')
+            document.querySelector(`#historyItems .generating[data-id="${id}"]`)?.classList.remove('generating')
 
             if (loadedChatId !== id) return
 
@@ -1923,13 +1952,26 @@
                 if (!confirm('Are you sure?\nI won\'t be able reference your previous queries anymore. *sadface*')) return
                 try {
                     localStorage.setItem('history', '[]')
-                    historyMenuElem.innerHTML = ''
+                    historyItemsElem.innerHTML = ''
                     startNew()
                 } catch (error) {
                     console.error('Error:', error)
                 }
             }
-            historyMenuElem.appendChild(option)
+            historyItemsElem.appendChild(option)
+        }
+
+        function searchHistory(searchElem) {
+            const m = new RegExp(`(${searchElem.value})`, 'gi')
+            searchElem.dataset.q = searchElem.value
+            Array.from(historyItemsElem.children).forEach(elem => {
+                if (elem.innerText.toLowerCase().match(m)) {
+                    elem.style.display = 'block'
+                    elem.innerHTML = elem.innerText.replace(m, '<b>$1</b>')
+                } else {
+                    elem.style.display = 'none'
+                }
+            })
         }
 
         function loadHistory () {
@@ -1944,9 +1986,9 @@
         function manageHistoryItemElem(chat, previousId) {
             if (!chat.log?.[0]) return
             if (previousId) {
-                Array.from(historyMenuElem.children).forEach(c => {
+                Array.from(historyItemsElem.children).forEach(c => {
                     if (c.dataset.id === previousId) {
-                        historyMenuElem.removeChild(c)
+                        historyItemsElem.removeChild(c)
                     }
                 })
                 enableClearHistory()
@@ -1956,7 +1998,7 @@
             option.textContent = chat.name || chat.log[0].content
             option.className = chat.log[chat.log.length - 1].role === 'user' && parseInt(chat.id) > (new Date().getTime() - 4e5) ? 'generating' : ''
             option.onclick = () => loadHistoryLog(chat)
-            historyMenuElem.prepend(option)
+            historyItemsElem.prepend(option)
         }
 
         async function loadHistoryLog(chat) {
@@ -2174,6 +2216,7 @@
             window.modelSectionElem = document.getElementById('modelSection')
             window.modelInfoElem = document.getElementById('modelInfo')
             window.historyMenuElem = document.getElementById('historyMenu')
+            window.historyItemsElem = document.getElementById('historyItems')
             window.settingsMenuElem = document.getElementById('settingsMenu')
             window.scrolldownElem = document.getElementById('scrolldown')
 
