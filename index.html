@@ -1713,9 +1713,6 @@
             const message = sender === 'user' && chatMessagesElem.lastElementChild?.classList.contains('user-message') ? chatMessagesElem.lastElementChild : document.createElement(sender === 'tool' ? 'section' : 'div')
             message.className = `message ${sender === 'user' ? 'user-message' : sender === 'assistant' ? 'ai-message' : sender === 'system' ? 'system-message' : 'tool-message'}`
             if (!message.parentElement) {
-                if (sender === 'tool' && chatMessagesElem.lastElementChild?.classList.contains('ai-message')) {
-                    chatMessagesElem.lastElementChild.remove()
-                }
                 const content = message.firstElementChild || document.createElement('div')
                 content.className = 'content'
                 content.innerHTML = await markdownToHtml(text)
@@ -1730,7 +1727,11 @@
                 statusElem.innerHTML = status ? formatStatus(status) : ''
                 message.appendChild(statusElem)
             }
-            chatMessagesElem.appendChild(message)
+            if (sender === 'tool' && chatMessagesElem.lastElementChild?.classList.contains('ai-message')) {
+                chatMessagesElem.lastElementChild.insertAdjacentElement('beforebegin', message)
+            } else {
+                chatMessagesElem.appendChild(message)
+            }
             return message
         }
 
