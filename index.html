@@ -472,7 +472,7 @@
             width: 100%;
             margin-bottom: -.5em;
             line-height: 1.5em;
-            padding: 0 .5em 0 calc(1em + 28px);
+            padding: 0 1em 0 calc(1em + 28px);
             color: #777;
             position: relative;
             border-radius: 5px;
@@ -505,16 +505,17 @@
         }
 
         @keyframes gradientMove {
-            0%, 100% {
-                transform: translateY(100%);
+            0% {
+                transform: translateY(300%);
             }
-            50% {
-                transform: translateY(-100%);
+            100% {
+                transform: translateY(-300%);
             }
         }
 
         .tool-message:has(.content + .content) > .content {
-            width: 85%;
+            width: fit-content;
+            max-width: 85%;
             flex: 0 0 auto;
             scroll-snap-align: start;
         }
@@ -1373,30 +1374,35 @@
 
         // TOOL RESULT FUNCTIONS
         async function render_search_web_info(results, id) {
-            if (loadedChatId.toString() === id.split('-')[0]) {
-                const elem = document.getElementById(id)
-                appendTool({ html: `<p>Web search: ${results.query}</p><ul class="items">${results.results.slice(0, 5).map(r => `<li><img src="${new URL(r.url).origin}/favicon.png" onerror="faviconError(this)" /><a href="${r.url}" rel="noopener nofollow noreferrer" target="_blank" title="${r.title.replace(/"/, '\"')}">${new URL(r.url).hostname.replace('www.','')}</a></li>`).join('')}</ul>`, id: results.id })
+            const parts = id.split('-')
+            if (loadedChatId.toString() === parts[0]) {
+                id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
+                appendTool({ html: `<p>Web search: ${results.query}</p><ul class="items">${results.results.slice(0, 5).map(r => `<li><img src="${new URL(r.url).origin}/favicon.png" onerror="faviconError(this)" /><a href="${r.url}" rel="noopener nofollow noreferrer" target="_blank" title="${r.title.replace(/"/, '\"')}">${new URL(r.url).hostname.replace('www.','')}</a></li>`).join('')}</ul>`, id })
             }
         }
         async function render_get_weather(results, id) {
-            if (loadedChatId.toString() === id.split('-')[0]) {
-                const elem = document.getElementById(id)
-                appendTool({ html: '<p>' + (results.forecast ? 'Checking the 7-day weather forecast ...' : 'Checking today\'s weather ...') + '</p>', id: results.id })
+            const parts = id.split('-')
+            if (loadedChatId.toString() === parts[0]) {
+                id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
+                appendTool({ html: '<p>' + (results.forecast ? 'Checking the 7-day weather forecast ...' : 'Checking today\'s weather ...') + '</p>', id })
             }
         }
 
         async function render_search_user_history(results, id) {
-            if (loadedChatId.toString() === id.split('-')[0]) {
+            const parts = id.split('-')
+            if (loadedChatId.toString() === parts[0]) {
                 const content = results.logs.map(r => {
                     const html = r[0].content.replace(/</g, '&lt;').replace(/>/g, '&gt;')
                     return `<li><span title="${r[0].content.replace(/"/g, '\"')}">"${html}"</span></li>`
                 })
-                appendTool({ html: `<p>Reviewing chat history:</p><ul class="items">${content.join('')}</ul>`, id: results.id })
+                id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
+                appendTool({ html: `<p>Reviewing chat history:</p><ul class="items">${content.join('')}</ul>`, id })
             }
         }
 
         async function render_spawn_research_agents(results, id) {
-            if (loadedChatId.toString() === id.split('-')[0]) {
+            const parts = id.split('-')
+            if (loadedChatId.toString() === parts[0]) {
                 appendTool({ html: `<p>Researching ...</p><ol>${results.topics.map(t => `<li><strong>${t.topic}</strong><br><div id='${id + '-' + t.i}' class="subcontent"></div></li>`).join('')}</ol>` })
             }
         }
@@ -1693,7 +1699,6 @@
         }
 
         async function appendTool({ html, id }) {
-            id = id?.split('-')[1]
             const toolElem = (id && document.getElementById(id)) || (chatMessagesElem.lastElementChild?.classList.contains('tool-message') && chatMessagesElem.lastElementChild)
             if (toolElem) {
                 const content = document.createElement('div')
