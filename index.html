@@ -434,6 +434,7 @@
         }
 
         .tool-message .content {
+            position: relative;
             margin: .5em 0;
         }
 
@@ -444,10 +445,7 @@
             line-height: 1.5em;
             padding: 0 .5em 0 calc(1em + 28px);
             color: #777;
-            background-image: linear-gradient(to bottom, #1f87cd00 45%, #1f87cd22 100%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' aria-hidden='true'%3E%3Cpath fill='%23777' d='M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM11 7h2v2h-2V7zm0 4h2v6h-2v-6z'%3E%3C/path%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: 50% 50%, 1em 1.08em;
-            background-size: 100%, 20px;
+            position: relative;
             border-radius: 5px;
             border: 1px solid #333;
             box-sizing: border-box;
@@ -455,6 +453,35 @@
             max-height: 60vh;
             overflow: hidden;
             overflow-y: auto;
+        }
+
+        .tool-message > .content:before {
+            content: '';
+            position: absolute;
+            left: 1em;
+            top: 1.08em;
+            width: 20px;
+            height: 20px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' aria-hidden='true'%3E%3Cpath fill='%23777' d='M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM11 7h2v2h-2V7zm0 4h2v6h-2v-6z'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-size: contain;
+        }
+
+        .generating .tool-message:last-of-type > .content:after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, #1f87cd00 45%, #1f87cd22 100%, #1f87cd00 145%);
+            animation: gradientMove 2s ease-in-out infinite;
+        }
+
+        @keyframes gradientMove {
+            0%, 100% {
+                transform: translateY(100%);
+            }
+            50% {
+                transform: translateY(-100%);
+            }
         }
 
         .tool-message:has(.content + .content) > .content {
@@ -512,19 +539,19 @@
             background: var(--background);
         }
 
-        .tool-message:last-child li {
+        .generating .tool-message li {
             animation: load 3s ease-in-out 1;
         }
-        .tool-message:last-child li:nth-child(1) {
+        .generating .tool-message li:nth-child(1) {
             animation: load 1s ease-in-out 1;
         }
-        .tool-message:last-child li:nth-child(2) {
+        .generating .tool-message li:nth-child(2) {
             animation: load 1.5s ease-in-out 1;
         }
-        .tool-message:last-child li:nth-child(3) {
+        .generating .tool-message li:nth-child(3) {
             animation: load 2s ease-in-out 1;
         }
-        .tool-message:last-child li:nth-child(4) {
+        .generating .tool-message li:nth-child(4) {
             animation: load 2.5s ease-in-out 1;
         }
 
@@ -624,7 +651,7 @@
             padding: 13px 44px 64px 36px;
             box-shadow: 0 5px 25px #00000055;
             border-radius: 5px 5px 0 0;
-            min-height: 104px;
+            min-height: 107px;
             max-height: 45vh;
             overflow-y: hidden;
             margin-bottom: -20px;
@@ -736,14 +763,14 @@
             background-size: 22px;
         }
 
-        button#ask.stop {
+        .generating button#ask {
             background-color: #db3434;
             background-size: 18px;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' aria-hidden='true'%3E%3Cpath fill='%23ddd' d='M6 5h12v14H6z'/%3E%3C/svg%3E");
         }
 
         button#ask:disabled {
-          background-color: #777;
+          background-color: #777 !important;
         }
 
         .status {
@@ -767,7 +794,8 @@
 
         p:empty,
         p > br:first-child,
-        .status:empty {
+        .status:empty,
+        .content:empty {
             display: none !important;
         }
 
@@ -1287,7 +1315,7 @@
             if (!topics?.length || !context) {
                 throw new Error('No topic to research specified')
             }
-            render_spawn_research_agents(topics, id)
+            render_spawn_research_agents({ topics }, id)
             await Promise.all(topics.map(async topic => {
                 try {
                     const json = await chatStreams[id].call({
@@ -1336,7 +1364,7 @@
 
         async function render_spawn_research_agents(results, id) {
             if (loadedChatId.toString() === id.split('-')[0]) {
-                appendTool({ html: `<p>Researching ...</p><ol>${results.map(t => `<li><strong>${t.topic}</strong><br><div id='${id + '-' + t.i}' class="subcontent"></div></li>`).join('')}</ol>` })
+                appendTool({ html: `<p>Researching ...</p><ol>${results.topics.map(t => `<li><strong>${t.topic}</strong><br><div id='${id + '-' + t.i}' class="subcontent"></div></li>`).join('')}</ol>` })
             }
         }
         // TOOL RESULT FUNCTIONS END
@@ -1491,8 +1519,8 @@
                 clearMemory()
             }
 
-            askButtonElem.classList.add('stop')
             document.body.classList.remove('new')
+            document.body.classList.add('generating')
             window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
 
             const prompt = {
@@ -1539,7 +1567,7 @@
                 apiKey: window.API_KEY,
                 id: newId,
                 onComplete: (messages, status, id) => {
-                    askButtonElem.classList.remove('stop')
+                    document.body.classList.remove('generating')
 
                     if(!messages?.length) return
 
@@ -1646,7 +1674,7 @@
         }
 
         async function appendMessage({ text, sender, files, status }) {
-            const message = sender === 'user' && chatMessagesElem.lastElementChild?.classList.contains('user-message') ? chatMessagesElem.lastElementChild : document.createElement('div')
+            const message = sender === 'user' && chatMessagesElem.lastElementChild?.classList.contains('user-message') ? chatMessagesElem.lastElementChild : document.createElement(sender === 'tool' ? 'section' : 'div')
             message.className = `message ${sender === 'user' ? 'user-message' : sender === 'assistant' ? 'ai-message' : sender === 'system' ? 'system-message' : 'tool-message'}`
             if (!message.parentElement) {
                 const content = message.firstElementChild || document.createElement('div')
@@ -1724,12 +1752,12 @@
         }
 
         async function loadModels() {
-          isAvailable = null;
+          isAvailable = null
           
           askButtonElem.disabled = true
 
-          modelSectionElem.innerHTML = '';
-          selectedModel = '';
+          modelSectionElem.innerHTML = ''
+          selectedModel = ''
 
           try {
             const response = await fetch(window.API_URL + '/v1/models', {
@@ -1737,38 +1765,37 @@
                 'Authorization': `Bearer ${window.API_KEY}`,
                 'Content-Type': 'application/json'
               }
-            });
-            const models = await response.json();
+            })
+            const models = await response.json()
 
             if (!models.data.length) {
                 clearMemory()
                 await appendMessage({ text: 'There are no models loaded.', sender: 'system' })
-                return;
+                return
             }
 
-            loadedModels = models.data;
+            loadedModels = models.data
 
             loadedModels.forEach(m => {
               const onclick = function (e) {
-                selectedModel = m.id;
-                Array.from(modelSectionElem.children).forEach(n => n.classList[n.dataset.id === m.id ? 'add' : 'remove']('checked'));
-                modelInfoElem.textContent = m.name || m.id;
-              };
-              const option = document.createElement('button');
-              option.dataset.id = m.id;
-              option.textContent = m.name || m.id;
-              option.onclick = onclick;
-              modelSectionElem.appendChild(option);
-
+                selectedModel = m.id
+                Array.from(modelSectionElem.children).forEach(n => n.classList[n.dataset.id === m.id ? 'add' : 'remove']('checked'))
+                modelInfoElem.textContent = m.name || m.id
+              }
+              const option = document.createElement('button')
+              option.dataset.id = m.id
+              option.textContent = m.name || m.id
+              option.onclick = onclick
+              modelSectionElem.appendChild(option)
               if (!selectedModel || DEFAULT_MODELS.includes(m.id)) {
                 onclick();
               }
             });
 
-            isAvailable = new Date().getTime();
-            askButtonElem.disabled = false;
+            isAvailable = new Date().getTime()
+            askButtonElem.disabled = false
 
-            sayHello();
+            sayHello()
           } catch (error) {
             console.error(error)
             clearMemory()
@@ -1779,7 +1806,7 @@
         function onStart(id) {
             if (loadedChatId !== id) return
 
-            askButtonElem.classList.add('stop')
+            document.body.classList.add('generating')
         }
 
         function onEnd(id) {
@@ -1787,7 +1814,7 @@
 
             if (loadedChatId !== id) return
 
-            askButtonElem.classList.remove('stop')
+            document.body.classList.remove('generating')
             scrollToEnd()
         }
 
@@ -1960,7 +1987,7 @@
                 }
             }
             hljs.highlightAll()
-            askButtonElem.classList[chatStreams[chat.id]?.isGenerating ? 'add' : 'remove']('stop')
+            document.body.classList[chatStreams[chat.id]?.isGenerating ? 'add' : 'remove']('generating')
             chatStreams[chat.id]?.isGenerating && onToken('', chat.id)
             window.scrollTo(0, document.documentElement.scrollHeight)
             setTimeout(() => window.scrollTo(0, document.documentElement.scrollHeight), 280)
