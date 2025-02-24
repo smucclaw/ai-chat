@@ -1455,8 +1455,7 @@
             const files = event.target.files;
 
             for (const file of files) {
-                if (attachedFiles.find(f => f.name === file.name)) continue;
-
+                if (attachedFiles.find(f => f.name === file.name)) continue
                 if (file.type === 'application/pdf') {
                     try {
                         const text = await extractTextFromPDF(file);
@@ -1485,6 +1484,8 @@
             if (!elem) {
                 elem = document.createElement('div');
                 elem.className = 'attachments';
+            } else {
+                elem.innerHTML = ''
             }
             files.forEach(file => {
                 const attachment = document.createElement('div');
@@ -1496,7 +1497,6 @@
                 `;
                 elem.appendChild(attachment);
             })
-
             return elem;
         }
 
