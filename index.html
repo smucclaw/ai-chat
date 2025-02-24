@@ -512,20 +512,20 @@
             background: var(--background);
         }
 
-        .tool-message:last-child .items li {
+        .tool-message:last-child li {
+            animation: load 2.2s ease-in-out 1;
+        }
+        .tool-message:last-child li:first-child {
             animation: load 1s ease-in-out 1;
         }
-        .tool-message:last-child .items li + li {
+        .tool-message:last-child li:first-child + li {
             animation: load 1.3s ease-in-out 1;
         }
-        .tool-message:last-child .items li + li + li {
+        .tool-message:last-child li:first-child + li + li {
             animation: load 1.6s ease-in-out 1;
         }
-        .tool-message:last-child .items li + li + li + li {
+        .tool-message:last-child li:first-child + li + li + li {
             animation: load 1.9s ease-in-out 1;
-        }
-        .tool-message:last-child .items li + li + li + li + li {
-            animation: load 2.2s ease-in-out 1;
         }
 
         .tool-message .items img {
