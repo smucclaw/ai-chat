@@ -548,7 +548,7 @@
         .input-container {
             position: fixed;
             z-index: 1;
-            bottom: -4px;
+            bottom: -6px;
             padding: 10px 10px var(--offset);
             margin: 0 -10px;
             max-width: var(--max-width);
@@ -603,7 +603,7 @@
             border: 1px solid #444;
             background: #333333ee;
             backdrop-filter: blur(10px);
-            border-radius: 5px;
+            border-radius: 6px;
             font-size: 16px;
             outline: none;
             color: #eee;
@@ -621,10 +621,10 @@
         }
 
         .input-container textarea {
-            padding: 10px 40px 60px 32px;
+            padding: 13px 44px 64px 36px;
             box-shadow: 0 5px 25px #00000055;
             border-radius: 5px 5px 0 0;
-            min-height: 98px;
+            min-height: 104px;
             max-height: 45vh;
             overflow-y: hidden;
             margin-bottom: -20px;
@@ -633,8 +633,8 @@
         .input-container #modelInfo {
             position: absolute;
             z-index: 2;
-            right: 18px;
-            bottom: calc(14px + var(--offset));
+            right: 22px;
+            bottom: calc(18px + var(--offset));
             font-size: 13px;
             color: rgba(255, 255, 255, .2);
         }
@@ -642,12 +642,12 @@
         .input-container .attachments {
             position: absolute;
             z-index: 3;
-            bottom: calc(10px + var(--offset));
+            bottom: calc(14px + var(--offset));
             padding: 0;
-            left: 14px;
-            right: 14px;
+            left: 18px;
+            right: 18px;
             display: flex;
-            gap: 4px;
+            gap: 6px;
             overflow: hidden;
             overflow-x: scroll;
         }
@@ -677,6 +677,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             font-size: 13px;
+            line-height: 14px;
         }
 
         .attachment button {
@@ -702,8 +703,8 @@
 
         #addFiles {
             position: absolute;
-            left: 14px;
-            top: 17px;
+            left: 18px;
+            top: 21px;
             height: 24px;
             width: 24px;
             background: transparent;
@@ -718,8 +719,8 @@
 
         button#ask {
             position: absolute;
-            right: 14px;
-            top: 14px;
+            right: 18px;
+            top: 18px;
             box-sizing: border-box;
             width: 32px;
             height: 34px;
@@ -1175,7 +1176,7 @@
                         },
                         topic5: {
                             type: "string",
-                            description: "A concept or fact that you want to have verified. Ask as a question."
+                            description: "A concept or fact that you want to have verified. Ask as a question"
                         }
                     },
                     required: ["context", "topic1", "topic2"]
