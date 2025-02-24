@@ -1649,7 +1649,6 @@
                             if (l.role === 'user') {
                                 a.push(`#${++i} Prompt: "${l.content}"` + (l.files?.length ? `, file attachments: "${l.files.map(f => f.name).join(', ')}"` : '') + '\n')
                             }
-                            console.log(a)
                             return a
                         }, [])
                     }]
