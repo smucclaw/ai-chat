@@ -458,7 +458,7 @@
             display: flex;
             overflow-x: auto;
             gap: 1em;
-            padding: 0.5em 0;
+            padding: .5em 0;
             scroll-snap-type: x mandatory;
         }
 
@@ -470,7 +470,7 @@
         .tool-message > .content {
             flex: 1;
             width: 100%;
-            margin-bottom: -.5em;
+            margin: 0 0 -.5em;
             line-height: 1.5em;
             padding: 0 1em 0 calc(1em + 28px);
             color: #777;
@@ -829,8 +829,7 @@
             display: none !important;
         }
 
-        think,
-        .think {
+        think, .think {
           display: block;
           font-size: 13px;
           line-height: 16px;
@@ -847,8 +846,12 @@
             cursor: pointer;
         }
 
-        think:after,
-        .think:after {
+        think code, .think code {
+            color: #777;
+            font-size: 12px;
+        }
+
+        think:after, .think:after {
             content: "";
             position: absolute;
             top: .7rem;
@@ -859,18 +862,15 @@
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' aria-hidden='true'%3E%3Cpath fill='%23888' d='M3.543 8.96l1.414-1.42L12 14.59l7.043-7.05 1.414 1.42L12 17.41 3.543 8.96z'%3E%3C/path%3E%3C/svg%3E");
         }
 
-        think,
-        .think.expanded {
+        think, .think.expanded {
             max-height: fit-content;
         }
 
-        think:after,
-        .think.expanded:after {
+        think:after, .think.expanded:after {
             transform: rotate(0deg);
         }
 
-        think:before,
-        .think:before {
+        think:before, .think:before {
           content: "Thinking ...";
           display: block;
           color: #888;
@@ -879,9 +879,7 @@
           padding: 2px 0 6px 20px;
         }
 
-        think + think:before,
-        .think + think:before,
-        .think + .think:before {
+        think + think:before, .think + think:before, .think + .think:before {
           content: "Considering additional information ...";
         }
 
@@ -889,8 +887,7 @@
             padding-bottom: 12px;
         }
 
-        think > p:last-child,
-        .think > p:last-child {
+        think > p:last-child, .think > p:last-child {
             margin-bottom: 0px;
         }
 
@@ -1559,7 +1556,6 @@
             }
 
             document.body.classList.remove('new')
-            document.body.classList.add('generating')
             window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
 
             const prompt = {
@@ -1592,6 +1588,8 @@
                 return
             }
 
+            document.querySelectorAll('.tool-message').forEach(elem => elem.parentElement.remove(elem))
+            document.body.classList.add('generating')
             await appendMessage({ text: messageText, sender: 'user', files: attachedFiles })
 
             userInputElem.value = ''
@@ -1715,6 +1713,9 @@
             const message = sender === 'user' && chatMessagesElem.lastElementChild?.classList.contains('user-message') ? chatMessagesElem.lastElementChild : document.createElement(sender === 'tool' ? 'section' : 'div')
             message.className = `message ${sender === 'user' ? 'user-message' : sender === 'assistant' ? 'ai-message' : sender === 'system' ? 'system-message' : 'tool-message'}`
             if (!message.parentElement) {
+                if (sender === 'tool' && chatMessagesElem.lastElementChild?.classList.contains('ai-message')) {
+                    chatMessagesElem.lastElementChild.remove()
+                }
                 const content = message.firstElementChild || document.createElement('div')
                 content.className = 'content'
                 content.innerHTML = await markdownToHtml(text)
@@ -2018,18 +2019,20 @@
             document.body.classList.remove('new')
             let toolCalls = []
             for (const l of chat.log) {
-                if (l.role === 'tool') {
-                    const name = toolCalls.find(t => l.tool_call_id === t.id)?.function.name
-                    if (name) {
-                        try {
-                            await window['render_' + name](JSON.parse(l.content), chat.id)
-                        } catch (e) {
-                            console.error('Failed rendering tool history for ' + chat.id, name, l, e)
-                        }
-                    }
-                } else if (l.tool_calls) {
-                    toolCalls.push(...l.tool_calls)
-                } else {
+                // More work needs to be done to load tool results back
+                // if (l.role === 'tool') {
+                //     const name = toolCalls.find(t => l.tool_call_id === t.id)?.function.name
+                //     if (name) {
+                //         try {
+                //             await window['render_' + name](JSON.parse(l.content), chat.id)
+                //         } catch (e) {
+                //             console.error('Failed rendering tool history for ' + chat.id, name, l, e)
+                //         }
+                //     }
+                // } else if (l.tool_calls) {
+                //     toolCalls.push(...l.tool_calls)
+                // } else {
+                if (l.role !== 'tool' && !l.tool_calls) {
                     await appendMessage({ 
                         text: l.content, 
                         sender: l.role, 
