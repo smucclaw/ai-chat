@@ -1163,7 +1163,7 @@
             <input type="file" id="fileInput" accept=".pdf,.txt,.csv,.tsv,.js,.json,.jsx,.ts,.tsx,.css,.scss,.less,.html,.htm,.xml,.yaml,.yml,.md,.py,.rb,.java,.c,.cpp,.h,.hpp,.cs,.php,.sql,.sh,.bash,.zsh" multiple>
             <button id="addFiles" onclick="fileInputElem.click()" title="Attach PDF or Text files"></button>
             <button id="ask" onclick="sendMessage()" disabled title="Start/stop answer generation"></button>
-            <button id="scrolldown" onclick="window.scrollTo(0, document.documentElement.scrollHeight)"></button>
+            <button id="scrolldown" onclick="window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })"></button>
         </div>
     </div>
     <script>
