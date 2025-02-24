@@ -640,7 +640,7 @@
         }
 
         textarea:focus {
-            background: #444444cc;
+            background: #333333cc;
         }
 
         textarea::placeholder {
@@ -1647,8 +1647,9 @@
                         role: 'user',
                         content: 'Summarise the following prompts in one title with less than 10 words. Output only the title without any further explanation or added context!\n\n' + log.reduce((a, l) => {
                             if (l.role === 'user') {
-                                a.push(`#${++i}: "${l.content}"\n`)
+                                a.push(`#${++i} Prompt: "${l.content}"` + (l.files?.length ? `, file attachments: "${l.files.map(f => f.name).join(', ')}"` : '') + '\n')
                             }
+                            console.log(a)
                             return a
                         }, [])
                     }]
