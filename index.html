@@ -1197,13 +1197,13 @@
             type: "function",
             function: {
                 name: "search_user_history",
-                description: "Retrieve the conversation history with the user. Use it often to personalise or to find additional context from the past",
+                description: "Retrieve the conversation history with the user by individual key words. Use it often to personalise or to find additional context from the past",
                 parameters: {
                     type: "object",
                     properties: {
                         keywords: {
                             type: "string",
-                            description: "A white-space separated list of keywords that can help find relevant content."
+                            description: "A white-space separated list of terms as keywords. Plural and singular matters! Curate those well."
                         }
                     }
                 },
