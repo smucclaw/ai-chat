@@ -650,7 +650,7 @@
             top: -48px;
             height: 32px;
             padding: 12px 13px;
-            transform-origin: 42px 50%;
+            transform-origin: 44px 50%;
             transition: all .2s linear;
             opacity: 0;
             transform: scale(.8);
@@ -1258,8 +1258,7 @@
         const MAX_STORAGE_CHARS = 5242880; // 5MB character limit for localStorage
         const DEFAULT_GREETING = 'Howdy, is it time to help again?';
 
-        const TOOLS = [];
-        const TOOLS_DEFAULT = [{
+        const TOOLS = [{
             type: "function", 
             function: {
                 name: "search_web_info",
