@@ -1763,9 +1763,36 @@
                 console.error('Error:', error)
             }
 
-            manageHistoryItemElem(chat, id)
+            manageHistoryItemElem(chat)
+            manageActiveItemElem(chat)
 
             return chat
+        }
+
+        function manageActiveItemElem(chat) {
+            const generating = chat.log[chat.log.length - 1].role === 'user' && parseInt(chat.id) > (new Date().getTime() - 4e5)
+            const activeElem = document.createElement('button')
+            activeElem.dataset.id = chat.id
+            activeElem.innerHTML = `<span>${chat.name || chat.log[0].content}</span>`
+            activeElem.className = generating ? 'generating' : loadedChatId === chat.id ? 'active' : ''
+            activeElem.onclick = () => {
+                if (activeElem.classList.contains('generating')) return
+                if (loadedChatId === chat.id) {
+                    const e = document.querySelector(`#activeChats button[data-id="${chat.id}"]`)
+                    const n = e.nextElementSibling || e.previousElementSibling
+                    n.click()
+                    e.remove()
+                } else {
+                    loadHistoryLog(chat)
+                }
+            }
+            const alreadyActiveElem = document.querySelector(`#activeChats button[data-id="${chat.id}"]`)
+            if (!alreadyActiveElem) {
+                activeChatsElem.appendChild(activeElem)
+                activeChatsElem.scrollTo({ left: activeChatsElem.scrollWidth, behavior: 'smooth' })
+            } else {
+                alreadyActiveElem?.replaceWith(activeElem)
+            }
         }
 
         async function createChatLogName(log) {
@@ -2112,28 +2139,6 @@
             option.className = generating ? 'generating' : ''
             option.onclick = () => loadHistoryLog(chat)
             historyItemsElem.prepend(option)
-
-            const activeElem = document.createElement('button')
-            activeElem.dataset.id = chat.id
-            activeElem.innerHTML = `<span>${chat.name || chat.log[0].content}</span>`
-            activeElem.className = generating ? 'generating' : loadedChatId === chat.id ? 'active' : ''
-            activeElem.onclick = () => {
-                if (activeElem.classList.contains('generating')) return
-                if (loadedChatId === chat.id) {
-                    const e = document.querySelector(`#activeChats button[data-id="${chat.id}"]`)
-                    e.previousElementSibling.click()
-                    e.remove()
-                } else {
-                    loadHistoryLog(chat)
-                }
-            }
-            const alreadyActiveElem = document.querySelector(`#activeChats button[data-id="${chat.id}"]`)
-            if (!alreadyActiveElem && generating) {
-                activeChatsElem.appendChild(activeElem)
-                activeChatsElem.scrollTo({ left: activeChatsElem.scrollWidth, behavior: 'smooth' })
-            } else {
-                alreadyActiveElem?.replaceWith(activeElem)
-            }
         }
 
         async function loadHistoryLog(chat) {
@@ -2164,6 +2169,7 @@
                 }
             }
             hljs.highlightAll()
+            manageActiveItemElem(chat)
             showActiveChat()
             document.body.classList[chatStreams[chat.id]?.isGenerating ? 'add' : 'remove']('generating')
             chatStreams[chat.id]?.isGenerating && onToken('', chat.id)
