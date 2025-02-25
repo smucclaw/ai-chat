@@ -2137,7 +2137,7 @@
             })
             enableClearHistory()
 
-            const generating = chat.log[chat.log.length - 1].role === 'user' && parseInt(chat.id) > (new Date().getTime() - 4e5)
+            const generating = chat.log[chat.log.length - 1].role === 'user' && parseInt(chat.updated) > (new Date().getTime() - 4e5)
             const option = document.createElement('button')
             option.dataset.id = chat.id
             option.textContent = chat.name || chat.log[0].content
