@@ -1660,6 +1660,9 @@
             if (messages[messages.length - 1].role !== 'user') {
                 messages = messages.slice(messages.findLastIndex(m => m.role === 'user') + 1)
             }
+            if (log[log.length - 1].role === 'user') {
+                log = log.slice(log.findLastIndex(m => m.role === 'user'))
+            }
             log.push(...messages)
 
             const name = await createChatLogName(log)
