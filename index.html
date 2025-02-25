@@ -1394,14 +1394,14 @@
         // TOOL RESULT FUNCTIONS
         async function render_search_web_info(results, id) {
             const parts = id.split('-')
-            if (loadedChatId.toString() === parts[0]) {
+            if (loadedChatId.toString() === parts[0] && results.id) {
                 id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
                 appendTool({ html: `<p>Web search: ${results.query}</p><ul class="items">${results.results.slice(0, 5).map(r => `<li><img src="${new URL(r.url).origin}/favicon.png" onerror="faviconError(this)" /><a href="${r.url}" rel="noopener nofollow noreferrer" target="_blank" title="${r.title.replace(/"/, '\"')}">${new URL(r.url).hostname.replace('www.','')}</a></li>`).join('')}${results.results.length > 5 ? `<li><span>... ${results.results.length - 5} more</span></li>` : ''}</ul>`, id })
             }
         }
         async function render_get_weather(results, id) {
             const parts = id.split('-')
-            if (loadedChatId.toString() === parts[0]) {
+            if (loadedChatId.toString() === parts[0] && results.id) {
                 id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
                 appendTool({ html: '<p>' + (results.forecast ? 'Checking the 7-day weather forecast ...' : 'Checking today\'s weather ...') + '</p>', id })
             }
@@ -1409,7 +1409,7 @@
 
         async function render_search_user_history(results, id) {
             const parts = id.split('-')
-            if (loadedChatId.toString() === parts[0]) {
+            if (loadedChatId.toString() === parts[0] && results.id) {
                 const content = results.logs.map(r => {
                     const html = r[0].content.replace(/</g, '&lt;').replace(/>/g, '&gt;')
                     return `<li><span title="${r[0].content.replace(/"/g, '\"')}">"${html}"</span></li>`
