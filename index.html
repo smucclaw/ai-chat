@@ -1655,7 +1655,7 @@
             const index = history?.findIndex(h => h.id === previousId)
 
             const id = new Date().getTime().toString()
-            const log = history[index]?.log || chatMemory
+            let log = history[index]?.log || chatMemory
             
             if (messages[messages.length - 1].role !== 'user') {
                 messages = messages.slice(messages.findLastIndex(m => m.role === 'user') + 1)
