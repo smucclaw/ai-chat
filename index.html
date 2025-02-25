@@ -1733,9 +1733,7 @@
             
             if (messages.length === 1 && messages[0].role === 'user') {
                 if(log[log.length - 1]?.role === 'user') {
-                    console.log('b', log)
                     log = log.slice(0, -1)
-                    console.log('a', log)
                 }
                 name = await createChatLogName(log)
             }
