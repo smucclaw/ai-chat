@@ -1775,8 +1775,7 @@
             activeElem.innerHTML = `<span>${chat.name || chat.log[0].content}</span>`
             activeElem.className = generating ? 'generating' : loadedChatId === chat.id ? 'active' : ''
             activeElem.onclick = () => {
-                if (activeElem.classList.contains('generating')) return
-                if (loadedChatId === chat.id) {
+                if (loadedChatId === chat.id && !activeElem.classList.contains('generating')) {
                     const e = document.querySelector(`#activeChats button[data-id="${chat.id}"]`)
                     const n = e.nextElementSibling || e.previousElementSibling
                     n.click()
