@@ -1723,19 +1723,16 @@
         }
 
         async function updateHistory(messages, id) {
+            const isUser = messages[messages.length - 1]?.role === 'user'
             const history = JSON.parse(localStorage.getItem('history')) || []
             const index = history?.findIndex(h => h.id === id)
 
+            let log = [...(history?.[index]?.log || [])] 
             const updated = new Date().getTime().toString()
             id = id || updated
-            let log = [...(history?.[index]?.log || [])]
-            let name = history?.[index]?.name
-            
-            if (messages.length === 1 && messages[0].role === 'user') {
-                if(log[log.length - 1]?.role === 'user') {
-                    log = log.slice(0, -1)
-                }
-                name = await createChatLogName(log)
+
+            if (isUser && log[log.length - 1]?.role === 'user') {
+                log = log.slice(0, -1)
             }
 
             messages.forEach(m => {
@@ -1744,6 +1741,7 @@
                 }
             })
 
+            const name = isUser ? await createChatLogName(log) : history?.[index]?.name
             const chat = { id, updated, name, log }
 
             if (index >= 0) {
