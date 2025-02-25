@@ -498,20 +498,21 @@
             background-size: contain;
         }
 
-        .generating .tool-message:last-of-type > .content:after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom, #1f87cd00 45%, #1f87cd22 100%, #1f87cd00 145%);
-            animation: gradientMove 2s ease-in-out infinite;
+        .generating .tool-message:last-of-type > .content {
+            background: linear-gradient(to bottom,
+                #1f87cd00 0%,
+                #1f87cd33 50%,
+                #1f87cd00 100%
+            ) 0 0 / 100% 200%;
+            animation: gradientMove 1.5s linear infinite;
         }
 
         @keyframes gradientMove {
             0% {
-                transform: translateY(300%);
+                background-position: 0 0;
             }
             100% {
-                transform: translateY(-300%);
+                background-position: 0 -200%;
             }
         }
 
@@ -1200,13 +1201,13 @@
             type: "function",
             function: {
                 name: "search_user_history",
-                description: "Retrieve the conversation history with the user by individual key words. Use it often to personalise or to find additional context from the past",
+                description: "Retrieve the conversation history with the user by single key words. Use it to personalise or to find additional context from the past",
                 parameters: {
                     type: "object",
                     properties: {
                         keywords: {
                             type: "string",
-                            description: "A white-space separated list of terms as keywords. Plural and singular matters! Curate those well."
+                            description: "A white-space separated list of terms individual key words. Plural and singular matters! Don\'t us questions or sentences'."
                         }
                     }
                 },
@@ -1215,36 +1216,32 @@
             type: "function",
             function: {
                 name: "spawn_research_agents",
-                description: "Research in detail not more than 5 sub-topics that could help you answer the user prompt with the most recent and accurate information. Only use once!",
+                description: "Research in detail with the most recent and accurate information. Only use once!",
                 parameters: {
                     type: "object",
                     properties: {
                         context: {
                             type: "string",
-                            description: "The context the agent might need to tailor the response better to the user prompt"
+                            description: "A short summary of the user prompt and relevant user context"
                         },
-                        topic1: {
+                        key_topic: {
                             type: "string",
-                            description: "An important topic you require to understand in detail to give a good answer"
+                            description: "Themost important key topic you require to understand in detail to give a good answer"
                         },
-                        topic2: {
+                        helpful_topic: {
                             type: "string",
-                            description: 'Another important or complicated set of information you need'
+                            description: "Another important or complicated set of information you need up-to-date information on"
                         },
-                        topic3: {
+                        approach: {
                             type: "string",
-                            description: "Ask for a specific information that you really want to get right"
+                            description: "Ask a short question to learn the method or approach that you want to understand better to give structure to your final answer"
                         },
-                        topic4: {
+                        challange: {
                             type: "string",
-                            description: "A method or approach that will help you give structure to your answer"
-                        },
-                        topic5: {
-                            type: "string",
-                            description: "A concept or fact that you want to have verified. Ask as a question"
+                            description: "Ask a brief question that tests your current assumptions for an answer to see if they hold up"
                         }
                     },
-                    required: ["context", "topic1", "topic2"]
+                    required: ["context", "key_topic", "challenge"]
                 }
             }
         }, {
@@ -1352,14 +1349,15 @@
             if (!topics?.length || !context) {
                 throw new Error('No topic to research specified')
             }
-            render_spawn_research_agents({ topics }, id)
+            const addedSteps = [{ i, topic: 'Verifying results and synthesizing ...' }]
+            render_spawn_research_agents({ topics: [...topics, ...addedSteps] }, id)
             await Promise.all(topics.map(async topic => {
                 try {
                     const json = await chatStreams[id].call({
                         id: id + '-' + topic.i,
                         messages: [{
                             role: 'system',
-                            content: 'You\'re an AI agent with the sole purpose to research one specific topic in as much detail as possible, then summarize they key findings using data tables and only short paragraphs of text. Use the tools at your disposal. Now is ' + new Date().toString()
+                            content: 'You\'re an AI agent with the sole purpose to research one specific topic in as much detail as possible, then summarize they key findings using lists or data tables and only short paragraphs of text. Use the tools at your disposal. Now is ' + new Date().toString()
                         }, {
                             role: 'user',
                             content: `Research this topic in detail and summarise your findings in short, information-dense structured output: "${topic.topic}" in the context of "${context}"`
@@ -1371,7 +1369,25 @@
                     console.error('Could not research topic for ' + id, topic, e)
                 }
             }))
-            return { id, topics }
+            await Promise.all(addedSteps.map(async step => {
+                try {
+                    const json = await chatStreams[id].call({
+                        id: id + '-' + step.i,
+                        messages: [{
+                            role: 'system',
+                            content: 'You\'re an AI agent with the sole purpose to verify information and identify errors, then summarize they key findings using a bullet point lists. Use the tools at your disposal.'
+                        }, {
+                            role: 'user',
+                            content: `Find factual errors and suggest ways to improve on the following information in the context of "${context}":\n\n${topics.map(t => t.result).join('\n\n')}`
+                        }],
+                        tools: TOOLS.filter(t => t.function.name !== 'spawn_research_agents')
+                    })
+                    step.result = json.content?.replace(/<think>[\s\S]*<\/think>/g, '') || 'No information found'
+                } catch (e) {
+                    console.error('Could not research step for ' + id, step, e)
+                }
+            }))
+            return { id, topics: [...topics, ...addedSteps]  }
         }
         // TOOL FUNCTIONS END
 
