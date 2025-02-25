@@ -1223,7 +1223,7 @@
                 </div>
                 <div>
                     <h4>System prompt</h4>
-                    <textarea rows="3" id="SYSTEM_PROMPT" placeholder="How should the AI behave exactly?" data-default="Comply with the user as best you can and choose to be the role or character most appropriate to answer the given query. Be detailed, structure your output well and explain yourself. Use a mildly cynical yet warm attitude. Use tools to refine your knowledge for complex queries. Consider fun and relatability in the way you assemble your final answer to enhance their readability and better understanding. Be a little entertaining." onblur="saveSetting('SYSTEM_PROMPT')" class="setting"></textarea>
+                    <textarea rows="3" id="SYSTEM_PROMPT" placeholder="How should the AI behave exactly?" data-default="You're a specialist AI that is maximally useful. Be detailed, structure your output well and explain yourself. Use a mildly cynical yet warm attitude. Use tools to refine your knowledge for complex queries. Make your responses easy to understand and sometimes just a little bit quirky." onblur="saveSetting('SYSTEM_PROMPT')" class="setting"></textarea>
                 </div>
                 <div>
                     <h4>About you</h4>
@@ -1287,8 +1287,11 @@
                     type: "object",
                     properties: {
                         keywords: {
-                            type: "string",
-                            description: "A white-space separated list of terms individual key words. Plural and singular matters! Don\'t us questions or sentences'."
+                            type: "array",
+                            items: {
+                                type: "string"
+                            },
+                            description: "Key words to look for. Singular and plural matters."
                         }
                     }
                 },
@@ -1307,19 +1310,19 @@
                         },
                         key_topic: {
                             type: "string",
-                            description: "Themost important key topic you require to understand in detail to give a good answer"
+                            description: "Themost important key topic you require to understand in detail to give a good answer."
                         },
                         helpful_topic: {
                             type: "string",
-                            description: "Another important or complicated set of information you need up-to-date information on"
+                            description: "Another important or helpful set of information or a different angle on the question you need up-to-date and relevant information on"
                         },
                         approach: {
                             type: "string",
-                            description: "Ask a short question to learn the method or approach that you want to understand better to give structure to your final answer"
+                            description: "A helpful approach or method that you want to understand better to evaluate the other information"
                         },
                         challange: {
                             type: "string",
-                            description: "Ask a brief question that tests your current assumptions for an answer to see if they hold up"
+                            description: "A prompt that challenges your current assumptions to see if they hold up"
                         }
                     },
                     required: ["context", "key_topic", "challenge"]
@@ -1410,9 +1413,9 @@
         }
 
         async function search_user_history({ keywords }, id) {
-            list = (keywords || '').toString().toLowerCase().split(' ');
-            const history = (JSON.parse(localStorage.getItem('history')) || []).filter(h => h.id !== loadedChatId);
-            const matching = history.filter(h => list.find(k => h.log[0].content.toLowerCase().includes(k.trim())));
+            list = keywords.map(k => k.toLowerCase())
+            const history = (JSON.parse(localStorage.getItem('history')) || []).filter(h => h.id !== loadedChatId)
+            const matching = history.filter(h => list.find(k => h.log[0].content.toLowerCase().includes(k.trim())))
             const logs = (matching?.length ? matching : history).slice(0, 3).map(h => h.log)
             const results = {
                 id,
@@ -1434,14 +1437,15 @@
             render_spawn_research_agents({ topics: [...topics, ...addedSteps] }, id)
             await Promise.all(topics.map(async topic => {
                 try {
+                    await new Promise(resolve => setTimeout(resolve, 250))
                     const json = await chatStreams[id].call({
                         id: id + '-' + topic.i,
                         messages: [{
                             role: 'system',
-                            content: 'You\'re an AI agent with the sole purpose to research one specific topic in a lot of detail, then summarize they key findings using lists or data tables and only short paragraphs of text. Use the tools at your disposal. Now is ' + new Date().toString()
+                            content: 'You\'re an AI agent with the sole purpose to research one specific topic in a lot of detail by querying for relevant content. Summarize key findings using lists or data tables and only short paragraphs of text. Use the tools at your disposal. Now is ' + new Date().toString()
                         }, {
                             role: 'user',
-                            content: `Research this topic in detail and summarise your findings in short, information-dense structured output: "${topic.topic}"`
+                            content: `Research this topic in detail and summarise your findings: "${topic.topic}" in the context of "${context}"`
                         }],
                         tools: TOOLS.filter(t => t.function.name !== 'spawn_research_agents')
                     })
@@ -1452,14 +1456,15 @@
             }))
             await Promise.all(addedSteps.map(async step => {
                 try {
+                    await new Promise(resolve => setTimeout(resolve, 250))
                     const json = await chatStreams[id].call({
                         id: id + '-' + step.i,
                         messages: [{
                             role: 'system',
-                            content: 'You\'re an AI agent with the sole purpose to verify information and identify errors, then summarize they key findings using a bullet point lists. Use the tools at your disposal.'
+                            content: 'You\'re an AI agent with the sole purpose to double-check the key finding to be most accurate and useful for a given prompt, suggest improvements and correct mistakes then summarize they key findings using a bullet point lists. Research critical questions by using tools.'
                         }, {
                             role: 'user',
-                            content: `Find factual errors and suggest ways to improve on the following information in the context of "${context}":\n\n${topics.map(t => t.result).join('\n\n')}`
+                            content: `Suggest ways to improve mistakes or errors on the following information for the prompt of "${context}":\n\n${topics.map(t => t.result).join('\n\n')}`
                         }],
                         tools: TOOLS.filter(t => t.function.name !== 'spawn_research_agents')
                     })
