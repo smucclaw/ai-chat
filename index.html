@@ -143,7 +143,8 @@
 
         @media (min-width: 1340px) {
             .chat-container .chat-messages {
-                padding: 0 100px;
+                padding-left: 100px;
+                padding-right: 100px;
             }
 
             .header .history-button, .header .settings-button {
@@ -387,7 +388,7 @@
         }
 
         .chat-messages {
-            padding: 1em 4px 4px;
+            padding: 1em 4px 3.4em;
             overflow-x: hidden;
             display: flex;
             flex-direction: column;
@@ -621,18 +622,19 @@
             animation: load 1s ease-in-out 1;
         }
 
-        .input-container button#scrolldown {
+        button#scrolldown {
             position: absolute;
-            right: 14px;
+            right: 18px;
             top: -36px;
-            border: 0;
-            background-color: #262626;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 20' width='16' height='16'%3E%3Cpath stroke='%23888' fill='transparent' stroke-width='4' d='M2.000,5.000 L15.000,18.000 L28.000,5.000' /%3E%3C/svg%3E");
+            background-color: #28282888;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 20' width='16' height='16'%3E%3Cpath stroke='%23aaa' fill='transparent' stroke-width='4' d='M2.000,5.000 L15.000,18.000 L28.000,5.000' /%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: center;
-            background-size: 16px 16px;
+            background-size: 16px;
+            backdrop-filter: blur(8px);
             width: 32px;
             height: 32px;
+            border: 1px solid #383838;
             box-shadow: 0 -2px 25px #00000055;
             border-radius: 16px;
             cursor: pointer;
@@ -640,8 +642,83 @@
             opacity: 0;
             transform: scale(.8);
         }
+        
+        #activeChats {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: -36px;
+            height: 42px;
+            padding: 0 13px;
+            transform-origin: 42px 50%;
+            transition: all .2s linear;
+            opacity: 0;
+            transform: scale(.8);
+            display: flex;
+            gap: 8px;
+            overflow: hidden;
+            overflow-x: auto;
+        }
 
-        .input-container button#scrolldown.visible {
+        #activeChats button {
+            color: #aaa;
+            background-color: #28282888;
+            background-repeat: no-repeat;
+            background-position: 6px 50%;
+            backdrop-filter: blur(8px);
+            background-size: 20px;
+            padding: 0 10px;
+            font-size: .85em;
+            width: fit-content;
+            max-width: 220px;
+            height: 32px;
+            box-shadow: 0 -2px 25px #00000055;
+            border: 1px solid #383838;
+            border-radius: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        #activeChats button span {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        #activeChats button:first-child {
+            padding-left: 30px;
+            min-width: fit-content;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' aria-hidden='true'%3E%3Cpath fill='%23aaa' d='M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z'%3E%3C/path%3E%3C/svg%3E");
+        }
+
+        #activeChats button.generating:before {
+            content: '';
+            margin: 0 6px 0 -4px;
+            min-width: 16px;
+            height: 16px;
+            border: 2px solid #1f87cd;
+            border-left-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        #activeChats button.active {
+            color: #ddd;
+        }
+
+        #activeChats button:not(.generating).active::after {
+            content: '\00D7';
+            font-weight: normal;
+            font-size: 1.4em;
+            color: #888;
+            display: inline-block;
+            padding-left: 6px;
+            margin-top: -2px;
+        }
+        
+        button#scrolldown.visible,
+        #activeChats.visible {
             opacity: 1;
             transform: scale(1);
         }
@@ -1096,7 +1173,8 @@
             margin-top: -22px;
         }
 
-        .new button#scrolldown {
+        .new button#scrolldown,
+        .new #activeChats {
             display: none !important;
         }
 
@@ -1113,10 +1191,6 @@
                 <button class="history-button" onclick="openMenu('historyMenu')" title="Open chat history">
                     <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="#ddd" d="M12 4C9.25 4 6.83 5.39 5.38 7.5H8v2H2v-6h2V6c1.82-2.43 4.73-4 8-4 5.52 0 10 4.48 10 10s-4.48 10-10 10c-4.76 0-8.74-3.33-9.75-7.78l1.95-.44C5.01 17.34 8.19 20 12 20c4.42 0 8-3.58 8-8s-3.58-8-8-8zm-1 4h2v3.59l3.21 3.2-1.42 1.42-3.79-3.8V8z"></path></svg>
                     <span>History</span>
-                </button>
-                <button class="new-button" onclick="startNew()" title="Start a new chat">
-                    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="#ddd" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path></svg>
-                    <span>New Chat</span>
                 </button>
             </div>
             <h1>AI</h1>
@@ -1171,6 +1245,9 @@
             <input type="file" id="fileInput" accept=".pdf,.txt,.csv,.tsv,.js,.json,.jsx,.ts,.tsx,.css,.scss,.less,.html,.htm,.xml,.yaml,.yml,.md,.py,.rb,.java,.c,.cpp,.h,.hpp,.cs,.php,.sql,.sh,.bash,.zsh" multiple>
             <button id="addFiles" onclick="fileInputElem.click()" title="Attach PDF or Text files"></button>
             <button id="ask" onclick="sendMessage()" disabled title="Start/stop answer generation"></button>
+            <div id="activeChats" class="visible">
+                <button onclick="startNew()" title="Start a new chat">New</button>
+            </div>
             <button id="scrolldown" onclick="window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })"></button>
         </div>
     </div>
@@ -1181,7 +1258,8 @@
         const MAX_STORAGE_CHARS = 5242880; // 5MB character limit for localStorage
         const DEFAULT_GREETING = 'Howdy, is it time to help again?';
 
-        const TOOLS = [{
+        const TOOLS = [];
+        const TOOLS_DEFAULT = [{
             type: "function", 
             function: {
                 name: "search_web_info",
@@ -1430,7 +1508,6 @@
 
         // Globals. Don't touch.
         let isAvailable = null
-        let chatMemory = []
         let loadedChatId = null
         let selectedModel = null
         let loadedModels = []
@@ -1442,16 +1519,16 @@
             if (!value) {
                 blockAutoScrolling = false
                 document.body.style.removeProperty('--offset')
-                setTimeout(() => {
-                    if (!chatMemory.length) {
-                        document.body.classList.add('new')
-                    }
-                }, 300);
+                // setTimeout(() => {
+                //     if (!loadedChat.log.length) {
+                //         document.body.classList.add('new')
+                //     }
+                // }, 300);
             } else {
                 blockAutoScrolling = document.body.classList.contains('new')
                 document.body.style.setProperty('--offset', value)
                 if (isAvailable && window.innerWidth <= 768) {
-                    document.body.classList.remove('new')
+                    // document.body.classList.remove('new')
                     setTimeout(() => {
                         window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
                     }, 100)
@@ -1468,7 +1545,6 @@
         }
 
         function clearMemory() {
-            chatMemory = []
             loadedChatId = null
             chatMessagesElem.innerHTML = ''
         }
@@ -1572,10 +1648,6 @@
 
             if (!messageText && !attachedFiles.length) return
 
-            if (!chatMemory.length) {
-                clearMemory()
-            }
-
             document.body.classList.remove('new')
             window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
 
@@ -1590,7 +1662,13 @@
                 content: (window.SYSTEM_PROMPT || '') + getUserInfo() + '\nNow is ' + new Date().toString()
             }
 
-            const messages = [...chatMemory, prompt]
+            const { id, log } = await updateHistory([prompt], loadedChatId)
+
+            if (log.length === 1) {
+                clearMemory()
+            }
+
+            const messages = [...log, prompt]
 
             let tokenLength = JSON.stringify(systemPrompt).length + 40
             for (let i = messages.length - 1; i >= 0; i--) {
@@ -1617,12 +1695,13 @@
             attachedFiles = []
             fileAttachmentsElem.innerHTML = ''
 
-            const newId = await updateHistory([prompt], loadedChatId)
+            loadedChatId = id
+            showActiveChat()
 
-            chatStreams[newId] = ChatStream.create({
+            chatStreams[id] = ChatStream.create({
                 apiUrl: window.API_URL,
                 apiKey: window.API_KEY,
-                id: newId,
+                id: loadedChatId,
                 onComplete: (messages, status, id) => {
                     document.body.classList.remove('generating')
 
@@ -1630,6 +1709,7 @@
 
                     messages[messages.length - 1].status = status
                     updateHistory(messages, id)
+                    showActiveChat()
                 },
                 onToken,
                 onError,
@@ -1643,30 +1723,38 @@
                 }
             })
 
-            await chatStreams[newId].stream({
+            await chatStreams[id].stream({
                 messages: [systemPrompt, ...messages],
                 model: selectedModel,
                 tools: TOOLS
             })
         }
 
-        async function updateHistory(messages, previousId) {
+        async function updateHistory(messages, id) {
             const history = JSON.parse(localStorage.getItem('history')) || []
-            const index = history?.findIndex(h => h.id === previousId)
+            const index = history?.findIndex(h => h.id === id)
 
-            const id = new Date().getTime().toString()
-            let log = history[index]?.log || chatMemory
+            const updated = new Date().getTime().toString()
+            id = id || updated
+            let log = [...(history?.[index]?.log || [])]
+            let name = history?.[index]?.name
             
-            if (messages[messages.length - 1].role !== 'user') {
-                messages = messages.slice(messages.findLastIndex(m => m.role === 'user') + 1)
+            if (messages.length === 1 && messages[0].role === 'user') {
+                if(log[log.length - 1]?.role === 'user') {
+                    console.log('b', log)
+                    log = log.slice(0, -1)
+                    console.log('a', log)
+                }
+                name = await createChatLogName(log)
             }
-            if (log[log.length - 1].role === 'user') {
-                log = log.slice(log.findLastIndex(m => m.role === 'user'))
-            }
-            log.push(...messages)
 
-            const name = await createChatLogName(log)
-            const chat = { id, name, log }
+            messages.forEach(m => {
+                if (m.role !== 'system' && !log.find(l => JSON.stringify(l) === JSON.stringify(m))) {
+                    log.push(m)
+                }
+            })
+
+            const chat = { id, updated, name, log }
 
             if (index >= 0) {
                 history[index] = chat
@@ -1678,7 +1766,7 @@
                 while (history.length > 0 && JSON.stringify(history).length >= MAX_STORAGE_CHARS) {
                     history.pop()
                 }
-                history.sort((a, b) => a.id - b.id)
+                history.sort((a, b) => (a.updated || a.id) - (b.updated || b.id))
                 const toStore = JSON.stringify(history)
                 localStorage.setItem('history', toStore)
                 console.log(`Saved ${toStore.length} characters to history.`)
@@ -1686,11 +1774,9 @@
                 console.error('Error:', error)
             }
 
-            loadedChatId = id
+            manageHistoryItemElem(chat, id)
 
-            manageHistoryItemElem(chat, previousId)
-
-            return loadedChatId
+            return chat
         }
 
         async function createChatLogName(log) {
@@ -1877,6 +1963,7 @@
 
         function onEnd(id) {
             document.querySelector(`#historyItems .generating[data-id="${id}"]`)?.classList.remove('generating')
+            document.querySelector(`#activeChats .generating[data-id="${id}"]`)?.classList.remove('generating')
 
             if (loadedChatId !== id) return
 
@@ -1950,7 +2037,7 @@
                     content += '\nHere are some previous user chat logs with you that you could reference on the occasion:'
                     let i = 1;
                     history.slice(0, 10).forEach(h => {
-                        content += `\n${1}.: ${h.log[0].content.substring(0, 255)}`
+                        content += `\n${1}.: ${h.log[0].content?.substring(0, 255)}`
                     })
                 }
 
@@ -2019,28 +2106,49 @@
             enableClearHistory()
         }
 
-        function manageHistoryItemElem(chat, previousId) {
+        function manageHistoryItemElem(chat) {
             if (!chat.log?.[0]) return
-            if (previousId) {
-                Array.from(historyItemsElem.children).forEach(c => {
-                    if (c.dataset.id === previousId) {
-                        historyItemsElem.removeChild(c)
-                    }
-                })
-                enableClearHistory()
-            }
+
+            Array.from(historyItemsElem.children).forEach(c => {
+                if (c.dataset.id === chat.id) {
+                    historyItemsElem.removeChild(c)
+                }
+            })
+            enableClearHistory()
+
+            const generating = chat.log[chat.log.length - 1].role === 'user' && parseInt(chat.id) > (new Date().getTime() - 4e5)
             const option = document.createElement('button')
             option.dataset.id = chat.id
             option.textContent = chat.name || chat.log[0].content
-            option.className = chat.log[chat.log.length - 1].role === 'user' && parseInt(chat.id) > (new Date().getTime() - 4e5) ? 'generating' : ''
+            option.className = generating ? 'generating' : ''
             option.onclick = () => loadHistoryLog(chat)
             historyItemsElem.prepend(option)
+
+            const activeElem = document.createElement('button')
+            activeElem.dataset.id = chat.id
+            activeElem.innerHTML = `<span>${chat.name || chat.log[0].content}</span>`
+            activeElem.className = generating ? 'generating' : loadedChatId === chat.id ? 'active' : ''
+            activeElem.onclick = () => {
+                if (activeElem.classList.contains('generating')) return
+                if (loadedChatId === chat.id) {
+                    const e = document.querySelector(`#activeChats button[data-id="${chat.id}"]`)
+                    e.previousElementSibling.click()
+                    e.remove()
+                } else {
+                    loadHistoryLog(chat)
+                }
+            }
+            const alreadyActiveElem = document.querySelector(`#activeChats button[data-id="${chat.id}"]`)
+            if (!alreadyActiveElem && generating) {
+                activeChatsElem.appendChild(activeElem)
+            } else {
+                alreadyActiveElem?.replaceWith(activeElem)
+            }
         }
 
         async function loadHistoryLog(chat) {
             closeMenu()
             clearMemory()
-            chatMemory = chat.log
             loadedChatId = chat.id
             document.body.classList.remove('new')
             let toolCalls = []
@@ -2066,10 +2174,17 @@
                 }
             }
             hljs.highlightAll()
+            showActiveChat()
             document.body.classList[chatStreams[chat.id]?.isGenerating ? 'add' : 'remove']('generating')
             chatStreams[chat.id]?.isGenerating && onToken('', chat.id)
             window.scrollTo(0, document.documentElement.scrollHeight)
             setTimeout(() => window.scrollTo(0, document.documentElement.scrollHeight), 280)
+        }
+
+        function showActiveChat() {
+            document.querySelectorAll('#activeChats button').forEach(elem => {
+                elem.classList[elem.dataset.id === loadedChatId ? 'add' : 'remove']('active')
+            })
         }
 
         function addThinkingAndKatexSupport () {
@@ -2201,6 +2316,7 @@
         function startNew() {
             closeMenu()
             sayHello()
+            setTimeout(() => userInputElem.focus(), 800)
         }
 
         function openMenu(menu) {
@@ -2255,6 +2371,7 @@
             window.historyItemsElem = document.getElementById('historyItems')
             window.settingsMenuElem = document.getElementById('settingsMenu')
             window.scrolldownElem = document.getElementById('scrolldown')
+            window.activeChatsElem = document.getElementById('activeChats')
 
             addThinkingAndKatexSupport()
             loadSettings()
@@ -2317,6 +2434,7 @@
             window.addEventListener('scroll', function () {
                 const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 180
                 scrolldownElem.className = isAtBottom ? '' : 'visible'
+                activeChatsElem.className = isAtBottom ? 'visible' : ''
             })
 
             fileInputElem.addEventListener('change' , handleFileUpload);
