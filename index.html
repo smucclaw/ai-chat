@@ -647,9 +647,9 @@
             position: absolute;
             left: 0;
             right: 0;
-            top: -36px;
-            height: 42px;
-            padding: 0 13px;
+            top: -48px;
+            height: 32px;
+            padding: 12px 13px;
             transform-origin: 42px 50%;
             transition: all .2s linear;
             opacity: 0;
@@ -672,7 +672,7 @@
             width: fit-content;
             max-width: 220px;
             height: 32px;
-            box-shadow: 0 -2px 25px #00000055;
+            box-shadow: 0 4px 12px #00000022;
             border: 1px solid #383838;
             border-radius: 16px;
             cursor: pointer;
@@ -1519,20 +1519,9 @@
             if (!value) {
                 blockAutoScrolling = false
                 document.body.style.removeProperty('--offset')
-                // setTimeout(() => {
-                //     if (!loadedChat.log.length) {
-                //         document.body.classList.add('new')
-                //     }
-                // }, 300);
             } else {
                 blockAutoScrolling = document.body.classList.contains('new')
                 document.body.style.setProperty('--offset', value)
-                if (isAvailable && window.innerWidth <= 768) {
-                    // document.body.classList.remove('new')
-                    setTimeout(() => {
-                        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
-                    }, 100)
-                }
             }
         }
 
@@ -2141,6 +2130,7 @@
             const alreadyActiveElem = document.querySelector(`#activeChats button[data-id="${chat.id}"]`)
             if (!alreadyActiveElem && generating) {
                 activeChatsElem.appendChild(activeElem)
+                activeChatsElem.scrollTo({ left: activeChatsElem.scrollWidth, behavior: 'smooth' })
             } else {
                 alreadyActiveElem?.replaceWith(activeElem)
             }
