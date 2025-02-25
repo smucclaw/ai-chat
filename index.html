@@ -129,18 +129,6 @@
             overflow-y: auto;
         }
 
-        @media (max-width: 680px) {
-            .header button span {
-                display: none;
-            }
-        }
-
-        @media (max-width: 1008px) {
-            .menu {
-                height: calc(100dvh - calc(59px + var(--offset)));
-            }
-        }
-
         @media (min-width: 1340px) {
             .chat-container .chat-messages {
                 padding-left: 100px;
@@ -652,8 +640,6 @@
             padding: 12px 13px;
             transform-origin: 50% 200%;
             transition: all .2s linear;
-            opacity: 0;
-            transform: scale(.95) translateY(28px);
             display: flex;
             gap: 8px;
             overflow: hidden;
@@ -1185,6 +1171,22 @@
         .new footer {
             opacity: 1;
             transition: opacity .3s ease-in-out;
+        }
+
+        @media (max-width: 680px) {
+            .header button span {
+                display: none;
+            }
+            #activeChats {
+                opacity: 0;
+                transform: scale(.95) translateY(28px);
+            }
+        }
+
+        @media (max-width: 1008px) {
+            .menu {
+                height: calc(100dvh - calc(59px + var(--offset)));
+            }
         }
     </style>
 </head>
