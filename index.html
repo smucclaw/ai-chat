@@ -1724,7 +1724,7 @@
 
             const prompt = {
                 role: 'user',
-                content: messageText || userInputElem.value.trim().replace(/</g, '&lt;').replace(/>/g, '&gt;'),
+                content: messageText || userInputElem.value.trim(),
                 files: !messageText && attachedFiles
             }
 
@@ -1862,7 +1862,7 @@
             const generating = chat.log[chat.log.length - 1].role === 'user' && parseInt(chat.updated) > (new Date().getTime() - 4e5)
             const activeElem = document.createElement('button')
             activeElem.dataset.id = chat.id
-            activeElem.innerHTML = `<span>${chat.name || chat.log[0].content}</span>`
+            activeElem.innerHTML = `<span></span>`
             activeElem.className = generating ? 'generating' : loadedChatId === chat.id ? 'active' : ''
             activeElem.onclick = () => {
                 if (loadedChatId === chat.id && !activeElem.classList.contains('generating')) {
@@ -1881,6 +1881,7 @@
             } else {
                 alreadyActiveElem?.replaceWith(activeElem)
             }
+            activeElem.lastElementChild.textContent = chat.name || chat.log[0].content
         }
 
         async function createChatLogName(log) {
