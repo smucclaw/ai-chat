@@ -1,8 +1,18 @@
 # AI Chat
-A simple AI chat UI to connect to OpenAI v1 compatible API streaming endpoints. Supports markdown, code and math highlighting and uses local-storage for chat history. Careful: Can make snarky remarks.
+A simple AI chat UI to connect to OpenAI v1 compatible API streaming endpoints. 
+
+Supports markdown, code and math highlighting and uses local-storage for chat history.
+Supports a few tool calls:
+1. Basic web search with Google Custom Search credentials
+2. Basic weather lookup from OpenMeteo
+3. User chat history inquiries
+4. Basic reasoning if you ask it to do research
+
 
 # Getting started
-Recommending LM Studio to run server APIs and `llama-3.2-3b-instruct` as a fast, ease to host model to get started with for conversations. It's configured as default in the `index.html` and with a max-length of 20000. Adjust to your preferences.
+I can recommend LM Studio to run server APIs. Use a decently capable model as `Chat Model` and a fast, easy to run one as `Summary Model`. The latter enables automatic naming of conversations and the suggestion of follow-up topics.
+
+Hint: In the `index.html` is a max-length of 20,000 characters hardcoded. Adjust to your preferences.
 
 ---
 

@@ -687,7 +687,7 @@
             padding: 0 10px;
             font-size: .85em;
             width: fit-content;
-            max-width: 220px;
+            max-width: 38%;
             height: 32px;
             box-shadow: 0 4px 12px #00000022;
             border: 1px solid #383838;
@@ -2283,6 +2283,9 @@
         function showActiveChat() {
             document.querySelectorAll('#activeChats button').forEach(elem => {
                 elem.classList[elem.dataset.id === loadedChatId ? 'add' : 'remove']('active')
+                if (elem.dataset.id === loadedChatId) {
+                    elem.scrollIntoView({ behavior: 'smooth', inline: 'center' })
+                }
             })
         }
 
