@@ -2268,7 +2268,7 @@
             const timeElem = document.createElement('span')
             timeElem.className = 'updated'
 
-            const updateTime = parseInt(chat.updated || chat.id)
+            const updateTime = 1733097600000// parseInt(chat.updated || chat.id)
             const now = new Date().getTime()
             const diff = now - updateTime
             
@@ -2282,7 +2282,7 @@
             } else if (diff < 604800000) { // less than a week
               timeText = `${Math.floor(diff / 86400000)}d ago`
             } else {
-              timeText = new Date(updateTime).toLocaleDateString()
+              timeText = new Date(updateTime).toLocaleDateString(undefined, { day: "numeric", year: 'numeric', month: 'short' })
             }
             
             titleElem.textContent = chat.name || chat.log[0].content
