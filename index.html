@@ -1454,7 +1454,7 @@
         }
 
         async function search_user_history({ keywords }, id) {
-            list = keywords.map(k => k.toLowerCase())
+            list = typeof keywords === 'object' ? keywords.map(k => k.toLowerCase()) : [keywords.toString().toLowerCase()]
             const history = (JSON.parse(localStorage.getItem('history')) || []).filter(h => h.id !== loadedChatId)
             const matching = history.filter(h => list.find(k => h.log[0].content.toLowerCase().includes(k.trim())))
             const logs = (matching?.length ? matching : history).slice(0, 3).map(h => h.log)
@@ -2051,7 +2051,13 @@
             isAvailable = new Date().getTime()
             askButtonElem.disabled = false
 
-            sayHello()
+            if (location.search) {
+                const params = new URLSearchParams(location.search)
+                const q = params.get('q')
+                sendMessage(q)
+            } else {
+                sayHello()
+            }
           } catch (error) {
             console.error(error)
             clearMemory()
