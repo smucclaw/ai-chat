@@ -331,6 +331,13 @@
             animation: spin 1s linear infinite;
         }
 
+        #historyItems .updated {
+            color: #ffffff55;
+            font-size: .85em;
+            margin-top: .2em;
+            display: block;
+        }
+
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
@@ -2043,14 +2050,16 @@
                 modelInfoElem.textContent = m.name || m.id
               }
               const option = document.createElement('button')
+              const text = document.createElement('span')
               option.dataset.id = m.id
-              option.textContent = m.name || m.id
+              text.textContent = m.name || m.id
               option.onclick = onclick
               option.ondblclick = function (e) {
                 DEFAULT_MODEL = m.id
                 const dm = document.getElementById('DEFAULT_MODEL')
                 dm.value = dm.value.trim() ? dm.value + ', ' + m.id : m.id
               }
+              option.appendChild(text)
               modelSectionElem.appendChild(option)
               if (!selectedModel || defaultModels.includes(m.id)) {
                 onclick();
@@ -2210,9 +2219,9 @@
             const m = new RegExp(`(${searchElem.value})`, 'gi')
             searchElem.dataset.q = searchElem.value
             Array.from(items.children).forEach(elem => {
-                if (elem.innerText.toLowerCase().match(m)) {
+                if (elem.firstElementChild?.innerText.toLowerCase().match(m)) {
                     elem.style.display = 'block'
-                    elem.innerHTML = elem.innerText.replace(m, '<b>$1</b>')
+                    elem.firstElementChild.innerHTML = elem.firstElementChild.innerText.replace(m, '<b>$1</b>')
                 } else {
                     elem.style.display = 'none'
                 }
@@ -2247,9 +2256,36 @@
             const generating = chat.log[chat.log.length - 1].role === 'user' && parseInt(chat.updated) > (new Date().getTime() - 4e5)
             const option = document.createElement('button')
             option.dataset.id = chat.id
-            option.textContent = chat.name || chat.log[0].content
             option.className = generating ? 'generating' : ''
             option.onclick = () => loadHistoryLog(chat)
+            
+            const titleElem = document.createElement('span')
+            const timeElem = document.createElement('span')
+            timeElem.className = 'updated'
+
+            const updateTime = parseInt(chat.updated || chat.id)
+            const now = new Date().getTime()
+            const diff = now - updateTime
+            
+            let timeText = ''
+            if (diff < 60000) { // less than a minute
+              timeText = 'just now'
+            } else if (diff < 3600000) { // less than an hour
+              timeText = `${Math.floor(diff / 60000)}m ago`
+            } else if (diff < 86400000) { // less than a day
+              timeText = `${Math.floor(diff / 3600000)}h ago`
+            } else if (diff < 604800000) { // less than a week
+              timeText = `${Math.floor(diff / 86400000)}d ago`
+            } else {
+              const date = new Date(updateTime)
+              timeText = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`
+            }
+            
+            titleElem.textContent = chat.name || chat.log[0].content
+            timeElem.textContent = timeText
+            option.appendChild(titleElem)
+            option.appendChild(timeElem)
+
             historyItemsElem.prepend(option)
         }
 
