@@ -2242,33 +2242,15 @@
             const history = JSON.parse(localStorage.getItem('history')) || []
             history.forEach(chat => manageHistoryItemElem(chat))
             
+            setInterval(manageHistoryItemElem, 60000)
+
             if (!history.length) return
 
             enableClearHistory()
         }
 
-        function manageHistoryItemElem(chat) {
-            if (!chat.log?.[0]) return
-
-            Array.from(historyItemsElem.children).forEach(c => {
-                if (c.dataset.id === chat.id) {
-                    historyItemsElem.removeChild(c)
-                }
-            })
-            resetSearch(historyMenuElem)
-            enableClearHistory()
-
-            const generating = chat.log[chat.log.length - 1].role === 'user' && parseInt(chat.updated) > (new Date().getTime() - 4e5)
-            const option = document.createElement('button')
-            option.dataset.id = chat.id
-            option.className = generating ? 'generating' : ''
-            option.onclick = () => loadHistoryLog(chat)
-            
-            const titleElem = document.createElement('span')
-            const timeElem = document.createElement('span')
-            timeElem.className = 'updated'
-
-            const updateTime = parseInt(chat.updated || chat.id)
+        function getRelativeTime (timeSec) {
+            const updateTime = parseInt(timeSec, 10)
             const now = new Date().getTime()
             const diff = now - updateTime
             
@@ -2284,12 +2266,41 @@
             } else {
               timeText = new Date(updateTime).toLocaleDateString(undefined, { day: "numeric", year: 'numeric', month: 'short' })
             }
-            
+            return timeText
+        }
+
+        function manageHistoryItemElem(chat) {
+            if (!chat?.log?.[0]) {
+                console.log('Time update')
+                Array.from(historyItemsElem.children).forEach(e => {
+                    if (e.lastElementChild) {
+                        e.lastElementChild.textContent = getRelativeTime(e.dataset.updated)
+                    }
+                })
+                return
+            }
+
+            Array.from(historyItemsElem.children).forEach(c => {
+                if (c.dataset.id === chat.id) {
+                    historyItemsElem.removeChild(c)
+                }
+            })
+            resetSearch(historyMenuElem)
+            enableClearHistory()
+
+            const generating = chat?.log[chat.log.length - 1].role === 'user' && parseInt(chat?.updated) > (new Date().getTime() - 4e5)
+            const option = document.createElement('button')
+            option.dataset.id = chat.id
+            option.dataset.updated = chat.updated
+            option.className = generating ? 'generating' : ''
+            option.onclick = () => loadHistoryLog(chat)
+            const titleElem = document.createElement('span')
             titleElem.textContent = chat.name || chat.log[0].content
-            timeElem.textContent = timeText
+            const timeElem = document.createElement('span')
+            timeElem.className = 'updated'
+            timeElem.textContent = getRelativeTime(chat.updated || chat.id)
             option.appendChild(titleElem)
             option.appendChild(timeElem)
-
             historyItemsElem.prepend(option)
         }
 
