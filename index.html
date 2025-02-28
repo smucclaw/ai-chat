@@ -274,11 +274,11 @@
             margin: 8px 0 0;
         }
 
-        #historySearch {
+        .search-input {
             padding-right: 32px;
         }
 
-        #historySearch + .clear {
+        .search-input + .clear {
             position: absolute;
             right: 19px;
             top: 13px;
@@ -299,7 +299,7 @@
             transition: all .2s linear;
         }
 
-        #historySearch[data-q=""] + .clear {
+        .search-input[data-q=""] + .clear {
             opacity: 0;
             transform: scale(.8);
         }
@@ -341,11 +341,12 @@
             right: 0px;
         }
 
-        #modelSection:not(:empty):before {
-            display: block;
-            content: 'Models';
-            color: #555;
-            margin: 4px 0 -4px;
+        #modelMenu:has(#modelSection:empty) {
+            display: none;
+        }
+
+        #modelMenu:has(#modelSection:empty) + div {
+            margin-top: 0;
         }
 
         #modelSection button:not(.checked) {
@@ -446,6 +447,19 @@
             color: #555;
             border-radius: 15px;
             cursor: pointer;
+            white-space: no-wrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+
+        .ai-message:last-child .followups button {
+            animation: load 1.5s ease-in-out 1;
+        }
+        .ai-message:last-child .followups button:nth-child(1) {
+            animation: load .5s ease-in-out 1;
+        }
+        .ai-message:last-child .followups button:nth-child(2) {
+            animation: load 1s ease-in-out 1;
         }
 
         .system-message {
@@ -487,7 +501,7 @@
             border: 1px solid #333;
             box-sizing: border-box;
             --background: #11111166;
-            max-height: 60vh;
+            max-height: 56vh;
             overflow: hidden;
             overflow-y: auto;
         }
@@ -1228,17 +1242,26 @@
     <div class="aichat">
         <div class="menus">
             <div class="menu" id="historyMenu">
-                <input type="text" id="historySearch" placeholder="Search history ..." autocorrect="off" data-q="" onkeyup="searchHistory(this)" />
-                <button onclick="this.previousElementSibling.value = ''; searchHistory(this.previousElementSibling);" class="clear">&times;</button>
-                <div id="historyItems"></div>
+                <input type="text" class="search-input" placeholder="Search history ..." autocorrect="off" data-q="" onkeyup="search(this, historyItemsElem)" />
+                <button onclick="this.previousElementSibling.value = ''; search(this.previousElementSibling, historyItemsElem);" class="clear">&times;</button>
+                <div class="items" id="historyItems"></div>
             </div>
             <div class="menu" id="settingsMenu">
-                <div id="modelSection"></div>
+                <div id="modelMenu">
+                    <input type="text" class="search-input" placeholder="Search model name ..." autocorrect="off" data-q="" onkeyup="search(this, modelSectionElem)" />
+                    <button onclick="this.previousElementSibling.value = ''; search(this.previousElementSibling, modelSectionElem);" class="clear">&times;</button>
+                    <div class="items" id="modelSection"></div>
+                </div>
                 <div>
                     <h4>Server</h4>
                     <input type="text" id="API_URL" placeholder="API URL" autocorrect="off" data-default="http://localhost:1234" onblur="saveSetting('API_URL')" class="setting" />
                     <input type="text" id="API_KEY" placeholder="API key" autocorrect="off" autocomplete="off" data-default="lm-studio" onblur="saveSetting('API_KEY')" class="setting" />
                     <button id="reconnect" onclick="closeMenu(); loadModels()">Reconnect</button>
+                </div>
+                <div>
+                    <h4>Default Models</h4>
+                    <input type="text" id="DEFAULT_MODEL" placeholder="for chat" autocorrect="off" data-default="" onblur="saveSetting('DEFAULT_MODEL')" class="setting" />
+                    <input type="text" id="SUMMARY_MODEL" placeholder="for text summary" autocorrect="off" data-default="" onblur="saveSetting('SUMMARY_MODEL')" class="setting" />
                 </div>
                 <div>
                     <h4>System prompt</h4>
@@ -1276,7 +1299,6 @@
     </div>
     <script>
         // Configuration
-        const DEFAULT_MODELS = ['llama-3.2-3b-instruct', 'meta-llama-3.1-8b-instruct', 'grok-2-1212']; // Use a non-reasoning very fast conversation model
         const MAX_TOKENS = 20000;
         const MAX_STORAGE_CHARS = 5242880; // 5MB character limit for localStorage
         const DEFAULT_GREETING = 'Howdy, is it time to help again?';
@@ -1652,27 +1674,34 @@
 
         async function suggestFollowUp(log, id) {
             if (!log?.length || !chatStreams[null]) return
-                try {
-                    const json = await chatStreams[null].call({
-                        messages: [{
-                            role: 'system',
-                            content: 'You\'re an AI with the sole purpose to suggest up to three short follow up topics worth researching given a specific context. Always respond in the form of a valid JSON arra containing strings.'
-                        }, {
-                            role: 'user',
-                            content: 'Return the JSON array with short follow up topics for:\n\n' + log[log.length - 1].content
-                        }]
-                    })
-                    const followUps = JSON.parse(json.content?.match(/(\[(\s*"[^"]*"\s*,?)*\s*\])/)?.[0])
-                    if (loadedChatId === id) {
-                        const elem = document.createElement('div')
-                        elem.innerHTML = followUps.map(f => `<button onclick="sendMessage('${f.replace(/(['"])/g, '\\$1')}')">${f}</button>`).join('')
-                        elem.className = 'followups'
-                        console.log(elem, chatMessagesElem.lastElementChild.lastElementChild)
-                        chatMessagesElem.lastElementChild.lastElementChild.insertAdjacentElement('beforebegin', elem)
-                    }
-                } catch (e) {
-                    console.error('Malformed follow-up resposne', e)
-                }
+            try {
+                const json = await chatStreams[null].call({
+                    messages: [{
+                        role: 'system',
+                        content: 'You\'re an AI with the sole purpose to suggest up to three follow up topics worth researching given a specific context with no more than 8 words. Always respond in the form of a valid JSON arra containing strings.'
+                    }, {
+                        role: 'user',
+                        content: 'Return the JSON array with short follow up topics for:\n\n' + log[log.length - 1].content
+                    }]
+                })
+                const followUps = JSON.parse(json.content?.match(/(\[(\s*"[^"]*"\s*,?)*\s*\])/)?.[0])
+                appendFollowUps(followUps, id)
+                
+                return followUps
+            } catch (e) {
+                console.error('Malformed follow-up resposne', e)
+            }
+        }
+
+        function appendFollowUps (followUps, id) {
+            if (loadedChatId === id && followUps?.length) {
+                const elem = document.createElement('div')
+                elem.innerHTML = followUps.slice(0, 3).map(f => `<button onclick="sendMessage('${f.replace(/(['"])/g, '\\$1')}')">${f}</button>`).join('')
+                elem.className = 'followups'
+                console.log(elem, chatMessagesElem.lastElementChild.lastElementChild)
+                chatMessagesElem.lastElementChild.lastElementChild.insertAdjacentElement('beforebegin', elem)
+                window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
+            }
         }
 
         async function sendMessage(messageText) {
@@ -1682,6 +1711,8 @@
                 chatStreams[loadedChatId].stop()
                 return
             }
+
+            if (document.body.classList.contains('generating')) return
 
             const prompt = {
                 role: 'user',
@@ -1693,6 +1724,7 @@
 
             userInputElem.blur()
             document.body.classList.remove('new')
+            document.body.classList.add('generating')
             window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
 
             const systemPrompt = {
@@ -1722,10 +1754,11 @@
 
             if (!messages.length) {
                 await appendMessage({ text: 'Prompt size is too large.', sender: 'system' })
+                document.body.classList.remove('generating')
                 return
             }
 
-            document.body.classList.add('generating')
+
             await appendMessage({ text: prompt.content, sender: 'user', files: prompt.files })
 
             userInputElem.value = ''
@@ -1740,15 +1773,15 @@
                 apiUrl: window.API_URL,
                 apiKey: window.API_KEY,
                 id: loadedChatId,
-                onComplete: (messages, status, id) => {
+                onComplete: async (messages, status, id) => {
                     document.body.classList.remove('generating')
 
                     if(!messages?.length) return
 
                     messages[messages.length - 1].status = status
+
                     updateHistory(messages, id)
                     showActiveChat()
-                    suggestFollowUp(messages, id)
                 },
                 onToken,
                 onError,
@@ -1771,6 +1804,7 @@
 
         async function updateHistory(messages, id) {
             const isUser = messages[messages.length - 1]?.role === 'user'
+            const isAI = messages[messages.length - 1]?.role === 'assistant'
             const history = JSON.parse(localStorage.getItem('history')) || []
             const index = history?.findIndex(h => h.id === id)
 
@@ -1788,8 +1822,9 @@
                 }
             })
 
+            const followUps = isAI ? await suggestFollowUp(messages, id) : undefined
             const name = isUser ? await createChatLogName(log) : history?.[index]?.name
-            const chat = { id, updated, name, log }
+            const chat = { id, followUps, updated, name, log }
 
             if (index >= 0) {
                 history[index] = chat
@@ -1969,7 +2004,10 @@
           askButtonElem.disabled = true
 
           modelSectionElem.innerHTML = ''
+          resetSearch(modelMenuElem)
           selectedModel = ''
+
+          const defaultModels = DEFAULT_MODEL?.replace(/\s/g, '').split(',')
 
           try {
             const response = await fetch(window.API_URL + '/v1/models', {
@@ -1999,8 +2037,13 @@
               option.dataset.id = m.id
               option.textContent = m.name || m.id
               option.onclick = onclick
+              option.ondblclick = function (e) {
+                DEFAULT_MODEL = m.id
+                const dm = document.getElementById('DEFAULT_MODEL')
+                dm.value = dm.value.trim() ? dm.value + ', ' + m.id : m.id
+              }
               modelSectionElem.appendChild(option)
-              if (!selectedModel || DEFAULT_MODELS.includes(m.id)) {
+              if (!selectedModel || defaultModels.includes(m.id)) {
                 onclick();
               }
             });
@@ -2089,7 +2132,8 @@
 
             document.body.classList.add('new')
 
-            const model = loadedModels.find(m => DEFAULT_MODELS.includes(m.id))?.id
+            const summary_models = SUMMARY_MODEL?.replace(/\s/g, '').split(',')
+            const model = loadedModels.find(m => summary_models.includes(m.id))?.id
 
             if (model) {
                 let content = 'You\'re a professional entertainer. Say hello and ask how to help. It\'s okay to be mildly cynical. You must always use less than 30 words!'
@@ -2145,10 +2189,10 @@
             historyItemsElem.appendChild(option)
         }
 
-        function searchHistory(searchElem) {
+        function search(searchElem, items) {
             const m = new RegExp(`(${searchElem.value})`, 'gi')
             searchElem.dataset.q = searchElem.value
-            Array.from(historyItemsElem.children).forEach(elem => {
+            Array.from(items.children).forEach(elem => {
                 if (elem.innerText.toLowerCase().match(m)) {
                     elem.style.display = 'block'
                     elem.innerHTML = elem.innerText.replace(m, '<b>$1</b>')
@@ -2156,6 +2200,11 @@
                     elem.style.display = 'none'
                 }
             })
+        }
+
+        function resetSearch(container) {
+            container.firstElementChild.value = ''
+            search(container.firstElementChild, container.lastElementChild)
         }
 
         function loadHistory () {
@@ -2175,6 +2224,7 @@
                     historyItemsElem.removeChild(c)
                 }
             })
+            resetSearch(historyMenuElem)
             enableClearHistory()
 
             const generating = chat.log[chat.log.length - 1].role === 'user' && parseInt(chat.updated) > (new Date().getTime() - 4e5)
@@ -2214,6 +2264,7 @@
                 }
             }
             hljs.highlightAll()
+            appendFollowUps(chat.followUps, chat.id)
             manageActiveItemElem(chat)
             showActiveChat()
             document.body.classList[chatStreams[chat.id]?.isGenerating ? 'add' : 'remove']('generating')
@@ -2391,7 +2442,6 @@
             } catch(error) {
                 console.error('Error: ', error);
             }
-            loadModels();
         }
 
         window.addEventListener('focus', function handleFocus() {
@@ -2406,6 +2456,7 @@
             window.chatMessagesElem = document.getElementById('chatMessages')
             window.fileInputElem = document.getElementById('fileInput')
             window.fileAttachmentsElem = document.getElementById('fileAttachments')
+            window.modelMenuElem = document.getElementById('modelMenu')
             window.modelSectionElem = document.getElementById('modelSection')
             window.modelInfoElem = document.getElementById('modelInfo')
             window.historyMenuElem = document.getElementById('historyMenu')
@@ -2414,8 +2465,8 @@
             window.scrolldownElem = document.getElementById('scrolldown')
             window.activeChatsElem = document.getElementById('activeChats')
 
-            addThinkingAndKatexSupport()
             loadSettings()
+            addThinkingAndKatexSupport()
             loadModels()
             loadHistory()
 
