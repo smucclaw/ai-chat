@@ -2277,8 +2277,7 @@
             } else if (diff < 604800000) { // less than a week
               timeText = `${Math.floor(diff / 86400000)}d ago`
             } else {
-              const date = new Date(updateTime)
-              timeText = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`
+              timeText = new Date(updateTime).toLocaleDateString()
             }
             
             titleElem.textContent = chat.name || chat.log[0].content
