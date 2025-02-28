@@ -222,9 +222,12 @@
             padding: 2px 8px;
             display: block;
             text-align: left;
-            max-height: 3.54em;
             border-radius: 0;
             width: 100%;
+        }
+
+        .menu button span {
+            max-height: 3.54em;
             overflow: hidden;
         }
 
@@ -2216,12 +2219,14 @@
         }
 
         function search(searchElem, items) {
-            const m = new RegExp(`(${searchElem.value})`, 'gi')
-            searchElem.dataset.q = searchElem.value
+            const q = searchElem.value.trim()
+            const m = new RegExp(`(${q})`, 'gi')
+            searchElem.dataset.q = q
             Array.from(items.children).forEach(elem => {
                 if (elem.firstElementChild?.innerText.toLowerCase().match(m)) {
+                    const text = elem.firstElementChild.innerText
                     elem.style.display = 'block'
-                    elem.firstElementChild.innerHTML = elem.firstElementChild.innerText.replace(m, '<b>$1</b>')
+                    elem.firstElementChild.innerHTML = q ? text.replace(m, '<b>$1</b>') : text
                 } else {
                     elem.style.display = 'none'
                 }
