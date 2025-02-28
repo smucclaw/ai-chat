@@ -1194,9 +1194,17 @@
             margin-top: -22px;
         }
 
-        .new button#scrolldown,
-        .new #activeChats {
+        .new button#scrolldown {
             display: none !important;
+        }
+
+        .new #activeChats {
+            top: auto;
+            bottom: -48px;
+        }
+
+        .new #activeChats button:first-child {
+            display: none;
         }
 
         .new footer {
@@ -2136,6 +2144,7 @@
             if (!isAvailable) return
 
             clearMemory()
+            showActiveChat()
 
             document.body.classList.add('new')
 
