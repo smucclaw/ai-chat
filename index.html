@@ -2268,7 +2268,7 @@
             const timeElem = document.createElement('span')
             timeElem.className = 'updated'
 
-            const updateTime = 1733097600000// parseInt(chat.updated || chat.id)
+            const updateTime = parseInt(chat.updated || chat.id)
             const now = new Date().getTime()
             const diff = now - updateTime
             
