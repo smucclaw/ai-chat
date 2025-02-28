@@ -1695,7 +1695,7 @@
         }
 
         function appendFollowUps (followUps, id) {
-            if (loadedChatId === id && followUps?.length && chatMessagesElem.lastElementChild.classList.contains('ai-message')) {
+            if (loadedChatId === id && followUps?.length && chatMessagesElem.lastElementChild?.classList.contains('ai-message')) {
                 const elem = document.createElement('div')
                 elem.innerHTML = followUps.slice(0, 3).map(f => `<button onclick="sendMessage('${f.replace(/(['"])/g, '\\$1')}')">${f}</button>`).join('')
                 elem.className = 'followups'
