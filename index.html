@@ -2622,6 +2622,7 @@
               if (diff < -65) {
                 currentX = diff
                 chatMessagesElem.style.transform = `translateX(${currentX}px)`
+                chatMessagesElem.style.opacity = Math.max(0, 1 - Math.abs(diff) / 250)
               }
             })
             
@@ -2629,6 +2630,7 @@
               touchEndX = e.changedTouches[0].screenX
               const swipeThreshold = 180
               chatMessagesElem.style.transform = ''
+              chatMessagesElem.style.opacity = 1
               if (touchStartX - touchEndX > swipeThreshold) {
                 startNew()
               }
