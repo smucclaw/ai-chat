@@ -431,6 +431,23 @@
             padding: 0;
         }
 
+        .ai-message .followups {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 1em;
+        }
+
+        .ai-message .followups button {
+            background: none;
+            border: 1px solid #333;
+            padding: 6px 12px;
+            font-size: 1em;
+            color: #555;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+
         .system-message {
             line-height: 1.5em;
             font-style: italic;
@@ -1633,7 +1650,32 @@
             return (window.USER_INFO ? '\nHere is some information the user would like you to know in general. Never ever reference it directly in your response but use it to relate better with the user!\n "' + window.USER_INFO + '"' : '') + '\n\n'
         }
 
-        async function sendMessage() {
+        async function suggestFollowUp(log, id) {
+            if (!log?.length || !chatStreams[null]) return
+                try {
+                    const json = await chatStreams[null].call({
+                        messages: [{
+                            role: 'system',
+                            content: 'You\'re an AI with the sole purpose to suggest up to three short follow up topics worth researching given a specific context. Always respond in the form of a valid JSON arra containing strings.'
+                        }, {
+                            role: 'user',
+                            content: 'Return the JSON array with short follow up topics for:\n\n' + log[log.length - 1].content
+                        }]
+                    })
+                    const followUps = JSON.parse(json.content?.match(/(\[(\s*"[^"]*"\s*,?)*\s*\])/)?.[0])
+                    if (loadedChatId === id) {
+                        const elem = document.createElement('div')
+                        elem.innerHTML = followUps.map(f => `<button onclick="sendMessage('${f.replace(/(['"])/g, '\\$1')}')">${f}</button>`).join('')
+                        elem.className = 'followups'
+                        console.log(elem, chatMessagesElem.lastElementChild.lastElementChild)
+                        chatMessagesElem.lastElementChild.lastElementChild.insertAdjacentElement('beforebegin', elem)
+                    }
+                } catch (e) {
+                    console.error('Malformed follow-up resposne', e)
+                }
+        }
+
+        async function sendMessage(messageText) {
             if (!isAvailable) return
 
             if (chatStreams[loadedChatId]?.isGenerating) {
@@ -1641,20 +1683,17 @@
                 return
             }
 
-            userInputElem.blur()
-
-            let messageText = userInputElem.value.trim()
-
-            if (!messageText && !attachedFiles.length) return
-
-            document.body.classList.remove('new')
-            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
-
             const prompt = {
                 role: 'user',
-                content: messageText,
-                files: attachedFiles
+                content: messageText || userInputElem.value.trim(),
+                files: !messageText && attachedFiles
             }
+
+            if (!prompt.content && !prompt.files.length) return
+
+            userInputElem.blur()
+            document.body.classList.remove('new')
+            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
 
             const systemPrompt = {
                 role: 'system',
@@ -1687,7 +1726,7 @@
             }
 
             document.body.classList.add('generating')
-            await appendMessage({ text: messageText, sender: 'user', files: attachedFiles })
+            await appendMessage({ text: prompt.content, sender: 'user', files: prompt.files })
 
             userInputElem.value = ''
             userInputElem.style.height = 'auto'
@@ -1709,6 +1748,7 @@
                     messages[messages.length - 1].status = status
                     updateHistory(messages, id)
                     showActiveChat()
+                    suggestFollowUp(messages, id)
                 },
                 onToken,
                 onError,
