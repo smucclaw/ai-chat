@@ -2601,14 +2601,48 @@
             })
 
             fileInputElem.addEventListener('change' , handleFileUpload);
-        });
+
+            let touchStartX = 0
+            let touchEndX = 0
+            let currentX = 0
+
+            document.addEventListener('touchstart', e => {
+              if (document.body.classList.contains('new')) return
+              if (e.target.closest('#activeChats') && activeChatsElem.scrollLeft < activeChatsElem.scrollWidth - activeChatsElem.clientWidth) return
+              touchStartX = e.changedTouches[0].screenX
+              currentX = 0
+            })
+            
+            document.addEventListener('touchmove', e => {
+              if (!touchStartX) return
+
+              const touchX = e.changedTouches[0].screenX
+              const diff = touchX - touchStartX
+              
+              if (diff < -65) {
+                currentX = diff
+                chatMessagesElem.style.transform = `translateX(${currentX}px)`
+              }
+            })
+            
+            document.addEventListener('touchend', e => {
+              touchEndX = e.changedTouches[0].screenX
+              const swipeThreshold = 180
+              chatMessagesElem.style.transform = ''
+              if (touchStartX - touchEndX > swipeThreshold) {
+                startNew()
+              }
+              touchStartX = 0
+            })
+        })
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js');
             })
             document.body.classList.add(window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'embedded');
-        };
+        }
     </script>
+
 </body>
 </html>
