@@ -2505,7 +2505,7 @@
 
                 const userElement = e.target.closest('.user-message')
                 if (userElement) {
-                    userInputElem.value = userElement.innerText;
+                    userInputElem.value = userElement.innerText.trim();
                 }
 
                 const inputElement = e.target.closest('.input-container')
