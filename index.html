@@ -2293,7 +2293,7 @@
             const generating = chat?.log[chat.log.length - 1].role === 'user' && parseInt(chat?.updated) > (new Date().getTime() - 4e5)
             const option = document.createElement('button')
             option.dataset.id = chat.id
-            option.dataset.updated = chat.updated
+            option.dataset.updated = chat.updated || chat.id
             option.className = generating ? 'generating' : ''
             option.onclick = () => loadHistoryLog(chat)
             const titleElem = document.createElement('span')
