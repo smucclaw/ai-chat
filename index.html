@@ -1735,15 +1735,15 @@
                 return
             }
 
-            document.body.classList.remove('new')
+            if (document.body.classList.contains('new')) {
+                clearMemory()
+                document.body.classList.remove('new')
+            }
+
             document.body.classList.add('generating')
             window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
 
             const { id, log } = await updateHistory([prompt], loadedChatId)
-
-            if (log.length === 1) {
-                clearMemory()
-            }
 
             const messages = [...log, prompt]
 
