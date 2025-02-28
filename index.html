@@ -447,7 +447,7 @@
             color: #666;
             border-radius: 15px;
             cursor: pointer;
-            white-space: no-wrap;
+            white-space: nowrap;
             text-overflow: ellipsis;
             overflow: hidden;
         }
@@ -1679,7 +1679,7 @@
                 const json = await chatStreams[null].call({
                     messages: [{
                         role: 'system',
-                        content: 'You\'re an AI with the sole purpose to suggest up to three follow up topics worth researching given a specific context with no more than 8 words. Always respond in the form of a valid JSON arra containing strings.'
+                        content: 'You\'re an AI with the sole purpose to suggest the three most relevant follow up topics worth researching given a specific text with no more than 8 words. Always respond in the form of a valid JSON arra containing strings.'
                     }, {
                         role: 'user',
                         content: 'Return the JSON array with short follow up topics for:\n\n' + log[log.length - 1].content
