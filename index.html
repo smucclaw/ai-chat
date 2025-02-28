@@ -1699,7 +1699,6 @@
                 const elem = document.createElement('div')
                 elem.innerHTML = followUps.slice(0, 3).map(f => `<button onclick="sendMessage('${f.replace(/(['"])/g, '\\$1')}')">${f}</button>`).join('')
                 elem.className = 'followups'
-                console.log(elem, chatMessagesElem.lastElementChild.lastElementChild)
                 chatMessagesElem.lastElementChild.lastElementChild.insertAdjacentElement('beforebegin', elem)
                 window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
             }
@@ -1877,7 +1876,6 @@
         }
 
         async function createChatLogName(log) {
-            console.log(log)
             if (!log?.length || !chatStreams[null]) return
             let name
             let i = 0
