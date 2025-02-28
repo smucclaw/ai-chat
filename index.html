@@ -2065,9 +2065,26 @@
               option.appendChild(text)
               modelSectionElem.appendChild(option)
               if (!selectedModel || defaultModels.includes(m.id)) {
-                onclick();
+                onclick()
               }
-            });
+            })
+
+            const summaryModels = SUMMARY_MODEL?.replace(/\s/g, '').split(',')
+            const summaryModel = loadedModels.find(m => summaryModels.includes(m.id))?.id
+
+            if (summaryModel) {
+                chatStreams[loadedChatId] = ChatStream.create({
+                    apiUrl: window.API_URL,
+                    apiKey: window.API_KEY,
+                    id: loadedChatId,
+                    model: summaryModel,
+                    onToken,
+                    onError,
+                    onStatus,
+                    onStart,
+                    onEnd
+                })
+            }
 
             isAvailable = new Date().getTime()
             askButtonElem.disabled = false
@@ -2161,10 +2178,7 @@
 
             document.body.classList.add('new')
 
-            const summary_models = SUMMARY_MODEL?.replace(/\s/g, '').split(',')
-            const model = loadedModels.find(m => summary_models.includes(m.id))?.id
-
-            if (model) {
+            if (chatStreams[loadedChatId]) {
                 let content = 'You\'re a professional entertainer. Say hello and ask how to help. It\'s okay to be mildly cynical. You must always use less than 30 words!'
                 const history = JSON.parse(localStorage.getItem('history')) || []
                 if (history.length) {
@@ -2174,18 +2188,6 @@
                         content += `\n${1}.: ${h.log[0].content?.substring(0, 255)}`
                     })
                 }
-
-                chatStreams[loadedChatId] = ChatStream.create({
-                    apiUrl: window.API_URL,
-                    apiKey: window.API_KEY,
-                    id: loadedChatId,
-                    model,
-                    onToken,
-                    onError,
-                    onStatus,
-                    onStart,
-                    onEnd
-                })
 
                 chatStreams[loadedChatId].stream({
                     messages: [{
