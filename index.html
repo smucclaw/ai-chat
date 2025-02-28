@@ -444,7 +444,7 @@
             border: 1px solid #333;
             padding: 6px 12px;
             font-size: 1em;
-            color: #555;
+            color: #666;
             border-radius: 15px;
             cursor: pointer;
             white-space: no-wrap;
@@ -1569,6 +1569,7 @@
                 blockAutoScrolling = false
                 document.body.style.removeProperty('--offset')
             } else {
+                userInputElem.style.height = userInputElem.scrollHeight + 'px'
                 blockAutoScrolling = document.body.classList.contains('new')
                 document.body.style.setProperty('--offset', value)
             }
@@ -1716,21 +1717,28 @@
 
             const prompt = {
                 role: 'user',
-                content: messageText || userInputElem.value.trim(),
+                content: messageText || userInputElem.value.trim().replace(/</g, '&lt;').replace(/>/g, '&gt;'),
                 files: !messageText && attachedFiles
             }
 
             if (!prompt.content && !prompt.files.length) return
 
             userInputElem.blur()
-            document.body.classList.remove('new')
-            document.body.classList.add('generating')
-            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
+            userInputElem.style.height = 'auto'
 
             const systemPrompt = {
                 role: 'system',
                 content: (window.SYSTEM_PROMPT || '') + getUserInfo() + '\nNow is ' + new Date().toString()
             }
+
+            if (JSON.stringify([systemPrompt, prompt]).length > MAX_TOKENS) {
+                await appendMessage({ text: 'Prompt size is too large.', sender: 'system' })
+                return
+            }
+
+            document.body.classList.remove('new')
+            document.body.classList.add('generating')
+            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
 
             const { id, log } = await updateHistory([prompt], loadedChatId)
 
@@ -1751,13 +1759,6 @@
                     continue
                 }
             }
-
-            if (!messages.length) {
-                await appendMessage({ text: 'Prompt size is too large.', sender: 'system' })
-                document.body.classList.remove('generating')
-                return
-            }
-
 
             await appendMessage({ text: prompt.content, sender: 'user', files: prompt.files })
 
@@ -1876,6 +1877,7 @@
         }
 
         async function createChatLogName(log) {
+            console.log(log)
             if (!log?.length || !chatStreams[null]) return
             let name
             let i = 0
@@ -2472,7 +2474,7 @@
 
             userInputElem.addEventListener('input', function () {
                 userInputElem.style.height = 'auto'
-                userInputElem.style.height = Math.min(200, userInputElem.scrollHeight) + 'px'
+                userInputElem.style.height = userInputElem.scrollHeight + 'px'
             })
             
             userInputElem.addEventListener('keypress', e => {
