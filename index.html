@@ -320,6 +320,10 @@
             padding-right: 34px;
         }
 
+        #historyItems button span {
+            display: block;
+        }
+
         #historyItems button.generating:after {
             content: '';
             position: absolute;
@@ -338,7 +342,6 @@
             color: #ffffff55;
             font-size: .85em;
             margin-top: .2em;
-            display: block;
         }
 
         @keyframes spin {
@@ -2206,7 +2209,7 @@
 
             const option = document.createElement('button')
             option.id = 'clearHistory'
-            option.textContent = 'Clear history'
+            option.innerHTML = '<span>Clear history</span>'
             option.onclick = () => {
                 if (!confirm('Are you sure?\nI won\'t be able reference your previous queries anymore. *sadface*')) return
                 try {
