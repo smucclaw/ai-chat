@@ -2281,7 +2281,7 @@
             if (!chat?.log?.[0]) {
                 console.log('Time update')
                 Array.from(historyItemsElem.children).forEach(e => {
-                    if (e.lastElementChild) {
+                    if (e.lastElementChild && e.dataset.updated) {
                         e.lastElementChild.textContent = getRelativeTime(e.dataset.updated)
                     }
                 })
