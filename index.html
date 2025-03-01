@@ -2033,6 +2033,7 @@
           selectedModel = ''
 
           const defaultModels = DEFAULT_MODEL?.replace(/\s/g, '').split(',')
+          const q = location.search ? (new URLSearchParams(location.search)).get('q') : null
 
           try {
             const response = await fetch(window.API_URL + '/v1/models', {
@@ -2095,15 +2096,16 @@
             isAvailable = new Date().getTime()
             askButtonElem.disabled = false
 
-            if (location.search) {
-                const params = new URLSearchParams(location.search)
-                const q = params.get('q')
+            if (q) {
                 sendMessage(q)
             } else {
                 sayHello()
             }
           } catch (error) {
             console.error(error)
+            if (!userInputElem.value.trim()) {
+                userInputElem.value = q
+            }
             clearMemory()
             await appendMessage({ text: 'Configure a valid OpenAI v1 compatible API in the server settings.', sender: 'system' });
           }
