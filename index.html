@@ -1380,7 +1380,6 @@
         function clearMemory() {
             loadedChatId = null
             chatMessagesElem.innerHTML = ''
-            history.replaceState({}, document.title, location.pathname)
         }
 
         async function handleFileUpload(event) {
@@ -1787,8 +1786,10 @@
 
           const defaultModels = DEFAULT_MODEL?.replace(/\s/g, '').split(',')
           const q = location.search ? (new URLSearchParams(location.search)).get('q') : null
+          history.replaceState({}, document.title, location.pathname)
 
           try {
+            
             const response = await fetch(window.API_URL + '/v1/models', {
               headers: {
                 'Authorization': `Bearer ${window.API_KEY}`,
