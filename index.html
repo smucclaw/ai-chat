@@ -1334,9 +1334,9 @@
             <div id="modelInfo"></div>
             <div class="attachments" id="fileAttachments"></div>
             <textarea id="userInput" placeholder="What would you like to know?" rows="1" onfocus="adjustOffset('0px')" onblur="adjustOffset()"></textarea>
-            <select id="modeSelect" title="Select prompt mode" onChange="userInputElem.placeholder = MODES[this.value].placeholder; modelInfoElem.textContent = MODES[this.value].name + ' - ' + selectedModel;"></select>
+            <select id="modeSelect" title="Select prompt mode" onChange="changeMode(this.value)"></select>
             <input type="file" id="fileInput" accept=".pdf,.txt,.csv,.tsv,.js,.json,.jsx,.ts,.tsx,.css,.scss,.less,.html,.htm,.xml,.yaml,.yml,.md,.py,.rb,.java,.c,.cpp,.h,.hpp,.cs,.php,.sql,.sh,.bash,.zsh" multiple>
-            <button id="addFiles" onclick="fileInputElem.click()" title="Attach PDF or Text files">Attach</button>
+            <button id="addFiles" onclick="fileInputElem.click()" title="Attach PDF or Text files">Files</button>
             <button id="ask" onclick="sendMessage()" disabled title="Start/stop answer generation"></button>
             <div id="activeChats" class="visible">
                 <button onclick="startNew()" title="Start a new chat">New</button>
@@ -1409,6 +1409,13 @@
             }
             appendFileElements(attachedFiles, fileAttachmentsElem);
             event.target.value = '';
+        }
+
+        function changeMode (value = 'chat') {
+            userInputElem.placeholder = MODES[value].placeholder
+            if (selectedModel) {
+                modelInfoElem.textContent = MODES[value].name + ' - ' + selectedModel
+            }
         }
 
         function appendFileElements(files, elem) {
@@ -1566,6 +1573,7 @@
                     showActiveChat()
 
                     modeSelectElem.value = 'chat'
+                    userInputElem.placeholder = 'Need more details?'
                     modelInfoElem.textContent = MODES.chat.name + ' - ' + selectedModel
                 },
                 onToken,

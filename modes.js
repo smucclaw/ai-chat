@@ -35,7 +35,7 @@ const MODES = {
   improve: {
     name: 'Improve',
     visible: true,
-    placeholder: 'What message would you like to improve?',
+    placeholder: 'What message do you want to improve?',
     tools: ['spawn_research_agents'],
     initialMessages: message => [
       {
