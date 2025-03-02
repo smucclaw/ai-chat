@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./highlight.css">
     <script src="./chatstream.js"></script>
+    <script src="./tools.js"></script>
+    <script src="./modes.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.6/marked.min.js" crossorigin="anonymous"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js" crossorigin="anonymous"></script>
     <link rel="manifest" href="manifest.json">
@@ -817,7 +819,7 @@
             z-index: 3;
             bottom: calc(14px + var(--offset));
             padding: 0;
-            left: 18px;
+            left: 86px;
             right: 18px;
             display: flex;
             gap: 6px;
@@ -874,20 +876,40 @@
             display: none;
         }
 
-        #addFiles {
+        #modeSelect {
+            appearance: none;
             position: absolute;
             left: 18px;
-            top: 21px;
-            height: 24px;
+            top: 22px;
             width: 24px;
+            height: 22px;
+            outline: none;
+            color: transparent;
             background: transparent;
             border: none;
             cursor: pointer;
-            opacity: 0.5;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ddd' d='M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 0 1 5 0v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5a2.5 2.5 0 0 0 5 0V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23aaa' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: center;
-            background-size: 20px;
+            background-size: 24px;
+        }
+
+        #addFiles {
+            position: absolute;
+            left: 18px;
+            bottom: calc(14px + var(--offset));
+            padding: 5px 6px 5px 20px;
+            border: 0;
+            border-radius: 3px;
+            overflow: hidden;
+            font-size: 13px;
+            line-height: 14px;
+            color: rgba(255, 255, 255, .6);
+            background-color: var(--background);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ffffff66' d='M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 0 1 5 0v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5a2.5 2.5 0 0 0 5 0V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: 3px 49%;
+            background-size: 14px;
         }
 
         button#ask {
@@ -1311,9 +1333,10 @@
         <div class="input-container">
             <div id="modelInfo"></div>
             <div class="attachments" id="fileAttachments"></div>
-            <textarea id="userInput" placeholder="What's on your mind ..." rows="1" onfocus="adjustOffset('0px')" onblur="adjustOffset()"></textarea>
+            <textarea id="userInput" placeholder="What would you like to know?" rows="1" onfocus="adjustOffset('0px')" onblur="adjustOffset()"></textarea>
+            <select id="modeSelect" title="Select prompt mode" onChange="userInputElem.placeholder = MODES[this.value].placeholder"></select>
             <input type="file" id="fileInput" accept=".pdf,.txt,.csv,.tsv,.js,.json,.jsx,.ts,.tsx,.css,.scss,.less,.html,.htm,.xml,.yaml,.yml,.md,.py,.rb,.java,.c,.cpp,.h,.hpp,.cs,.php,.sql,.sh,.bash,.zsh" multiple>
-            <button id="addFiles" onclick="fileInputElem.click()" title="Attach PDF or Text files"></button>
+            <button id="addFiles" onclick="fileInputElem.click()" title="Attach PDF or Text files">Attach</button>
             <button id="ask" onclick="sendMessage()" disabled title="Start/stop answer generation"></button>
             <div id="activeChats" class="visible">
                 <button onclick="startNew()" title="Start a new chat">New</button>
@@ -1325,268 +1348,15 @@
         // Configuration
         const MAX_TOKENS = 20000;
         const MAX_STORAGE_CHARS = 5242880; // 5MB character limit for localStorage
-        const DEFAULT_GREETING = 'Howdy, is it time to help again?';
-
-        const TOOLS = [{
-            type: "function", 
-            function: {
-                name: "search_web_info",
-                description: "Search the web for current information about a precise topic. Only use when asked about current events or specific information that need verification. Only use once.",
-                parameters: {
-                    type: "object",
-                    properties: {
-                        query: {
-                            type: "string",
-                            description: "The search query or keywords"
-                        }
-                    },
-                    required: ["query"]
-                }
-            }
-        }, {
-            type: "function",
-            function: {
-                name: "search_user_history",
-                description: "Retrieve the conversation history with the user by single key words. Use it to personalise or to find additional context from the past",
-                parameters: {
-                    type: "object",
-                    properties: {
-                        keywords: {
-                            type: "array",
-                            items: {
-                                type: "string"
-                            },
-                            description: "Key words to look for. Singular and plural matters."
-                        }
-                    }
-                },
-            }
-        }, {
-            type: "function",
-            function: {
-                name: "spawn_research_agents",
-                description: "Research in detail with the most recent and accurate information. Only use once!",
-                parameters: {
-                    type: "object",
-                    properties: {
-                        context: {
-                            type: "string",
-                            description: "A short summary of the user prompt and relevant user context"
-                        },
-                        key_topic: {
-                            type: "string",
-                            description: "The most important key topic you require to understand in detail to give a good answer."
-                        },
-                        helpful_topic: {
-                            type: "string",
-                            description: "Another important or helpful set of information or a different angle on the question you need up-to-date and relevant information on"
-                        },
-                        approach: {
-                            type: "string",
-                            description: "A helpful approach or method that you want to understand better to evaluate the other information"
-                        },
-                        challange: {
-                            type: "string",
-                            description: "A prompt that challenges your current assumptions to see if they hold up"
-                        }
-                    },
-                    required: ["context", "key_topic", "challenge"]
-                }
-            }
-        }, {
-            type: "function",
-            function: {
-                name: "get_weather",
-                description: "Retrieve the current or 7-day forecasted weather information at a specific latitude and longitude, only if asked",
-                parameters: {
-                    type: "object",
-                    properties: {
-                        latitude: {
-                            type: "number",
-                            description: "The exact latitude of the location on planet earth"
-                        },
-                        longitude: {
-                            type: "number",
-                            description: 'The exact longitude of the location on planet earth'
-                        },
-                        temp_unit: {
-                            type: "string",
-                            description: "Unit the temperature will be returned in",
-                            enum: ['fahrenheit', 'celsius']
-                        },
-                        speed_unit: {
-                            type: "string",
-                            description: "Unit the wind speed will be returned in",
-                            enum: ['kmh', 'mph']
-                        },
-                        forecast: {
-                            type: "boolean",
-                            description: "False returns the current weather. True the 7-day forecast."
-                        }
-                    },
-                    required: ["latitude", "longitude", "forecast"]
-                },
-            }
-        }]
-
-        // TOOL FUNCTIONS
-        async function search_web_info({ query }, id) {
-            if (!query.trim()) {
-                throw new Error('No query or keywords passed')
-            }
-            const response = await fetch(`https://www.googleapis.com/customsearch/v1?key=${GOOGLE_CUSTOMSEARCH_API_KEY}&cx=${GOOGLE_CUSTOMSEARCH_ENGINE_ID}&q=${encodeURIComponent(query)}`)
-            if (response.status === 403) {
-                return { error: 'Please tell the user that they have not set up their Google Custom Search key in the source code, yet.' }
-            } else if (response.status === 429) {
-                return { error: 'Please tell the user that we have made too many requests for the day.'}
-            } else if (!response.ok) {
-                throw new Error('Failed to provide search results') 
-            }
-            const data = await response.json()  
-            const results = { id, query, results: data.items.map(i => ({ title: i.title, snippet: i.snippet, url: i.link })) }
-            render_search_web_info(results, id)
-            return results
-        }
-
-        async function get_weather({ latitude, longitude, speed_unit = 'kmh', temp_unit = 'celsius', forecast = true }, id) {
-            const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}`
-                + (forecast
-                    ? '&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean,weather_code,wind_speed_10m_max,wind_direction_10m_dominant&forecast_days=7'
-                    : '&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m')
-                + `&wind_speed_unit=${speed_unit}&temperature_unit=${temp_unit}`)
-            const data = await response.json()
-            
-            const weatherCodes = { 0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast', 45: 'Foggy', 48: 'Depositing rime fog', 51: 'Light drizzle', 53: 'Moderate drizzle', 55: 'Dense drizzle', 61: 'Slight rain', 63: 'Moderate rain', 65: 'Heavy rain', 71: 'Slight snow', 73: 'Moderate snow', 75: 'Heavy snow', 77: 'Snow grains', 80: 'Slight rain showers', 81: 'Moderate rain showers', 82: 'Violent rain showers', 85: 'Slight snow showers', 86: 'Heavy snow showers', 95: 'Thunderstorm', 96: 'Thunderstorm with slight hail', 99: 'Thunderstorm with heavy hail' }
-
-            if (!forecast) {
-                data.current.conditions = weatherCodes[data.current.weather_code] || 'Unknown'
-                const results = { id, now: new Date().toString(), current: data.current }
-                render_get_weather(results, id)
-                return results
-            }
-
-            const days = data.daily.time.map((date, index) => {
-                return Object.keys(data.daily).reduce((acc, key) => {
-                    acc[key === 'time' ? 'date' : key] = data.daily[key][index]
-                    return acc
-                }, { day: new Date(date).toLocaleString(undefined, { weekday: 'short', timeZone: 'UTC' }), conditions: weatherCodes[data.daily.weather_code[index]] || 'Unknown' })
-            });
-
-            const results = { id, now: new Date().toString(), forecast: days }
-            render_get_weather(results, id)
-            return results
-        }
-
-        async function search_user_history({ keywords }, id) {
-            list = typeof keywords === 'object' ? keywords.map(k => k.toLowerCase()) : [keywords.toString().toLowerCase()]
-            const history = (JSON.parse(localStorage.getItem('history')) || []).filter(h => h.id !== loadedChatId)
-            const matching = history.filter(h => list.find(k => h.log[0].content.toLowerCase().includes(k.trim())))
-            const logs = (matching?.length ? matching : history).slice(0, 3).map(h => h.log)
-            const results = {
-                id,
-                description: 'The logs array contains the ' + (matching?.length ? `${matching.length} previous conversations matching the keywords "${keywords}"` : `latest ${logs.length} conversations`) + ' of ' + history.length + ' total past conversations with this user.',
-                logs
-            }
-            render_search_user_history(results, id)
-            return results
-        }
-
-        async function spawn_research_agents(topics, id) {
-            const context = topics.context?.trim()
-            let i = 1
-            topics = Object.keys(topics).reduce((a, v) => v !== 'context' && topics[v]?.trim() ? [...a, { i: i++, topic: topics[v] }] : a, [])
-            if (!topics?.length || !context) {
-                throw new Error('No topic to research specified')
-            }
-            const addedSteps = [{ i, topic: 'Verifying results and synthesizing ...' }]
-            render_spawn_research_agents({ topics: [...topics, ...addedSteps] }, id)
-            await Promise.all(topics.map(async topic => {
-                try {
-                    await new Promise(resolve => setTimeout(resolve, 250))
-                    const json = await chatStreams[id].call({
-                        id: id + '-' + topic.i,
-                        messages: [{
-                            role: 'system',
-                            content: 'You\'re an AI agent with the sole purpose to research one specific topic in a lot of detail by querying for relevant content. Summarize key findings using lists or data tables and only short paragraphs of text. Use the tools at your disposal. Now is ' + new Date().toString()
-                        }, {
-                            role: 'user',
-                            content: `Research this topic in detail and summarise your findings: "${topic.topic}" in the context of "${context}"`
-                        }],
-                        tools: TOOLS.filter(t => t.function.name !== 'spawn_research_agents')
-                    })
-                    topic.result = json.content?.replace(/<think>[\s\S]*<\/think>/g, '') || 'No information found'
-                } catch (e) {
-                    console.error('Could not research topic for ' + id, topic, e)
-                }
-            }))
-            await Promise.all(addedSteps.map(async step => {
-                try {
-                    await new Promise(resolve => setTimeout(resolve, 250))
-                    const json = await chatStreams[id].call({
-                        id: id + '-' + step.i,
-                        messages: [{
-                            role: 'system',
-                            content: 'You\'re an AI agent with the sole purpose to double-check the key finding to be most accurate and useful for a given prompt, suggest improvements and correct mistakes then summarize they key findings using a bullet point lists. Research critical questions by using tools.'
-                        }, {
-                            role: 'user',
-                            content: `Suggest ways to improve mistakes or errors on the following information for the prompt of "${context}":\n\n${topics.map(t => t.result).join('\n\n')}`
-                        }],
-                        tools: TOOLS.filter(t => t.function.name !== 'spawn_research_agents')
-                    })
-                    step.result = json.content?.replace(/<think>[\s\S]*<\/think>/g, '') || 'No information found'
-                } catch (e) {
-                    console.error('Could not research step for ' + id, step, e)
-                }
-            }))
-            return { id, topics: [...topics, ...addedSteps]  }
-        }
-        // TOOL FUNCTIONS END
-
-        // TOOL RESULT FUNCTIONS
-        async function render_search_web_info(results, id) {
-            const parts = id.split('-')
-            if (loadedChatId.toString() === parts[0] && results.id) {
-                id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
-                appendTool({ html: `<p>Web search: ${results.query}</p><ul class="items">${results.results.slice(0, 5).map(r => `<li><img src="${new URL(r.url).origin}/favicon.png" onerror="faviconError(this)" /><a href="${r.url}" rel="noopener nofollow noreferrer" target="_blank" title="${r.title.replace(/"/, '\"')}">${new URL(r.url).hostname.replace('www.','')}</a></li>`).join('')}${results.results.length > 5 ? `<li><span>... ${results.results.length - 5} more</span></li>` : ''}</ul>`, id })
-            }
-        }
-        async function render_get_weather(results, id) {
-            const parts = id.split('-')
-            if (loadedChatId.toString() === parts[0] && results.id) {
-                id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
-                appendTool({ html: '<p>' + (results.forecast ? 'Checking the 7-day weather forecast ...' : 'Checking today\'s weather ...') + '</p>', id })
-            }
-        }
-
-        async function render_search_user_history(results, id) {
-            const parts = id.split('-')
-            if (loadedChatId.toString() === parts[0] && results.id) {
-                const content = results.logs.map(r => {
-                    const html = r[0].content.replace(/</g, '&lt;').replace(/>/g, '&gt;')
-                    return `<li><span title="${r[0].content.replace(/"/g, '\"')}">"${html}"</span></li>`
-                })
-                id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
-                appendTool({ html: `<p>Reviewing chat history:</p><ul class="items">${content.join('')}</ul>`, id })
-            }
-        }
-
-        async function render_spawn_research_agents(results, id) {
-            const parts = id.split('-')
-            if (loadedChatId.toString() === parts[0]) {
-                appendTool({ html: `<p>Researching ...</p><ol>${results.topics.map(t => `<li><strong>${t.topic}</strong><br><div id='${id + '-' + t.i}' class="subcontent"></div></li>`).join('')}</ol>` })
-            }
-        }
-        // TOOL RESULT FUNCTIONS END
-
 
         // Globals. Don't touch.
-        let isAvailable = null
-        let loadedChatId = null
-        let selectedModel = null
-        let loadedModels = []
-        let attachedFiles = []
-        let blockAutoScrolling = false
-        let chatStreams = {}
+        let isAvailable = null,
+         loadedChatId = null,
+         selectedModel = null,
+         loadedModels = [],
+         attachedFiles = [],
+         blockAutoScrolling = false,
+         chatStreams = {}
         
         function adjustOffset(value) {
             if (!value) {
@@ -1693,21 +1463,11 @@
             }
         }
 
-        function getUserInfo() {
-            return (window.USER_INFO ? '\nHere is some information the user would like you to know in general. Never ever reference it directly in your response but use it to relate better with the user!\n "' + window.USER_INFO + '"' : '') + '\n\n'
-        }
-
         async function suggestFollowUp(log, id) {
             if (!log?.length || !chatStreams[null]) return
             try {
                 const json = await chatStreams[null].call({
-                    messages: [{
-                        role: 'system',
-                        content: 'You\'re an AI with the sole purpose to suggest the three most relevant follow up topics worth researching given a specific text with no more than 8 words. Always respond in the form of a valid JSON arra containing strings.'
-                    }, {
-                        role: 'user',
-                        content: 'Return the JSON array with short follow up topics for:\n\n' + log[log.length - 1].content
-                    }]
+                    messages: MODES.suggestFollowUps.initialMessages(log[log.length - 1].content)
                 })
                 const followUps = JSON.parse(json.content?.match(/(\[(\s*"[^"]*"\s*,?)*\s*\])/)?.[0])
                 appendFollowUps(followUps, id)
@@ -1724,7 +1484,7 @@
                 elem.innerHTML = followUps.slice(0, 3).map(f => `<button onclick="sendMessage('${f.replace(/(['"])/g, '\\$1')}')">${f}</button>`).join('')
                 elem.className = 'followups'
                 chatMessagesElem.lastElementChild.lastElementChild.insertAdjacentElement('beforebegin', elem)
-                window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
+                scrollToEnd
             }
         }
 
@@ -1749,12 +1509,10 @@
             userInputElem.blur()
             userInputElem.style.height = 'auto'
 
-            const systemPrompt = {
-                role: 'system',
-                content: (window.SYSTEM_PROMPT || '') + getUserInfo() + '\nNow is ' + new Date().toString()
-            }
+            const mode = modeSelectElem.value || 'chat'
+            const initialMessages = MODES[mode].initialMessages()
 
-            if (JSON.stringify([systemPrompt, prompt]).length > MAX_TOKENS) {
+            if (JSON.stringify([...initialMessages, prompt]).length > MAX_TOKENS) {
                 await appendMessage({ text: 'Prompt size is too large.', sender: 'system' })
                 return
             }
@@ -1771,7 +1529,7 @@
 
             const messages = [...log, prompt]
 
-            let tokenLength = JSON.stringify(systemPrompt).length + 40
+            let tokenLength = JSON.stringify(initialMessages).length
             for (let i = messages.length - 1; i >= 0; i--) {
                 tokenLength += JSON.stringify(messages[i]).length + 1
                 if (tokenLength > MAX_TOKENS) {
@@ -1820,9 +1578,9 @@
             })
 
             await chatStreams[id].stream({
-                messages: [systemPrompt, ...messages],
+                messages: [...initialMessages, ...messages],
                 model: selectedModel,
-                tools: TOOLS
+                tools: TOOLS.filter(t => MODES[mode].tools?.includes(t.function.name))
             })
         }
 
@@ -1906,18 +1664,12 @@
             let i = 0
             try {
                 const json = await chatStreams[null].call({
-                    messages: [{
-                        role: 'system',
-                        content: 'You\'re an AI with the sole purpose to summarise user prompts as a title to identify them again later quickly.'
-                    }, {
-                        role: 'user',
-                        content: 'Summarise the following prompts in one title with less than 10 words. Output only the title without any further explanation or added context!\n\n' + log.reduce((a, l) => {
-                            if (l.role === 'user') {
-                                a.push(`#${++i} Prompt: "${l.content}"` + (l.files?.length ? `, file attachments: "${l.files.map(f => f.name).join(', ')}"` : '') + '\n')
-                            }
-                            return a
-                        }, [])
-                    }]
+                    messages: MODES.titleize.initialMessages(log.reduce((a, l) => {
+                        if (l.role === 'user') {
+                            a.push(`#${++i} Prompt: "${l.content}"` + (l.files?.length ? `, file attachments: "${l.files.map(f => f.name).join(', ')}"` : '') + '\n')
+                        }
+                        return a
+                    }, []))
                 })
                 name = json.content
             } catch (e) {
@@ -2068,6 +1820,7 @@
                 DEFAULT_MODEL = m.id
                 const dm = document.getElementById('DEFAULT_MODEL')
                 dm.value = dm.value.trim() ? dm.value + ', ' + m.id : m.id
+                saveSetting('DEFAULT_MODEL')
               }
               option.appendChild(text)
               modelSectionElem.appendChild(option)
@@ -2187,24 +1940,12 @@
             document.body.classList.add('new')
 
             if (chatStreams[loadedChatId]) {
-                let content = 'You\'re a professional entertainer. Say hello and ask how to help. It\'s okay to be mildly cynical. You must always use less than 30 words!'
                 const history = JSON.parse(localStorage.getItem('history')) || []
-                if (history.length) {
-                    content += '\nHere are some previous user chat logs with you that you could reference on the occasion:'
-                    let i = 1;
-                    history.slice(0, 10).forEach(h => {
-                        content += `\n${1}.: ${h.log[0].content?.substring(0, 255)}`
-                    })
-                }
-
                 chatStreams[loadedChatId].stream({
-                    messages: [{
-                        role: 'user',
-                        content: content + getUserInfo(),
-                    }]
+                    messages: MODES.sayHello.initialMessages(history)
                 })
             } else {
-                await appendMessage({ text: DEFAULT_GREETING, sender: 'assistant' })
+                await appendMessage({ text: MODES.sayHello.placeholder, sender: 'assistant' })
                 askButtonElem.disabled = false
             }
         }
@@ -2537,6 +2278,7 @@
             window.chatMessagesElem = document.getElementById('chatMessages')
             window.fileInputElem = document.getElementById('fileInput')
             window.fileAttachmentsElem = document.getElementById('fileAttachments')
+            window.modeSelectElem = document.getElementById('modeSelect')
             window.modelMenuElem = document.getElementById('modelMenu')
             window.modelSectionElem = document.getElementById('modelSection')
             window.modelInfoElem = document.getElementById('modelInfo')
@@ -2550,6 +2292,19 @@
             addThinkingAndKatexSupport()
             loadModels()
             loadHistory()
+
+            Object.keys(MODES).forEach(k => {
+                const mode = MODES[k]
+                if (!mode.visible) return
+                const option = document.createElement('option')
+                if (!userInputElem.placeholder && mode.placeholder) {
+                    userInputElem.placeholder = mode.placeholder
+                    option.selected = true
+                }
+                option.value = k
+                option.textContent = mode.name
+                modeSelectElem.appendChild(option)
+            })
 
             userInputElem.addEventListener('input', function () {
                 userInputElem.style.height = 'auto'

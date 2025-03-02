@@ -1,0 +1,92 @@
+const MODES = {
+  lookup: {
+    name: 'Lookup',
+    visible: true,
+    placeholder: 'What would you like to know?',
+    tools: ['search_web', 'get_weather', 'search_user_history'],
+    initialMessages: () => [{
+      role: 'system',
+      content: `You're an answering AI and always use your tools to retrieve relevant and up-to-date information first. ${window.SYSTEM_PROMPT || ''} ${window.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
+    }]
+  },
+  research: {
+    name: 'Research',
+    visible: true,
+    placeholder: 'What can I research for you?',
+    tools: ['spawn_research_agents'],
+    initialMessages: () => [{
+      role: 'system',
+      content: `You're a research AI. Use the spawn_research_agents tool to gather in-depth information.\n${window.SYSTEM_PROMPT || ''} ${window.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
+    }]
+  },
+  chat: {
+    name: 'Chat',
+    visible: true,
+    placeholder: 'What\'s on your mind?',
+    tools: ['search_user_history'],
+    initialMessages: () => [{
+      role: 'system',
+      content: `You're a chat AI. You know the user and can lookup past conversations and context by keyword whenever relevant.\n${window.SYSTEM_PROMPT || ''}\n${window.USER_INFO ? `Here is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
+    }]
+  },
+  titleize: {
+    name: 'Create title for chat history',
+    initialMessages: prompt => [{
+        role: 'system',
+        content: 'You\'re an AI with the sole purpose to summarise user prompts as a title to identify them again later quickly.'
+    }, {
+        role: 'user',
+        content: 'Summarise the following prompts in one title with less than 10 words. Output only the title without any further explanation or added context!\n\n' + prompt
+    }]
+  },
+  suggestFollowUps: {
+    name: 'Suggest three follow-ups',
+    initialMessages: content => [{
+        role: 'system',
+        content: 'You\'re an AI with the sole purpose to suggest the three most relevant follow up topics worth researching given a specific text with no more than 8 words. Always respond in the form of a valid JSON arra containing strings.'
+    }, {
+        role: 'user',
+        content: 'Return the JSON array with short follow up topics for:\n\n' + content
+    }]
+  },
+  sayHello: {
+    name: 'Welcome the user',
+    placeholder: 'Howdy, is it time to help again?',
+    initialMessages: history => {
+      let content = ''
+      if (history?.length) {
+        content += '\nHere are some previous user chat logs with you that you could reference on the occasion:'
+        let i = 1;
+        history.slice(0, 10).forEach(h => {
+            content += `\n${1}.: ${h.log[0].content?.substring(0, 255)}`
+        })
+      }
+      return [{
+        role: 'user',
+        content: `You\'re a professional entertainer. Say hello and ask how to help. It\'s okay to be mildly cynical. You must always use less than 30 words!\n\n${content}\n\n${window.USER_INFO ? `Here is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}`,
+      }]
+    }
+  },
+  researchAgent: {
+    name: 'Researching a topic',
+    tools: ['search_web', 'get_weather', 'search_user_history'],
+    initialMessages: (topic, context) => [{
+        role: 'system',
+        content: 'You\'re an AI agent with the sole purpose to research one specific topic in a lot of detail by querying for relevant content. Summarize key findings using lists or data tables and only short paragraphs of text. Use the tools at your disposal. Now is ' + new Date().toString()
+    }, {
+        role: 'user',
+        content: `Research this topic in detail and summarise your findings: "${topic}" in the context of "${context}"`
+    }],
+  },
+  verify: {
+    name: 'Verify information and suggest improvements',
+    tools: ['search_web', 'get_weather', 'search_user_history'],
+    initialMessages: (info, context) => [{
+        role: 'system',
+        content: 'You\'re an AI agent with the sole purpose to double-check the key finding to be most accurate and useful for a given prompt, suggest improvements and correct mistakes then summarize they key findings using a bullet point lists. Research critical questions by using tools.'
+    }, {
+        role: 'user',
+        content: `Suggest ways to improve mistakes or errors on the following information for the prompt of "${context}":\n\n${info}`
+    }]
+  }
+}
