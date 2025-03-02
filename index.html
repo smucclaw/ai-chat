@@ -1413,9 +1413,7 @@
 
         function changeMode (value = 'chat') {
             userInputElem.placeholder = MODES[value].placeholder
-            if (selectedModel) {
-                modelInfoElem.textContent = MODES[value].name + ' - ' + selectedModel
-            }
+            modelInfoElem.textContent = (selectedModel ? selectedModel + ' - ' : '') + MODES[value].name
         }
 
         function appendFileElements(files, elem) {
@@ -1792,6 +1790,7 @@
           askButtonElem.disabled = true
 
           modelSectionElem.innerHTML = ''
+          modelInfoElem.textContent = MODES[modeSelectElem.value].name
           resetSearch(modelMenuElem)
           selectedModel = ''
 
@@ -1822,7 +1821,7 @@
               const onclick = function (e) {
                 selectedModel = m.id
                 Array.from(modelSectionElem.children).forEach(n => n.classList[n.dataset.id === m.id ? 'add' : 'remove']('checked'))
-                modelInfoElem.textContent = MODES[modeSelectElem.value].name + ' - ' + m.id
+                modelInfoElem.textContent = m.id + ' - ' + MODES[modeSelectElem.value].name
               }
               const option = document.createElement('button')
               const text = document.createElement('span')
@@ -2301,23 +2300,24 @@
             window.scrolldownElem = document.getElementById('scrolldown')
             window.activeChatsElem = document.getElementById('activeChats')
 
-            loadSettings()
-            addThinkingAndKatexSupport()
-            loadModels()
-            loadHistory()
-
             Object.keys(MODES).forEach(k => {
                 const mode = MODES[k]
                 if (!mode.visible) return
                 const option = document.createElement('option')
                 if (!userInputElem.placeholder && mode.placeholder) {
                     userInputElem.placeholder = mode.placeholder
+                    modelInfoElem.textContent = mode.name
                     option.selected = true
                 }
                 option.value = k
                 option.textContent = mode.name
                 modeSelectElem.appendChild(option)
             })
+
+            loadSettings()
+            addThinkingAndKatexSupport()
+            loadModels()
+            loadHistory()
 
             userInputElem.addEventListener('input', function () {
                 userInputElem.style.height = 'auto'
