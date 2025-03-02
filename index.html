@@ -1564,6 +1564,9 @@
 
                     updateHistory(messages, id)
                     showActiveChat()
+
+                    modeSelectElem.value = 'chat'
+                    modelInfoElem.textContent = MODES.chat.name + ' - ' + selectedModel
                 },
                 onToken,
                 onError,
@@ -1879,8 +1882,6 @@
 
             if (loadedChatId !== id) return
 
-            modeSelectElem.value = 'chat'
-            modelInfoElem.textContent = MODES.chat.name + ' - ' + selectedModel
             document.body.classList.remove('generating')
             scrollToEnd()
         }
