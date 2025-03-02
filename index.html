@@ -1841,8 +1841,7 @@
               }
             })
 
-            const summaryModels = SUMMARY_MODEL?.replace(/\s/g, '').split(',')
-            const summaryModel = loadedModels.find(m => summaryModels.includes(m.id))?.id
+            const summaryModel = getSummaryModel()
 
             if (summaryModel) {
                 chatStreams[loadedChatId] = ChatStream.create({
@@ -1874,6 +1873,16 @@
             clearMemory()
             await appendMessage({ text: 'Configure a valid OpenAI v1 compatible API in the server settings.', sender: 'system' });
           }
+        }
+
+        function getDefaultModel () {
+            const models = DEFAULT_MODEL?.replace(/\s/g, '').split(',')
+            return loadedModels.find(m => models.includes(m.id))?.id || loadedModels[0]?.id
+        }
+
+        function getSummaryModel () {
+            const models = SUMMARY_MODEL?.replace(/\s/g, '').split(',')
+            return loadedModels.find(m => models.includes(m.id))?.id
         }
 
         function onStart(id) {

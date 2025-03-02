@@ -6,7 +6,7 @@ const MODES = {
     tools: ['search_web', 'get_weather', 'search_user_history'],
     initialMessages: () => [{
       role: 'system',
-      content: 'You\'re an answering AI and always use the search_web tool or other tools to retrieve relevant and up-to-date information first.'
+      content: 'You\'re a information retrieval and answering AI and always use the search_web tool or other tools to retrieve relevant and up-to-date information first.'
         + `\n${window.SYSTEM_PROMPT || ''} ${window.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
     }]
   },
@@ -17,7 +17,7 @@ const MODES = {
     tools: ['spawn_research_agents'],
     initialMessages: () => [{
       role: 'system',
-      content: 'You\'re a research AI. Use the spawn_research_agents tool to gather in-depth information.'
+      content: 'You\'re a information retrieval and research AI. Always use the spawn_research_agents tool to gather in-depth information and respond with a detailed and information-dense report.'
         + `\n${window.SYSTEM_PROMPT || ''} ${window.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
     }]
   },

@@ -36,7 +36,7 @@ const TOOLS = [{
   type: "function",
   function: {
       name: "spawn_research_agents",
-      description: "Research in detail with the most recent and accurate information. Only use once!",
+      description: "Research a topic or problem statement in detail and gather the most recent and accurate information.",
       parameters: {
           type: "object",
           properties: {
@@ -178,6 +178,7 @@ async function spawn_research_agents(topics, id) {
           await new Promise(resolve => setTimeout(resolve, 250))
           const json = await chatStreams[id].call({
               id: id + '-' + topic.i,
+              model: getSummaryModel(),
               messages: MODES.researchAgent.initialMessages(topic.topic, context),
               tools: TOOLS.filter(t => MODES.researchAgent.tools.includes(t.function.name))
           })
