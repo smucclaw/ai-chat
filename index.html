@@ -1334,7 +1334,7 @@
             <div id="modelInfo"></div>
             <div class="attachments" id="fileAttachments"></div>
             <textarea id="userInput" placeholder="What would you like to know?" rows="1" onfocus="adjustOffset('0px')" onblur="adjustOffset()"></textarea>
-            <select id="modeSelect" title="Select prompt mode" onChange="userInputElem.placeholder = MODES[this.value].placeholder"></select>
+            <select id="modeSelect" title="Select prompt mode" onChange="userInputElem.placeholder = MODES[this.value].placeholder; modelInfoElem.textContent = MODES[this.value].name + ' - ' + selectedModel;"></select>
             <input type="file" id="fileInput" accept=".pdf,.txt,.csv,.tsv,.js,.json,.jsx,.ts,.tsx,.css,.scss,.less,.html,.htm,.xml,.yaml,.yml,.md,.py,.rb,.java,.c,.cpp,.h,.hpp,.cs,.php,.sql,.sh,.bash,.zsh" multiple>
             <button id="addFiles" onclick="fileInputElem.click()" title="Attach PDF or Text files">Attach</button>
             <button id="ask" onclick="sendMessage()" disabled title="Start/stop answer generation"></button>
@@ -1380,6 +1380,7 @@
         function clearMemory() {
             loadedChatId = null
             chatMessagesElem.innerHTML = ''
+            history.replaceState({}, document.title, location.pathname)
         }
 
         async function handleFileUpload(event) {
@@ -1809,7 +1810,7 @@
               const onclick = function (e) {
                 selectedModel = m.id
                 Array.from(modelSectionElem.children).forEach(n => n.classList[n.dataset.id === m.id ? 'add' : 'remove']('checked'))
-                modelInfoElem.textContent = m.name || m.id
+                modelInfoElem.textContent = MODES[modeSelectElem.value].name + ' - ' + m.id
               }
               const option = document.createElement('button')
               const text = document.createElement('span')
@@ -1877,6 +1878,8 @@
 
             if (loadedChatId !== id) return
 
+            modeSelectElem.value = 'chat'
+            modelInfoElem.textContent = MODES.chat.name + ' - ' + selectedModel
             document.body.classList.remove('generating')
             scrollToEnd()
         }

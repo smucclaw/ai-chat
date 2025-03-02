@@ -6,7 +6,8 @@ const MODES = {
     tools: ['search_web', 'get_weather', 'search_user_history'],
     initialMessages: () => [{
       role: 'system',
-      content: `You're an answering AI and always use your tools to retrieve relevant and up-to-date information first. ${window.SYSTEM_PROMPT || ''} ${window.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
+      content: 'You\'re an answering AI and always use the search_web tool or other tools to retrieve relevant and up-to-date information first.'
+        + `\n${window.SYSTEM_PROMPT || ''} ${window.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
     }]
   },
   research: {
@@ -16,7 +17,8 @@ const MODES = {
     tools: ['spawn_research_agents'],
     initialMessages: () => [{
       role: 'system',
-      content: `You're a research AI. Use the spawn_research_agents tool to gather in-depth information.\n${window.SYSTEM_PROMPT || ''} ${window.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
+      content: 'You\'re a research AI. Use the spawn_research_agents tool to gather in-depth information.'
+        + `\n${window.SYSTEM_PROMPT || ''} ${window.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
     }]
   },
   chat: {
@@ -26,8 +28,25 @@ const MODES = {
     tools: ['search_user_history'],
     initialMessages: () => [{
       role: 'system',
-      content: `You're a chat AI. You know the user and can lookup past conversations and context by keyword whenever relevant.\n${window.SYSTEM_PROMPT || ''}\n${window.USER_INFO ? `Here is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
+      content: 'You\'re a chat AI. You know the user and can lookup past conversations and context by keyword whenever relevant.'
+        + `\n${window.SYSTEM_PROMPT || ''}\n${window.USER_INFO ? `Here is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
     }]
+  },
+  improve: {
+    name: 'Improve',
+    visible: true,
+    placeholder: 'What message would you like to improve?',
+    tools: ['spawn_research_agents'],
+    initialMessages: message => [
+      {
+        role: 'system',
+        content: 'Your a social media post improvement AI. You use the spawn_research_agents tool to look-up related trending topics or other relevant input and use that information to suggest three versions of the content that would be more viral without changing the character and based on: Conciseness, Confidence & Clarity, Emotional Appeal, Trends & Relevance, Novelty & Surprise, Authenticity & Relatability, Humor & Entertainment Value, Practicality, Storytelling Elements, Call to Action and maybe a bit of controversy.'
+          + `\n${window.SYSTEM_PROMPT || ''} ${window.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
+      }, {
+        role: 'user',
+        content: 'Give me three better versions for this message:\n\n' + message
+      }
+    ]
   },
   titleize: {
     name: 'Create title for chat history',
