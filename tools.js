@@ -1,7 +1,7 @@
 const TOOLS = [{
   type: "function", 
   function: {
-      name: "search_web",
+      name: "search_web_info",
       description: "Search the web for current information about a precise topic. Only use when asked about current events or specific information that need verification. Only use once.",
       parameters: {
           type: "object",
@@ -103,7 +103,7 @@ const TOOLS = [{
 
 
 // TOOL FUNCTIONS
-async function search_web({ query }, id) {
+async function search_web_info({ query }, id) {
   if (!query.trim()) {
       throw new Error('No query or keywords passed')
   }
@@ -117,7 +117,7 @@ async function search_web({ query }, id) {
   }
   const data = await response.json()  
   const results = { id, query, results: data.items.map(i => ({ title: i.title, snippet: i.snippet, url: i.link })) }
-  render_search_web(results, id)
+  render_search_web_info(results, id)
   return results
 }
 
@@ -157,7 +157,8 @@ async function search_user_history({ keywords }, id) {
   const logs = (matching?.length ? matching : history).slice(0, 3).map(h => h.log)
   const results = {
       id,
-      description: 'The logs array contains the ' + (matching?.length ? `${matching.length} previous conversations matching the keywords "${keywords}"` : `latest ${logs.length} conversations`) + ' of ' + history.length + ' total past conversations with this user.',
+      keywords: list,
+      description: (matching?.length ? `${matching.length} previous conversations matching the given keywords` : `Latest ${logs.length} conversations`) + ' of ' + history.length + ' total past conversations with this user.',
       logs
   }
   render_search_user_history(results, id)
@@ -206,8 +207,8 @@ async function spawn_research_agents(topics, id) {
 
 
 
-// TOOL RESULT FUNCTIONS
-async function render_search_web(results, id) {
+// TOOL RESULT RENDER FUNCTIONS
+async function render_search_web_info(results, id) {
   const parts = id.split('-')
   if (loadedChatId.toString() === parts[0] && results.id) {
       id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
@@ -230,14 +231,14 @@ async function render_search_user_history(results, id) {
           return `<li><span title="${r[0].content.replace(/"/g, '\"')}">"${html}"</span></li>`
       })
       id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
-      appendTool({ html: `<p>Reviewing chat history:</p><ul class="items">${content.join('')}</ul>`, id })
+      appendTool({ html: `<p>Reviewing history: ${keywords.splice(0, 5).join(', ')}</p><ul class="items">${content.join('')}</ul>`, id })
   }
 }
 
 async function render_spawn_research_agents(results, id) {
   const parts = id.split('-')
   if (loadedChatId.toString() === parts[0]) {
-      appendTool({ html: `<p>Researching ...</p><ol>${results.topics.map(t => `<li><strong>${t.topic}</strong><br><div id='${id + '-' + t.i}' class="subcontent"></div></li>`).join('')}</ol>` })
+    appendTool({ html: `<p>Researching ...</p><ol>${results.topics.map(t => `<li><strong>${t.topic}</strong><br><div id='${id + '-' + t.i}' class="subcontent"></div></li>`).join('')}</ol>` })
   }
 }
-// TOOL RESULT FUNCTIONS END
+// TOOL RESULT RENDER FUNCTIONS END

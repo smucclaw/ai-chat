@@ -1696,6 +1696,7 @@
                 content.className = 'content'
                 content.innerHTML = html
                 toolElem.appendChild(content)
+                content.scrollIntoView({ behavior: 'smooth' })
                 return toolElem
             } else {
                 return await appendMessage({ text: html, sender: 'tool' })

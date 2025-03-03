@@ -3,10 +3,10 @@ const MODES = {
     name: 'Lookup',
     visible: true,
     placeholder: 'What would you like to know?',
-    tools: ['search_web', 'get_weather', 'search_user_history'],
+    tools: ['search_web_info', 'get_weather', 'search_user_history'],
     initialMessages: () => [{
       role: 'system',
-      content: 'You\'re a information retrieval and answering AI and always use the search_web tool or other tools to retrieve relevant and up-to-date information first.'
+      content: 'You\'re a information retrieval and answering AI and always use the search_web_info tool or other tools to retrieve relevant and up-to-date information first.'
         + `\n${window.SYSTEM_PROMPT || ''} ${window.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
     }]
   },
@@ -88,7 +88,7 @@ const MODES = {
   },
   researchAgent: {
     name: 'Researching a topic',
-    tools: ['search_web', 'get_weather', 'search_user_history'],
+    tools: ['search_web_info', 'get_weather', 'search_user_history'],
     initialMessages: (topic, context) => [{
         role: 'system',
         content: 'You\'re an AI agent with the sole purpose to research one specific topic in a lot of detail by querying for relevant content. Summarize key findings using lists or data tables and only short paragraphs of text. Use the tools at your disposal. Now is ' + new Date().toString()
@@ -99,7 +99,7 @@ const MODES = {
   },
   verify: {
     name: 'Verify information and suggest improvements',
-    tools: ['search_web', 'get_weather', 'search_user_history'],
+    tools: ['search_web_info', 'get_weather', 'search_user_history'],
     initialMessages: (info, context) => [{
         role: 'system',
         content: 'You\'re an AI agent with the sole purpose to double-check the key finding to be most accurate and useful for a given prompt, suggest improvements and correct mistakes then summarize they key findings using a bullet point lists. Research critical questions by using tools.'
