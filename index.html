@@ -2394,35 +2394,46 @@
             let touchEndX = 0
             let currentX = 0
 
-            document.addEventListener('touchstart', e => {
-              if (document.body.classList.contains('new')) return
-              if (e.target.closest('#activeChats') && activeChatsElem.scrollLeft < activeChatsElem.scrollWidth - activeChatsElem.clientWidth) return
-              touchStartX = e.changedTouches[0].screenX
-              currentX = 0
-            })
-            
-            document.addEventListener('touchmove', e => {
-              if (!touchStartX) return
+            document.addEventListener('touchstart', e => { 
+                if (document.body.classList.contains('new')) return
 
-              const touchX = e.changedTouches[0].screenX
-              const diff = touchX - touchStartX
-              
-              if (diff < -65) {
-                currentX = diff
-                chatMessagesElem.style.transform = `translateX(${currentX}px)`
-                chatMessagesElem.style.opacity = Math.max(0, 1 - Math.abs(diff) / 250)
-              }
-            })
-            
-            document.addEventListener('touchend', e => {
-              touchEndX = e.changedTouches[0].screenX
-              const swipeThreshold = 180
-              chatMessagesElem.style.transform = ''
-              chatMessagesElem.style.opacity = 1
-              if (touchStartX - touchEndX > swipeThreshold) {
-                startNew()
-              }
-              touchStartX = 0
+                for (const selector of ['#activeChats', 'pre', '.table', '.katex-display', '.attachments', '.tool-message', '.status']) {
+                    const elem = e.target.closest(selector)
+                    if (elem && elem.scrollLeft < elem.scrollWidth - elem.clientWidth) {
+                        return
+                    }
+                }
+
+                const touchMove = function (e) {
+                    if (!touchStartX) return
+
+                    const touchX = e.changedTouches[0].screenX
+                    const diff = touchX - touchStartX
+                    
+                    if (diff < -65) {
+                        currentX = diff
+                        chatMessagesElem.style.transform = `translateX(${currentX}px)`
+                        chatMessagesElem.style.opacity = Math.max(0, 1 - Math.abs(diff) / 250)
+                    }
+                }
+
+                const touchEnd = function (e) {
+                    touchEndX = e.changedTouches[0].screenX
+                    const swipeThreshold = 180
+                    chatMessagesElem.style.transform = ''
+                    chatMessagesElem.style.opacity = 1
+                    document.removeEventListener('touchmove', touchMove)
+                    document.removeEventListener('touchend', touchEnd)
+                    if (touchStartX - touchEndX > swipeThreshold) {
+                        startNew()
+                    }
+                    touchStartX = 0
+                }
+
+                touchStartX = e.changedTouches[0].screenX
+                currentX = 0
+                document.addEventListener('touchmove', touchMove)
+                document.addEventListener('touchend', touchEnd)
             })
         })
 
