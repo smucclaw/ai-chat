@@ -24,7 +24,7 @@ const TOOLS = [{
           properties: {
               code: {
                   type: "string",
-                  description: "The math to solve converted to valid JavaScript code"
+                  description: "The math to solve converted to valid JavaScript code (No use of variables!)"
               }
           }
       },
@@ -249,7 +249,7 @@ async function render_do_math(results, id) {
     const parts = id.split('-')
     if (loadedChatId.toString() === parts[0] && results.id) {
         console.log(results)
-        appendTool({ html: `<p>Doing math: <code class='code language-javascript'>${results.code} = ${results.result}</code></p>\n`, id })
+        appendTool({ html: `<p>Doing math: <code class='code language-javascript'>${results.code.replace(';', '')} = ${results.result}</code></p>\n`, id })
     }
 }
 
