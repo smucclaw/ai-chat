@@ -3,7 +3,7 @@ const MODES = {
     name: 'Lookup',
     visible: true,
     placeholder: 'What would you like to know?',
-    tools: ['search_web_info', 'get_weather', 'search_user_history'],
+    tools: ['search_web_info', 'get_weather', 'search_user_history', 'do_math'],
     initialMessages: () => [{
       role: 'system',
       content: 'You\'re a information retrieval and answering AI and always use the search_web_info tool or other tools to retrieve relevant and up-to-date information first.'
@@ -25,7 +25,7 @@ const MODES = {
     name: 'Chat',
     visible: true,
     placeholder: 'What\'s on your mind?',
-    tools: ['search_user_history'],
+    tools: ['search_user_history', 'do_math'],
     initialMessages: () => [{
       role: 'system',
       content: 'You\'re a chat AI. You know the user and can lookup past conversations and context by keyword whenever relevant.'
@@ -99,7 +99,7 @@ const MODES = {
   },
   verify: {
     name: 'Verify information and suggest improvements',
-    tools: ['search_web_info', 'get_weather', 'search_user_history'],
+    tools: ['search_web_info', 'get_weather', 'search_user_history', 'do_math'],
     initialMessages: (info, context) => [{
         role: 'system',
         content: 'You\'re an AI agent with the sole purpose to double-check the key finding to be most accurate and useful for a given prompt, suggest improvements and correct mistakes then summarize they key findings using a bullet point lists. Research critical questions by using tools.'

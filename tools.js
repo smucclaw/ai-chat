@@ -17,6 +17,21 @@ const TOOLS = [{
 }, {
   type: "function",
   function: {
+      name: "do_math",
+      description: "Helps to solve simple math accurately by executing it in JavaScript and returning the result",
+      parameters: {
+          type: "object",
+          properties: {
+              code: {
+                  type: "string",
+                  description: "The math to solve converted to valid JavaScript code"
+              }
+          }
+      },
+  }
+}, {
+  type: "function",
+  function: {
       name: "search_user_history",
       description: "Retrieve the conversation history with the user by single key words. Use it to personalise or to find additional context from the past",
       parameters: {
@@ -121,6 +136,20 @@ async function search_web_info({ query }, id) {
   return results
 }
 
+async function do_math({ code }, id) {
+  if (!code || typeof code !== 'string') {
+    throw new Error('No valid math provided')
+  }
+  try {
+    const result = new Function('return (function() { return ' + code + '; })()')()
+    const response = { id, code, result }
+    render_do_math(response, id)
+    return response
+  } catch (error) {
+    return { id, error: 'Couldn\'t run this code :(' }
+  }
+}
+
 async function get_weather({ latitude, longitude, speed_unit = 'kmh', temp_unit = 'celsius', forecast = true }, id) {
   const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}`
       + (forecast
@@ -215,6 +244,15 @@ async function render_search_web_info(results, id) {
       appendTool({ html: `<p>Web search: ${results.query}</p><ul class="items">${results.results.slice(0, 5).map(r => `<li><img src="${new URL(r.url).origin}/favicon.png" onerror="faviconError(this)" /><a href="${r.url}" rel="noopener nofollow noreferrer" target="_blank" title="${r.title.replace(/"/, '\"')}">${new URL(r.url).hostname.replace('www.','')}</a></li>`).join('')}${results.results.length > 5 ? `<li><span>... ${results.results.length - 5} more</span></li>` : ''}</ul>`, id })
   }
 }
+
+async function render_do_math(results, id) {
+    const parts = id.split('-')
+    if (loadedChatId.toString() === parts[0] && results.id) {
+        console.log(results)
+        appendTool({ html: `<p>Doing math: <code class='code language-javascript'>${results.code} = ${results.result}</code></p>\n`, id })
+    }
+}
+
 async function render_get_weather(results, id) {
   const parts = id.split('-')
   if (loadedChatId.toString() === parts[0] && results.id) {
