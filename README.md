@@ -7,6 +7,8 @@ Supports a few tool calls:
 2. Basic weather lookup from OpenMeteo
 3. User chat history inquiries
 4. Basic reasoning if you ask it to do research
+5. Solving simple math
+
 
 
 # Getting started
