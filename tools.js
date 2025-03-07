@@ -17,7 +17,7 @@ const TOOLS = [{
 }, {
   type: "function",
   function: {
-      name: "do_math",
+      name: "solve_math",
       description: "Helps to solve simple math accurately by executing it in JavaScript and returning the result",
       parameters: {
           type: "object",
@@ -136,14 +136,14 @@ async function search_web_info({ query }, id) {
   return results
 }
 
-async function do_math({ code }, id) {
+async function solve_math({ code }, id) {
   if (!code || typeof code !== 'string') {
     throw new Error('No valid math provided')
   }
   try {
     const result = new Function('return (function() { return ' + code + '; })()')()
     const response = { id, code, result }
-    render_do_math(response, id)
+    render_solve_math(response, id)
     return response
   } catch (error) {
     return { id, error: 'Couldn\'t run this code :(' }
@@ -245,7 +245,7 @@ async function render_search_web_info(results, id) {
   }
 }
 
-async function render_do_math(results, id) {
+async function render_solve_math(results, id) {
     const parts = id.split('-')
     if (loadedChatId.toString() === parts[0] && results.id) {
         console.log(results)

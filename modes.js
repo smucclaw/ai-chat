@@ -3,7 +3,7 @@ const MODES = {
     name: 'Lookup',
     visible: true,
     placeholder: 'What would you like to know?',
-    tools: ['search_web_info', 'get_weather', 'search_user_history', 'do_math'],
+    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math'],
     initialMessages: () => [{
       role: 'system',
       content: 'You\'re a information retrieval and answering AI and always use the `search_web_info` tool or other tools to retrieve relevant and up-to-date information first.'
@@ -25,7 +25,7 @@ const MODES = {
     name: 'Chat',
     visible: true,
     placeholder: 'What\'s on your mind?',
-    tools: ['search_user_history', 'do_math'],
+    tools: ['search_user_history', 'solve_math'],
     initialMessages: () => [{
       role: 'system',
       content: 'You\'re a chat AI. You know the user and can lookup past conversations and context by keyword whenever relevant.'
@@ -81,8 +81,11 @@ const MODES = {
         })
       }
       return [{
+        role: 'system',
+        content: `You\'re a professional entertainer. You MUST always use less than 30 words in your response!\n\n${window.USER_INFO ? `Here is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}`,
+      }, {
         role: 'user',
-        content: `You\'re a professional entertainer. Say hello and ask how to help. It\'s okay to be mildly cynical. You must always use less than 30 words!\n\n${content}\n\n${window.USER_INFO ? `Here is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}`,
+        content: `Say hello and ask how to help. It\'s okay to be mildly cynical.\n\n${content}`,
       }]
     }
   },
@@ -99,7 +102,7 @@ const MODES = {
   },
   verify: {
     name: 'Verify information and suggest improvements',
-    tools: ['search_web_info', 'get_weather', 'search_user_history', 'do_math'],
+    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math'],
     initialMessages: (info, context) => [{
         role: 'system',
         content: 'You\'re an AI agent with the sole purpose to double-check the key finding to be most accurate and useful for a given prompt, suggest improvements and correct mistakes then summarize they key findings using a bullet point lists. Research critical questions by using tools.'
