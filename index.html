@@ -1992,7 +1992,7 @@
                 // parts.push(timeToFirstTokenString + ' to first token')
             }
             parts.push(model)
-            parts.push(`<button onclick="deleteFromHistory(${loadedChatId})">Delete chat</button>`)
+            parts.push(`<button onclick="deleteFromHistory('${loadedChatId}')">Delete chat</button>`)
             return parts.join(' &#183; ')
         }
         
