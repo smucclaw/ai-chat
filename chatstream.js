@@ -66,9 +66,16 @@ const ChatStream = (function() {
                   content: JSON.stringify(result),
                   tool_call_id: tc.id
                 })
+              } else {
+                throw new Error('No result')
               }
             } catch (e) {
               console.warn(`Tool call failed: ${tc.function.name}`, tc.function.arguments, e)
+              messages.push({
+                role: 'tool',
+                content: 'Invalid tool call',
+                tool_call_id: tc.id
+              })
             }
           }
 
