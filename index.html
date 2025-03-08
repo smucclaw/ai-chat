@@ -2404,13 +2404,11 @@
                     const elem = e.target.closest('.code').children[0].children[0]
                     const textToRun = elem.innerText
                     try {
-                        console.log('hello')
                       const newWindow = window.open('', 'window_' + loadedChatId)
                       if (!newWindow) {
                         alert('Please allow popups')
                         return
                       }
-                      console.log(newWindow, textToRun)
                       newWindow.document.open()
                       if (elem.classList.contains('language-html')) {
                         newWindow.document.write(textToRun)
