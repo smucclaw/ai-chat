@@ -961,6 +961,17 @@
             display: none;
         }
 
+        .status button {
+            appearance: none;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, .2);
+            text-decoration: underline;
+            font-size: 1em;
+            padding: 0;
+            cursor: pointer;
+        }
+
         .chat-messages .message:last-child .status {
             display: block;
         }
@@ -1981,6 +1992,7 @@
                 // parts.push(timeToFirstTokenString + ' to first token')
             }
             parts.push(model)
+            parts.push(`<button onclick="deleteFromHistory(${loadedChatId})">Delete chat</button>`)
             return parts.join(' &#183; ')
         }
         
@@ -2043,6 +2055,18 @@
         function resetSearch(container) {
             container.firstElementChild.value = ''
             search(container.firstElementChild, container.lastElementChild)
+        }
+
+        function deleteFromHistory (id) {
+            if(!confirm('Are you sure you want to remove this chat?')) return
+            const history = JSON.parse(localStorage.getItem('history')) || []
+            const toStore = history.filter(h => h.id !== id)
+            localStorage.setItem('history', JSON.stringify(toStore))
+            historyItemsElem.querySelector(`button[data-id="${id}"]`)?.remove()
+            if (!history.length) {
+                document.getElementById('clearHistory')?.remove()
+            }
+            document.querySelector(`#activeChats button[data-id="${id}"]`)?.click()
         }
 
         function loadHistory () {
