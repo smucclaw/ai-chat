@@ -2057,8 +2057,11 @@
             search(container.firstElementChild, container.lastElementChild)
         }
 
-        function deleteFromHistory (id) {
+        async function deleteFromHistory (id) {
             if(!confirm('Are you sure you want to remove this chat?')) return
+            if(chatStreams[id]?.isGenerating) {
+                await chatStreams[id].stop()
+            }
             const history = JSON.parse(localStorage.getItem('history')) || []
             const toStore = history.filter(h => h.id !== id)
             localStorage.setItem('history', JSON.stringify(toStore))
