@@ -188,7 +188,11 @@
             }
 
             .menu:hover,
-            .menus:hover {
+            .menus:hover,
+            .historyMenu-open .menus,
+            .settingsMenu-open .menus,
+            .historyMenu-open .menu,
+            .settingsMenu-open .menu {
                 opacity: 1;
                 transform: translateX(0);
             }
@@ -200,7 +204,8 @@
             }
         }
 
-        .menu.open {
+        .historyMenu-open #historyMenu,
+        .settingsMenu-open #settingsMenu {
             display: block;
         }
         
@@ -1309,13 +1314,13 @@
     <div class="aichat">
         <div class="menus">
             <div class="menu" id="historyMenu">
-                <input type="text" class="search-input" placeholder="Search history ..." autocorrect="off" data-q="" onkeyup="search(this, historyItemsElem)" />
+                <input type="text" class="search-input" placeholder="Search history ..." autocorrect="off" data-q="" onkeyup="search(this, historyItemsElem, event)" />
                 <button onclick="this.previousElementSibling.value = ''; search(this.previousElementSibling, historyItemsElem);" class="clear">&times;</button>
                 <div class="items" id="historyItems"></div>
             </div>
             <div class="menu" id="settingsMenu">
                 <div id="modelMenu">
-                    <input type="text" class="search-input" placeholder="Search model name ..." autocorrect="off" data-q="" onkeyup="search(this, modelSectionElem)" />
+                    <input type="text" class="search-input" placeholder="Search model name ..." autocorrect="off" data-q="" onkeyup="search(this, modelSectionElem, event)" />
                     <button onclick="this.previousElementSibling.value = ''; search(this.previousElementSibling, modelSectionElem);" class="clear">&times;</button>
                     <div class="items" id="modelSection"></div>
                 </div>
@@ -1354,7 +1359,7 @@
         <div class="input-container">
             <div id="modelInfo"></div>
             <div class="attachments" id="fileAttachments"></div>
-            <textarea id="userInput" placeholder="What would you like to know?" rows="1" onfocus="adjustOffset('0px')" onblur="adjustOffset()"></textarea>
+            <textarea id="userInput" placeholder="What would you like to know?" rows="1" tabindex="0" onfocus="adjustOffset('0px')" onblur="adjustOffset()"></textarea>
             <select id="modeSelect" title="Select prompt mode" onChange="changeMode(this.value)"></select>
             <input type="file" id="fileInput" accept=".pdf,.txt,.csv,.tsv,.js,.json,.jsx,.ts,.tsx,.css,.scss,.less,.html,.htm,.xml,.yaml,.yml,.md,.py,.rb,.java,.c,.cpp,.h,.hpp,.cs,.php,.sql,.sh,.bash,.zsh" multiple>
             <button id="addFiles" onclick="fileInputElem.click()" title="Attach PDF or Text files">Files</button>
@@ -1384,6 +1389,7 @@
                 blockAutoScrolling = false
                 document.body.style.removeProperty('--offset')
             } else {
+                closeMenu()
                 userInputElem.style.height = userInputElem.scrollHeight + 'px'
                 blockAutoScrolling = document.body.classList.contains('new')
                 document.body.style.setProperty('--offset', value)
@@ -1500,7 +1506,7 @@
                 
                 return followUps
             } catch (e) {
-                console.error('Malformed follow-up resposne', e)
+                console.error('Malformed follow-up response', e)
             }
         }
 
@@ -1949,7 +1955,11 @@
                 message = await appendMessage({ text: '', sender: 'assistant' })
             }   
             message.firstElementChild.innerHTML = await markdownToHtml(chatStreams[id]?.response)
-            hljs.highlightAll()
+
+            const m = chatStreams[id]?.response.match(/<think>[\S\s]+?(<\/think>)?/)
+            if (!m || m?.[1]) {
+                hljs.highlightAll()
+            }
         }
 
         function formatStatus(status) {
@@ -2012,7 +2022,7 @@
             historyItemsElem.appendChild(option)
         }
 
-        function search(searchElem, items) {
+        function search(searchElem, items, event) {
             const q = searchElem.value.trim()
             const m = new RegExp(`(${q})`, 'gi')
             searchElem.dataset.q = q
@@ -2025,6 +2035,9 @@
                     elem.style.display = 'none'
                 }
             })
+            if (event?.key === 'Enter' && items.children.length > 0) {
+                Array.from(items.children).find(elem => elem.style.display !== 'none')?.click()
+            }
         }
 
         function resetSearch(container) {
@@ -2278,11 +2291,11 @@
 
         function openMenu(menu) {
             closeMenu(menu)
-            document.getElementById(menu).classList.toggle('open')
+            document.body.classList.toggle(menu + '-open')
         }
 
         function closeMenu(menu) {
-            document.querySelectorAll('.menu').forEach(e => e.id !== menu && e.classList.remove('open'))
+            document.querySelectorAll('.menu').forEach(e => e.id !== menu && document.body.classList.remove(e.id + '-open'))
         }
 
         function loadSettings() {
@@ -2364,18 +2377,18 @@
             })
 
             document.addEventListener('keypress', e => {
+                console.log(e.key)
                 if (e.key === 'n' && (e.ctrlKey || e.altKey)) {
                     e.preventDefault();
                     startNew();
                 } else if (e.key === 'h' && (e.ctrlKey || e.altKey)) {
-                    openMenu('historyMenu');
-                } else if (e.key === 's' && (e.ctrlKey || e.altKey)) {
-                    openMenu('settingsMenu');
-                }else if (e.keyCode === 9) {
-                    e.preventDefault();
-                    userInputElem.focus();
+                    openMenu('historyMenu')
+                    historyMenuElem.querySelector('.search-input').focus()
+                } else if (e.key === 'm' && (e.ctrlKey || e.altKey)) {
+                    openMenu('settingsMenu')
+                    settingsMenuElem.querySelector('.search-input').focus()
                 }
-            });
+            })
 
             document.addEventListener('click', function (e) {
                 const thoughtsElement = e.target.closest('.think')
