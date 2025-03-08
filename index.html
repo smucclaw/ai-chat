@@ -1510,7 +1510,7 @@
                 elem.innerHTML = followUps.slice(0, 3).map(f => `<button onclick="sendMessage('${f.replace(/(['"])/g, '\\$1')}')">${f}</button>`).join('')
                 elem.className = 'followups'
                 chatMessagesElem.lastElementChild.lastElementChild.insertAdjacentElement('beforebegin', elem)
-                scrollToEnd
+                scrollToEnd()
             }
         }
 
