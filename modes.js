@@ -28,7 +28,7 @@ const MODES = {
     tools: ['search_user_history', 'solve_math'],
     initialMessages: () => [{
       role: 'system',
-      content: 'You\'re a chat AI. You know the user and can lookup past conversations and context by keyword whenever relevant.'
+      content: 'You\'re a chat AI. You know the user and can lookup past conversations and context by keyword whenever relevant. Use tools only when necessary.'
         + `\n${window.SYSTEM_PROMPT || ''}\n${window.USER_INFO ? `Here is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
     }]
   },
