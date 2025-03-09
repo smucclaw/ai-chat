@@ -44,8 +44,8 @@
             background-repeat: no-repeat;
             background-position: 50% 0%;
             background-image: radial-gradient(circle at 65% 104%, #276da755 0%, #38444c00 20%),
-                radial-gradient(circle at 25% 159%, #4f95caee 0%, #38444c00 40%),
-                radial-gradient(circle at 80% 120%, #4f6f85bb 0%, #38444c00 28%),
+                radial-gradient(circle at 25% 159%, #f6a2f6ee 0%, #38444c00 40%),
+                radial-gradient(circle at 80% 120%, #ffd50066 0%, #38444c00 28%),
                 radial-gradient(circle at 58% 105%, #28496088 0%, #38444c00 31%),
                 radial-gradient(circle at center, #111111e8 0%, #111111f8 60%, #111111ff 100%);
         }
@@ -97,7 +97,20 @@
             margin: 0;
             font-size: 1.8em;
             transition: transform .5s ease-in-out;
-            text-shadow: 0 5px 25px rgba(0, 0, 0, .5);
+            text-shadow: -1px 0px 0px #ffffff22, 0 5px 25px rgba(0, 0, 0, .9);
+            background: conic-gradient(
+                #f6a2f6,
+                #1f87cd,
+                #1f87cd,
+                #ffd500,
+                #727de3,
+                #13c4fa,
+                #f6a2f6
+            );
+            background-position: 4em 2em;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-fill-color: transparent;
         }
 
         .header button {
