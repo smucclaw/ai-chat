@@ -193,6 +193,7 @@ async function search_user_history({ keywords }, id) {
   const logs = (list?.length ? matching : history)?.slice(0, 3).map(h => h.log)
   const results = {
       id,
+      keywords: list,
       matching_keywords: list?.length ? Array.from(matching_keywords) : undefined,
       description: (list?.length ? `${matching.length} previous conversations matching the given keywords` : `Latest ${logs.length} conversations`) + ' of ' + history.length + ' total past conversations with this user.',
       results: logs
