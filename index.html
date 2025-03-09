@@ -2439,6 +2439,8 @@
                         (document.body.classList.contains('new')
                             ? document.querySelector(`#activeChats button`).nextElementSibling
                             : document.querySelector(`#activeChats button[data-id="${loadedChatId}"]`)?.nextElementSibling)?.click()
+                    } else if (e.key === 'Backspace') {
+                        deleteFromHistory(loadedChatId)
                     } else if (e.key.match(/[0-9]/)) {
                         const mode = modeSelectElem.children[e.key - 1]?.value
                         if (mode) {
