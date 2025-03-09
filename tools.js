@@ -269,7 +269,7 @@ async function render_search_user_history(results, id) {
           return `<li><span title="${r[0].content.replace(/"/g, '\"')}">"${html}"</span></li>`
       })
       id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
-      appendTool({ html: `<p>Reviewing history: ${keywords.splice(0, 5).join(', ')}</p><ul class="items">${content.join('')}</ul>`, id })
+      appendTool({ html: `<p>Reviewing history: ${results.keywords.splice(0, 5).join(', ')}</p><ul class="items">${content.join('')}</ul>`, id })
   }
 }
 
