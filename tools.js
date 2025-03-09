@@ -180,7 +180,7 @@ async function get_weather({ latitude, longitude, speed_unit = 'kmh', temp_unit 
 }
 
 async function search_user_history({ keywords }, id) {
-  list = typeof keywords === 'object' ? keywords.map(k => k.toLowerCase().trim()) : [keywords.toString().toLowerCase().trim()]
+  const list = typeof keywords === 'object' ? keywords.map(k => k.toLowerCase().trim()) : [keywords.toString().toLowerCase().trim()]
   const history = (JSON.parse(localStorage.getItem('history')) || []).filter(h => h.id !== loadedChatId)
   const matching_keywords = new Set()
   const matching = history.filter(h => h.log.find(m => m.role === 'user' && list.find(l => {
@@ -277,7 +277,7 @@ async function render_search_user_history(results, id) {
           return `<li><span title="${r[0].content.replace(/"/g, '\"')}">"${html}"</span></li>`
       })
       id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
-      appendTool({ html: `<p>Reviewing history: ${results.keywords.splice(0, 5).join(', ')}</p><ul class="items">${content.join('')}</ul>`, id })
+      appendTool({ html: `<p>Reviewing history: ${results.keywords.slice(0, 5).join(', ')}</p><ul class="items">${content?.join('') || ''}</ul>`, id })
   }
 }
 
