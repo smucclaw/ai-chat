@@ -1718,7 +1718,7 @@
                         return a
                     }, []))
                 })
-                name = json.content
+                name = json.content.replace(/<think>[\S\s]+?(<\/think>)?/, '')
             } catch (e) {
                 console.error('Could not summarise prompt', e)
             }
@@ -2312,6 +2312,7 @@
 
         function startNew() {
             closeMenu()
+            changeMode(modeSelectElem.children[0]?.value)
             sayHello()
             setTimeout(() => userInputElem.focus(), 800)
         }
