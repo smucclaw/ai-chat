@@ -180,15 +180,22 @@ async function get_weather({ latitude, longitude, speed_unit = 'kmh', temp_unit 
 }
 
 async function search_user_history({ keywords }, id) {
-  list = typeof keywords === 'object' ? keywords.map(k => k.toLowerCase()) : [keywords.toString().toLowerCase()]
+  list = typeof keywords === 'object' ? keywords.map(k => k.toLowerCase().trim()) : [keywords.toString().toLowerCase().trim()]
   const history = (JSON.parse(localStorage.getItem('history')) || []).filter(h => h.id !== loadedChatId)
-  const matching = history.filter(h => list.find(k => h.log[0].content.toLowerCase().includes(k.trim())))
-  const logs = (matching?.length ? matching : history).slice(0, 3).map(h => h.log)
+  const matching_keywords = new Set()
+  const matching = history.filter(h => h.log.find(m => m.role === 'user' && list.find(l => {
+    const r = m.content.toLowerCase().includes(l)
+    if (r) {
+        matching_keywords.add(l)
+    }
+    return r
+  })))
+  const logs = (list?.length ? matching : history)?.slice(0, 3).map(h => h.log)
   const results = {
       id,
-      keywords: list,
-      description: (matching?.length ? `${matching.length} previous conversations matching the given keywords` : `Latest ${logs.length} conversations`) + ' of ' + history.length + ' total past conversations with this user.',
-      logs
+      matching_keywords: list?.length ? Array.from(matching_keywords) : undefined,
+      description: (list?.length ? `${matching.length} previous conversations matching the given keywords` : `Latest ${logs.length} conversations`) + ' of ' + history.length + ' total past conversations with this user.',
+      results: logs
   }
   render_search_user_history(results, id)
   return results
@@ -239,7 +246,7 @@ async function spawn_research_agents(topics, id) {
 // TOOL RESULT RENDER FUNCTIONS
 async function render_search_web_info(results, id) {
   const parts = id.split('-')
-  if (loadedChatId.toString() === parts[0] && results.id) {
+  if (loadedChatId?.toString() === parts[0] && results.id) {
       id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
       appendTool({ html: `<p>Web search: ${results.query}</p><ul class="items">${results.results.slice(0, 5).map(r => `<li><img src="${new URL(r.url).origin}/favicon.png" onerror="faviconError(this)" /><a href="${r.url}" rel="noopener nofollow noreferrer" target="_blank" title="${r.title.replace(/"/, '\"')}">${new URL(r.url).hostname.replace('www.','')}</a></li>`).join('')}${results.results.length > 5 ? `<li><span>... ${results.results.length - 5} more</span></li>` : ''}</ul>`, id })
   }
@@ -247,7 +254,7 @@ async function render_search_web_info(results, id) {
 
 async function render_solve_math(results, id) {
     const parts = id.split('-')
-    if (loadedChatId.toString() === parts[0] && results.id) {
+    if (loadedChatId?.toString() === parts[0] && results.id) {
         console.log(results)
         appendTool({ html: `<p>Doing math: <code class='code language-javascript'>${results.code.replace(';', '')} = ${results.result}</code></p>\n`, id })
     }
@@ -255,7 +262,7 @@ async function render_solve_math(results, id) {
 
 async function render_get_weather(results, id) {
   const parts = id.split('-')
-  if (loadedChatId.toString() === parts[0] && results.id) {
+  if (loadedChatId?.toString() === parts[0] && results.id) {
       id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
       appendTool({ html: '<p>' + (results.forecast ? 'Checking the 7-day weather forecast ...' : 'Checking today\'s weather ...') + '</p>', id })
   }
@@ -263,8 +270,8 @@ async function render_get_weather(results, id) {
 
 async function render_search_user_history(results, id) {
   const parts = id.split('-')
-  if (loadedChatId.toString() === parts[0] && results.id) {
-      const content = results.logs.map(r => {
+  if (loadedChatId?.toString() === parts[0] && results.id) {
+      const content = results.results?.map(r => {
           const html = r[0].content.replace(/</g, '&lt;').replace(/>/g, '&gt;')
           return `<li><span title="${r[0].content.replace(/"/g, '\"')}">"${html}"</span></li>`
       })
@@ -275,7 +282,7 @@ async function render_search_user_history(results, id) {
 
 async function render_spawn_research_agents(results, id) {
   const parts = id.split('-')
-  if (loadedChatId.toString() === parts[0]) {
+  if (loadedChatId?.toString() === parts[0]) {
     appendTool({ html: `<p>Researching ...</p><ol>${results.topics.map(t => `<li><strong>${t.topic}</strong><br><div id='${id + '-' + t.i}' class="subcontent"></div></li>`).join('')}</ol>` })
   }
 }

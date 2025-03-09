@@ -2254,7 +2254,7 @@
                         return src.indexOf('<think>');
                     },
                     tokenizer(src) {
-                        const match = src.match(/^<think>([\s\S]*?)(<\/think>|\[TOOL_REQUEST$)/);
+                        const match = src.match(/<think>([\s\S]*?)(<\/think>|\[TOOL_REQUEST$)/);
                         if (match) {
                             return {
                                 type: 'think',
