@@ -965,7 +965,7 @@
             appearance: none;
             background: none;
             border: none;
-            color: rgba(255, 255, 255, .2);
+            color: rgba(255, 255, 255, .1);
             text-decoration: underline;
             font-size: 1em;
             padding: 0;
@@ -2373,7 +2373,7 @@
             window.settingsMenuElem = document.getElementById('settingsMenu')
             window.scrolldownElem = document.getElementById('scrolldown')
             window.activeChatsElem = document.getElementById('activeChats')
-            const previewBody = type => '<head><scr' + 'ipt>var l = (m, t = "black") => { const p = document.createElement("div"); p.textContent = m; p.style = `padding: 8px 0; border-top: 1px solid #eee; color: ${t}`; document.getElementById("_console").appendChild(p); }; window.console = { log: a => l(a), warn: a => l(a, "gold"), error: a => l(a, "red") }</sc' + 'ript><style>body { padding-top: 46px; font-family: Arial, sans-serif; } .forceOpen { display: block !important; }</style><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><div style="position: fixed; z-index: 999999; top: 0; left: 0; right: 0; background: #111; text-align: center; box-shadow: 0 2px 10px #00000022; padding: 14px; font-weight: bold; color: #ddd;"><button style="position: absolute; left: 12px; top: 8px; appearance: none; background: none; border: 0; font-size: 1em; height: 30px; padding: 0; color: #ddd;" onClick="document.getElementById(\'_console\').classList.toggle(\'forceOpen\')">Console</button>' + (type === 'javascript' ? '<button style="position: absolute; left: 76px; top: 8px; appearance: none; background: none; border: 0; font-size: 1em; height: 30px; padding: 0; color: #ddd;" onClick="document.getElementById(\'_canvas\').classList.toggle(\'forceOpen\')">Canvas</button>' : '') + '<button style="position: absolute; right: 12px; top: 8px; padding: 0; height: 30px; appearance: none; background: none; border: 0; font-size: 1.4em; color: #ddd;" onClick="window.close()">×</button>&nbsp;</div><div id="_console" style="position: fixed; background: #ffffffee; top: 48px; left: 0; right: 0; bottom: 0; overflow: auto; display: none; z-index: 999999; padding: 0 1.2em;"><h4>Console output</h4></div><canvas id="_canvas" style="position: fixed; top: 54px; left: 8px; background: #fff; width: calc(100vw - 16px); height: calc(100dvh - 66px); display: none; z-index: 999998; box-shadow: 0 0 8px #00000044;"></canvas>'
+            const previewBody = type => '<head><scr' + 'ipt>var l = (m, t = "black") => { const p = document.createElement("div"); p.textContent = m; p.style = `padding: 8px 0; border-top: 1px solid #eee; color: ${t}`; document.getElementById("_console").appendChild(p); }; window.console = { log: a => l(a), warn: a => l(a, "gold"), error: a => l(a, "red") }</sc' + 'ript><style>body { padding-top: 46px; font-family: Arial, sans-serif; } .forceOpen { display: block !important; }</style><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><div style="position: fixed; z-index: 999999; top: 0; left: 0; right: 0; background: #111; text-align: center; box-shadow: 0 2px 10px #00000022; padding: 14px; font-weight: bold; color: #ddd;"><button style="position: absolute; left: 12px; top: 8px; appearance: none; background: none; border: 0; font-size: 1em; height: 30px; padding: 0; color: #ddd;" onClick="document.getElementById(\'_console\').classList.toggle(\'forceOpen\')">Console</button>' + (type === 'javascript' ? '<button style="position: absolute; left: 80px; top: 8px; appearance: none; background: none; border: 0; font-size: 1em; height: 30px; padding: 0; color: #ddd;" onClick="document.getElementById(\'_canvas\').classList.toggle(\'forceOpen\')">Canvas</button>' : '') + '<button style="position: absolute; right: 12px; top: 8px; padding: 0; height: 30px; appearance: none; background: none; border: 0; font-size: 1.4em; color: #ddd;" onClick="window.close()">×</button>&nbsp;</div><div id="_console" style="position: fixed; background: #ffffffee; top: 48px; left: 0; right: 0; bottom: 0; overflow: auto; display: none; z-index: 999999; padding: 0 1.2em;"><h4>Console output</h4></div><canvas id="_canvas" style="position: fixed; top: 54px; left: 8px; background: #fff; width: calc(100vw - 16px); height: calc(100dvh - 66px); display: none; z-index: 999998; box-shadow: 0 0 8px #00000044;"></canvas>'
 
             Object.keys(MODES).forEach(k => {
                 const mode = MODES[k]
@@ -2407,17 +2407,37 @@
                 }
             })
 
-            document.addEventListener('keypress', e => {
-                console.log(e.key)
-                if (e.key === 'n' && (e.ctrlKey || e.altKey)) {
-                    e.preventDefault();
-                    startNew();
-                } else if (e.key === 'h' && (e.ctrlKey || e.altKey)) {
-                    openMenu('historyMenu')
-                    historyMenuElem.querySelector('.search-input').focus()
-                } else if (e.key === 'm' && (e.ctrlKey || e.altKey)) {
-                    openMenu('settingsMenu')
-                    settingsMenuElem.querySelector('.search-input').focus()
+            document.addEventListener('keydown', e => {
+                if (e.ctrlKey || e.altKey) {
+                    if (e.key === 'n') {
+                        e.preventDefault();
+                        startNew();
+                    } else if (e.key === 'j') {
+                        openMenu('historyMenu')
+                        const searchInput = historyMenuElem.querySelector('.search-input')
+                        searchInput.focus()
+                        searchInput.select()
+                    } else if (e.key === 'm') {
+                        openMenu('settingsMenu')
+                        const searchInput = settingsMenuElem.querySelector('.search-input')
+                        searchInput.focus()
+                        searchInput.select()
+                    } else if (e.key === 'ArrowLeft') {
+                        (document.querySelector(`#activeChats button[data-id="${loadedChatId}"]`)?.previousElementSibling ||
+                            document.querySelector(`#activeChats button:last-child`))?.click()
+                    } else if (e.key === 'ArrowRight') {
+                        (document.body.classList.contains('new')
+                            ? document.querySelector(`#activeChats button`).nextElementSibling
+                            : document.querySelector(`#activeChats button[data-id="${loadedChatId}"]`)?.nextElementSibling)?.click()
+                    }
+                } else if (e.key === 'Escape') {
+                    if (Array.from(document.querySelectorAll('.menu')).find(e => document.body.classList.contains(e.id + '-open'))) {
+                        closeMenu()
+                    } else if (chatStreams[loadedChatId]?.isGenerating) {
+                        chatStreams[loadedChatId].stop()
+                    } else {
+                        document.querySelector(`#activeChats button[data-id="${loadedChatId}"]`)?.click()
+                    }
                 }
             })
 
