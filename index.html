@@ -65,7 +65,7 @@
 
         header {
             position: fixed;
-            z-index: 1;
+            z-index: 11;
             left: 0;
             right: 0;
             top: 0;
@@ -135,7 +135,7 @@
             width: 100vw;
             max-width: calc(var(--max-width) + 20px);
             margin: 0;
-            z-index: 2;
+            z-index: 20;
         }
 
         .menu {
@@ -676,19 +676,20 @@
 
         .input-container {
             position: fixed;
-            z-index: 1;
+            z-index: 8;
             bottom: -6px;
             padding: 10px 10px var(--offset);
             margin: 0 -10px;
             max-width: var(--max-width);
             width: var(--width);
-            --background: #222;
+            --background: #22222299;
             transition: transform .4s ease-out, width .7s ease-in-out;
             animation: load 1s ease-in-out 1;
         }
 
         button#scrolldown {
             position: absolute;
+            z-index: 7;
             right: 18px;
             top: -38px;
             background-color: #28282888;
@@ -710,6 +711,7 @@
         
         #activeChats {
             position: absolute;
+            z-index: 5;
             left: 0;
             right: 0;
             top: -48px;
@@ -824,6 +826,8 @@
         }
 
         .input-container textarea {
+            position: relative;
+            z-index: 9;
             padding: 13px 48px 64px 36px;
             box-shadow: 0 5px 25px #00000055;
             border-radius: 8px 8px 0 0;
@@ -835,7 +839,7 @@
 
         .input-container #modelInfo {
             position: absolute;
-            z-index: 2;
+            z-index: 12;
             right: 22px;
             bottom: calc(18px + var(--offset));
             font-size: 13px;
@@ -844,7 +848,7 @@
 
         .input-container .attachments {
             position: absolute;
-            z-index: 3;
+            z-index: 13;
             bottom: calc(14px + var(--offset));
             padding: 0;
             left: 78px;
@@ -907,6 +911,7 @@
         #modeSelect {
             appearance: none;
             position: absolute;
+            z-index: 14;
             left: 18px;
             top: 22px;
             width: 24px;
@@ -924,6 +929,7 @@
 
         #addFiles {
             position: absolute;
+            z-index: 15;
             left: 18px;
             bottom: calc(14px + var(--offset));
             padding: 5px 6px 5px 20px;
@@ -942,6 +948,7 @@
 
         button#ask {
             position: absolute;
+            z-index: 16;
             right: 18px;
             top: 18px;
             box-sizing: border-box;
@@ -1232,7 +1239,7 @@
         footer {
             position: absolute;
             margin: 0 auto;
-            z-index: 0;
+            z-index: 1;
             opacity: 0;
             width: 400px;
             left: 50%;
