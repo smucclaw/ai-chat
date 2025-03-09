@@ -1358,7 +1358,7 @@
                 </div>
                 <div>
                     <h4>System prompt</h4>
-                    <textarea rows="3" id="SYSTEM_PROMPT" placeholder="How should the AI behave exactly?" data-default="You're a specialist AI that is maximally useful. Be detailed, structure your output well and explain yourself. Use a mildly cynical yet warm attitude. Use tools to refine your knowledge for complex queries. Make your responses easy to understand and sometimes just a little bit quirky." onblur="saveSetting('SYSTEM_PROMPT')" class="setting"></textarea>
+                    <textarea rows="3" id="SYSTEM_PROMPT" placeholder="How should the AI behave exactly?" data-default="You're a specialist AI that is maximally useful. Be detailed, structure your output well and explain yourself. Use tools to refine your knowledge for complex queries. Make your responses easy to understand and sometimes just a little bit quirky." onblur="saveSetting('SYSTEM_PROMPT')" class="setting"></textarea>
                 </div>
                 <div>
                     <h4>About you</h4>
@@ -2002,7 +2002,10 @@
                 // parts.push(timeToFirstTokenString + ' to first token')
             }
             parts.push(model)
-            parts.push(`<button onclick="deleteFromHistory('${loadedChatId}')">Delete chat</button>`)
+            if (state.startsWith('Done')) {
+                parts.push(`<button onclick="repeatMessage('${loadedChatId}')">Resubmit</button>`)
+                parts.push(`<button onclick="deleteFromHistory('${loadedChatId}')">Delete chat</button>`)
+            }
             return parts.join(' &#183; ')
         }
         
@@ -2065,6 +2068,23 @@
         function resetSearch(container) {
             container.firstElementChild.value = ''
             search(container.firstElementChild, container.lastElementChild)
+        }
+
+        async function repeatMessage(id) {
+            const history = JSON.parse(localStorage.getItem('history')) || []
+            const chat = history.find(h => h.id === id)
+            const last = Array.from(chatMessagesElem.querySelectorAll('.user-message'))?.pop()
+            if (chat) {
+                while (last?.nextElementSibling) {
+                    last.nextElementSibling.remove()
+                }
+                const index = chat.log.findLastIndex(m => m.role === 'user')
+                const message = chat.log[index].content
+                chat.log = chat.log.slice(0, index)
+                localStorage.setItem('history', JSON.stringify(history))
+                last?.remove()
+                sendMessage(message)
+            }
         }
 
         async function deleteFromHistory (id) {

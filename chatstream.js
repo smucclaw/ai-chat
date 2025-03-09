@@ -4,6 +4,7 @@ const ChatStream = (function() {
     #_isDone = false
     #_isError = false
     #_response = ''
+    #_messages = []
     #_isCancelled = false
     #id = null
     #tokenAmount = 0
@@ -38,6 +39,10 @@ const ChatStream = (function() {
 
     get response() {
       return this.#_response
+    }
+
+    get messages() {
+      return this.#_messages
     }
 
     constructor(options = {}) {
@@ -102,6 +107,7 @@ const ChatStream = (function() {
       this.#_isDone = false
       this.#_isGenerating = true
       this.#model = model
+      this.#_messages = messages
 
       try {
         this.#options.onStart?.(id)
@@ -113,10 +119,10 @@ const ChatStream = (function() {
           }
         }, this.#statusIntervalMS) : null;
 
-        await this.#completionsCall(id, messages, model, tools, max_tokens, temperature, true)
+        await this.#completionsCall(id, this.#_messages, model, tools, max_tokens, temperature, true)
 
         while (this.#options.onToolCall && !this.#_isCancelled && (this.#toolCalls = this.#toolCalls.filter(this.#filterTools.bind(this.#toolCalls))).length) {
-          messages.push({
+          this.#_messages.push({
             role: 'assistant',
             tool_calls: this.#toolCalls.slice()
           })
@@ -126,7 +132,7 @@ const ChatStream = (function() {
               const args = tc.function.arguments ? JSON.parse(tc.function.arguments) : undefined
               const result = await this.#options.onToolCall(tc.function.name, args, id)
               if (result) {
-                messages.push({
+                this.#_messages.push({
                   role: 'tool',
                   content: JSON.stringify(result),
                   tool_call_id: tc.id
@@ -138,7 +144,7 @@ const ChatStream = (function() {
           }
 
           this.#toolCalls = []
-          await this.#completionsCall(id, messages, model, tools, max_tokens, temperature, true)
+          await this.#completionsCall(id, this.#_messages, model, tools, max_tokens, temperature, true)
         }
 
         setTimeout(() => {
@@ -152,7 +158,7 @@ const ChatStream = (function() {
               role: 'assistant',
               content: this.#_response
             })
-            this.#options.onComplete?.(messages, this.#status(), id)
+            this.#options.onComplete?.(this.#_messages, this.#status(), id)
           }
         }, this.#tokenThrottleMS)
       } catch (error) {
