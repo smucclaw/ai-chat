@@ -30,9 +30,19 @@
             display: flex;
             flex-direction: column;
             background-color: #111;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 130vh;
+            z-index: 0;
             background-size: 100vw 100vh;
             background-repeat: no-repeat;
-            background-position: 50% 100%;
+            background-position: 50% 0%;
             background-image: radial-gradient(circle at 65% 104%, #276da755 0%, #38444c00 20%),
                 radial-gradient(circle at 25% 159%, #4f95caee 0%, #38444c00 40%),
                 radial-gradient(circle at 80% 120%, #4f6f85bb 0%, #38444c00 28%),
@@ -2429,6 +2439,12 @@
                         (document.body.classList.contains('new')
                             ? document.querySelector(`#activeChats button`).nextElementSibling
                             : document.querySelector(`#activeChats button[data-id="${loadedChatId}"]`)?.nextElementSibling)?.click()
+                    } else if (e.key.match(/[0-9]/)) {
+                        const mode = modeSelectElem.children[e.key - 1]?.value
+                        if (mode) {
+                            modeSelectElem.value = mode
+                            changeMode(mode)
+                        }
                     }
                 } else if (e.key === 'Escape') {
                     if (Array.from(document.querySelectorAll('.menu')).find(e => document.body.classList.contains(e.id + '-open'))) {
