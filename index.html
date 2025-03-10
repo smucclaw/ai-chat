@@ -1607,6 +1607,13 @@
             userInputElem.style.height = 'auto'
 
             const mode = modeSelectElem.value || 'chat'
+
+            const acceptedModels = MODES[mode].models?.replace(/\s/g, '').split(',')
+            if (acceptedModels?.length && !acceptedModels.includes(selectedModel)) {
+                await appendMessage({ text: `The selected mode "${MODES[mode].name}" does only support the following models:<ul><li>${acceptedModels.join('</li><li>')}</li>`, sender: 'system' })
+                return
+            }
+
             const initialMessages = MODES[mode].initialMessages()
 
             if (JSON.stringify([...initialMessages, prompt]).length > MAX_TOKENS) {
