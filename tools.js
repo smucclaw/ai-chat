@@ -1,4 +1,4 @@
-const TOOLS = [{
+TOOLS = [{
   type: "function", 
   function: {
       name: "search_web_info",
@@ -51,7 +51,7 @@ const TOOLS = [{
   type: "function",
   function: {
       name: "spawn_research_agents",
-      description: "Research a topic or problem statement in detail and gather the most recent and accurate information.",
+      description: "Research a topic or problem statement in detail and gather the most recent and accurate information. Call only once.",
       parameters: {
           type: "object",
           properties: {
@@ -113,12 +113,11 @@ const TOOLS = [{
           required: ["latitude", "longitude", "forecast"]
       },
   }
-}]
+}, ...TOOLS]
 
 
-
-// TOOL FUNCTIONS
-async function search_web_info({ query }, id) {
+// GENERAL TOOL FUNCTIONS
+EXECUTE_TOOL.search_web_info = async ({ query }, id) => {
   if (!query.trim()) {
       throw new Error('No query or keywords passed')
   }
@@ -132,25 +131,25 @@ async function search_web_info({ query }, id) {
   }
   const data = await response.json()  
   const results = { id, query, results: data.items.map(i => ({ title: i.title, snippet: i.snippet, url: i.link })) }
-  render_search_web_info(results, id)
+  RENDER_TOOL.search_web_info(results, id)
   return results
 }
 
-async function solve_math({ code }, id) {
+EXECUTE_TOOL.solve_math = async ({ code }, id) => {
   if (!code || typeof code !== 'string') {
     throw new Error('No valid math provided')
   }
   try {
     const result = new Function('return (function() { return ' + code + '; })()')()
     const response = { id, code, result }
-    render_solve_math(response, id)
+    RENDER_TOOL.solve_math(response, id)
     return response
   } catch (error) {
     return { id, error: 'Couldn\'t run this code :(' }
   }
 }
 
-async function get_weather({ latitude, longitude, speed_unit = 'kmh', temp_unit = 'celsius', forecast = true }, id) {
+EXECUTE_TOOL.get_weather = async ({ latitude, longitude, speed_unit = 'kmh', temp_unit = 'celsius', forecast = true }, id) => {
   const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}`
       + (forecast
           ? '&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean,weather_code,wind_speed_10m_max,wind_direction_10m_dominant&forecast_days=7'
@@ -163,7 +162,7 @@ async function get_weather({ latitude, longitude, speed_unit = 'kmh', temp_unit 
   if (!forecast) {
       data.current.conditions = weatherCodes[data.current.weather_code] || 'Unknown'
       const results = { id, now: new Date().toString(), current: data.current }
-      render_get_weather(results, id)
+      RENDER_TOOL.get_weather(results, id)
       return results
   }
 
@@ -175,11 +174,11 @@ async function get_weather({ latitude, longitude, speed_unit = 'kmh', temp_unit 
   });
 
   const results = { id, now: new Date().toString(), forecast: days }
-  render_get_weather(results, id)
+  RENDER_TOOL.get_weather(results, id)
   return results
 }
 
-async function search_user_history({ keywords }, id) {
+EXECUTE_TOOL.search_user_history = async ({ keywords }, id) => {
   const list = typeof keywords === 'object' ? keywords.map(k => k.toLowerCase().trim()) : [keywords.toString().toLowerCase().trim()]
   const history = (JSON.parse(localStorage.getItem('history')) || []).filter(h => h.id !== loadedChatId)
   const matching_keywords = new Set()
@@ -198,11 +197,11 @@ async function search_user_history({ keywords }, id) {
       description: (list?.length ? `${matching.length} previous conversations matching the given keywords` : `Latest ${logs.length} conversations`) + ' of ' + history.length + ' total past conversations with this user.',
       results: logs
   }
-  render_search_user_history(results, id)
+  ENDER_TOOL.search_user_history(results, id)
   return results
 }
 
-async function spawn_research_agents(topics, id) {
+EXECUTE_TOOL.spawn_research_agents = async (topics, id) => {
   const context = topics.context?.trim()
   let i = 1
   topics = Object.keys(topics).reduce((a, v) => v !== 'context' && topics[v]?.trim() ? [...a, { i: i++, topic: topics[v] }] : a, [])
@@ -210,7 +209,7 @@ async function spawn_research_agents(topics, id) {
       throw new Error('No topic to research specified')
   }
   const addedSteps = [{ i, topic: 'Verifying results and synthesizing ...' }]
-  render_spawn_research_agents({ topics: [...topics, ...addedSteps] }, id)
+  RENDER_TOOL.spawn_research_agents({ topics: [...topics, ...addedSteps] }, id)
   await Promise.all(topics.map(async topic => {
       try {
           await new Promise(resolve => setTimeout(resolve, 250))
@@ -245,7 +244,7 @@ async function spawn_research_agents(topics, id) {
 
 
 // TOOL RESULT RENDER FUNCTIONS
-async function render_search_web_info(results, id) {
+RENDER_TOOL.search_web_info = (results, id) => {
   const parts = id.split('-')
   if (loadedChatId?.toString() === parts[0] && results.id) {
       id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
@@ -253,7 +252,7 @@ async function render_search_web_info(results, id) {
   }
 }
 
-async function render_solve_math(results, id) {
+RENDER_TOOL.solve_math = (results, id) => {
     const parts = id.split('-')
     if (loadedChatId?.toString() === parts[0] && results.id) {
         console.log(results)
@@ -261,7 +260,7 @@ async function render_solve_math(results, id) {
     }
 }
 
-async function render_get_weather(results, id) {
+RENDER_TOOL.get_weather = (results, id) => {
   const parts = id.split('-')
   if (loadedChatId?.toString() === parts[0] && results.id) {
       id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
@@ -269,7 +268,7 @@ async function render_get_weather(results, id) {
   }
 }
 
-async function render_search_user_history(results, id) {
+RENDER_TOOL.search_user_history = (results, id) => {
   const parts = id.split('-')
   if (loadedChatId?.toString() === parts[0] && results.id) {
       const content = results.results?.map(r => {
@@ -281,7 +280,7 @@ async function render_search_user_history(results, id) {
   }
 }
 
-async function render_spawn_research_agents(results, id) {
+RENDER_TOOL.spawn_research_agents = (results, id) => {
   const parts = id.split('-')
   if (loadedChatId?.toString() === parts[0]) {
     appendTool({ html: `<p>Researching ...</p><ol>${results.topics.map(t => `<li><strong>${t.topic}</strong><br><div id='${id + '-' + t.i}' class="subcontent"></div></li>`).join('')}</ol>` })

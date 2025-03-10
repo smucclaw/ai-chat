@@ -78,7 +78,7 @@ const ChatStream = (function() {
               console.warn(`Tool call failed: ${tc.function.name}`, tc.function.arguments, e)
               messages.push({
                 role: 'tool',
-                content: 'Invalid tool call',
+                content: 'Tool call failed',
                 tool_call_id: tc.id
               })
             }

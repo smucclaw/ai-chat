@@ -1,12 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+        // CONFIGURATION
+        const MAX_TOKENS = 20000;           // Adjust to what you can run
+        const MAX_STORAGE_CHARS = 5242880;  // 5MB character limit for localStorage
+        window.TOOLS = []                   // OpenAI compatible tool definitions
+        window.EXECUTE_TOOL = {}            // Object with the JS function implementations defined in TOOLS
+        window.RENDER_TOOL = {}             // Object with JS functions to render tool info in message stream using `appendTool({ html, id })`
+        window.MODES = {}                   // Object with UI Modes for the user to choose from. Set the AI system prompt and tools, etc.
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./highlight.css">
     <script src="./chatstream.js"></script>
     <script src="./tools.js"></script>
     <script src="./modes.js"></script>
+    <script src="./jl4.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.6/marked.min.js" crossorigin="anonymous"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js" crossorigin="anonymous"></script>
     <link rel="manifest" href="manifest.json">
@@ -620,6 +630,10 @@
             color: #777;
             margin-bottom: 1em;
             font-size: 13px;
+        }
+
+        .tool-message .subcontent:empty {
+            display: none;
         }
 
         .tool-message ul.items {
@@ -1415,7 +1429,7 @@
         <div class="input-container">
             <div id="modelInfo"></div>
             <div class="attachments" id="fileAttachments"></div>
-            <textarea id="userInput" placeholder="What would you like to know?" rows="1" tabindex="0" onfocus="adjustOffset('0px')" onblur="adjustOffset()"></textarea>
+            <textarea id="userInput" rows="1" tabindex="0" onfocus="adjustOffset('0px')" onblur="adjustOffset()"></textarea>
             <select id="modeSelect" title="Select prompt mode" onChange="changeMode(this.value)"></select>
             <input type="file" id="fileInput" accept=".pdf,.txt,.csv,.tsv,.js,.json,.jsx,.ts,.tsx,.css,.scss,.less,.html,.htm,.xml,.yaml,.yml,.md,.py,.rb,.java,.c,.cpp,.h,.hpp,.cs,.php,.sql,.sh,.bash,.zsh" multiple>
             <button id="addFiles" onclick="fileInputElem.click()" title="Attach PDF or Text files">Files</button>
@@ -1427,10 +1441,6 @@
         </div>
     </div>
     <script>
-        // Configuration
-        const MAX_TOKENS = 20000;
-        const MAX_STORAGE_CHARS = 5242880; // 5MB character limit for localStorage
-
         // Globals. Don't touch.
         let isAvailable = null,
          loadedChatId = null,
@@ -1552,7 +1562,7 @@
         }
 
         async function suggestFollowUp(log, id) {
-            if (!log?.length || !chatStreams[null]) return
+            if (!log?.[log.length - 1]?.content?.trim() || !chatStreams[null]) return
             try {
                 const json = await chatStreams[null].call({
                     messages: MODES.suggestFollowUps.initialMessages(log[log.length - 1].content)
@@ -1663,7 +1673,7 @@
                 onStart,
                 onEnd,
                 onToolCall: async (func, args, id) => {
-                    const result = await window[func](args, id)
+                    const result = await window.EXECUTE_TOOL[func](args, id)
                     console.log('ToolCall for ' + id + ':', { func, args, result })
                     return result
                 }
@@ -2212,12 +2222,14 @@
             for (const l of chat.log) {
                 if (l.role === 'tool') {
                     const name = toolCalls.find(t => l.tool_call_id === t.id)?.function.name
-                    if (name) {
+                    if (window.RENDER_TOOL[name]) {
                         try {
-                            await window['render_' + name](JSON.parse(l.content), chat.id)
+                            await window.RENDER_TOOL[name](JSON.parse(l.content), chat.id)
                         } catch (e) {
                             console.error('Failed rendering tool history for ' + chat.id, name, l, e)
                         }
+                    } else {
+                        console.warn('No render function found for tool ' + name)
                     }
                 } else if (l.tool_calls) {
                     toolCalls.push(...l.tool_calls)

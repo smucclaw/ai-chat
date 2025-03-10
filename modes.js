@@ -1,4 +1,4 @@
-const MODES = {
+MODES = Object.assign({
   lookup: {
     name: 'Lookup',
     visible: true,
@@ -62,7 +62,7 @@ const MODES = {
     name: 'Suggest three follow-ups',
     initialMessages: content => [{
         role: 'system',
-        content: 'You\'re an AI with the sole purpose to suggest the three most relevant follow up topics worth researching given a specific text with no more than 8 words. Always respond in the form of a valid JSON arra containing strings.'
+        content: 'You\'re an AI with the sole purpose to suggest the three most relevant follow up topics worth researching given a specific text with no more than 8 words. Always respond in the form of a valid JSON array containing strings.'
     }, {
         role: 'user',
         content: 'Return the JSON array with short follow up topics for:\n\n' + content
@@ -111,4 +111,4 @@ const MODES = {
         content: `Suggest ways to improve mistakes or errors on the following information for the prompt of "${context}":\n\n${info}`
     }]
   }
-}
+}, MODES)
