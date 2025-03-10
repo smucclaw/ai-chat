@@ -1889,7 +1889,6 @@
 
           const defaultModels = DEFAULT_MODEL?.replace(/\s/g, '').split(',')
           const q = location.search ? (new URLSearchParams(location.search)).get('q') : null
-          history.replaceState({}, document.title, location.pathname)
 
           try {
             
@@ -1987,7 +1986,9 @@
         function onEnd(id) {
             document.querySelector(`#historyItems .generating[data-id="${id}"]`)?.classList.remove('generating')
             document.querySelector(`#activeChats .generating[data-id="${id}"]`)?.classList.remove('generating')
-            history.replaceState({}, document.title, location.pathname)
+            const queryParams = new URLSearchParams(location.search)
+            queryParams.delete('q')
+            history.replaceState({}, document.title, location.pathname + (queryParams.size ? '?' + queryParams.toString() : ''))
 
             if (loadedChatId !== id) return
 
