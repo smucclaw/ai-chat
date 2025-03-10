@@ -2393,7 +2393,7 @@
             extensions.forEach(extension => {
               if (extension.trim()) {
                 const script = document.createElement('script')
-                script.src = `/extension/${extension.trim()}.js`
+                script.src = `./extension/${extension.trim()}.js`
                 document.head.appendChild(script)
               }
             })
