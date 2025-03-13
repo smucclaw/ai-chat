@@ -1673,9 +1673,11 @@
             }
 
             const initialMessages = MODES[mode].initialMessages()
+            const size = JSON.stringify([...initialMessages, prompt]).length
+            console.log(`Prompt size total: ${size} / ${MAX_TOKENS} characters`)
 
-            if (JSON.stringify([...initialMessages, prompt]).length > MAX_TOKENS) {
-                await appendMessage({ text: 'Prompt size is too large.', sender: 'system' })
+            if (size > MAX_TOKENS) {
+                await appendMessage({ text: `Prompt size is ${Math.round(size / MAX_TOKENS * 100)}% too large.`, sender: 'system' })
                 return
             }
 
