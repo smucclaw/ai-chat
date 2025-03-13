@@ -5,7 +5,7 @@
         // CONFIGURATION
         const MAX_IMAGE_WIDTH = 256         // Maximum dimensions for attached images (needs vision model)
         const MAX_IMAGE_HEIGHT = 256
-        const MAX_TOKENS = 20000            // Adjust to what you can run
+        const MAX_TOKENS = 32764            // Adjust to what you can run
         const MAX_STORAGE_CHARS = 5242880   // 5MB character limit for localStorage
         window.TOOLS = []                   // OpenAI compatible tool definitions
         window.EXECUTE_TOOL = {}            // Object with the JS function implementations defined in TOOLS
@@ -490,6 +490,19 @@
             gap: 4px;
         }
 
+        .user-message .attachment {
+            flex-wrap: wrap;
+        }
+
+        .user-message .attachment img {
+            max-width: 200px;
+            height: 128px;
+            object-fit: cover;
+            display: block;
+            flex: 1 0 100%;
+            border-radius: 3px;
+        }
+
         .user-message a {
             color: #eee;
         }
@@ -900,6 +913,10 @@
             overflow: hidden;
             color: rgba(255, 255, 255, .8);
             background: var(--background);
+        }
+
+        .attachment img {
+            display: none;
         }
 
         .attachment .type {
@@ -1576,6 +1593,7 @@
                 const attachment = document.createElement('div');
                 attachment.className = 'attachment ' + file.type;
                 attachment.innerHTML = `
+                    ${file.imageData ? `<img src='${file.imageData}' />` : ''}
                     <span class="type">${file.type}</span>
                     <span class="name">${file.name}</span>
                     <button onclick="removeFile('${file.name}')">&times;</button>
@@ -1677,7 +1695,7 @@
             console.log(`Prompt size total: ${size} / ${MAX_TOKENS} characters`)
 
             if (size > MAX_TOKENS) {
-                await appendMessage({ text: `Prompt size is ${Math.round(size / MAX_TOKENS * 100)}% too large.`, sender: 'system' })
+                await appendMessage({ text: `Prompt size is ${Math.round(size / MAX_TOKENS * 100)}% of maximum.`, sender: 'system' })
                 return
             }
 
