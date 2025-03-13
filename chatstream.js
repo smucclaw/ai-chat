@@ -267,16 +267,27 @@ const ChatStream = (function() {
     }
 
     #formatFileContent(message) {
-      if (!message.files?.length) return message.content
-      
-      return `${message.content}\n\n${message.files.length} file(s) are attached for context:\n${
-        message.files.map((f, i) => {
-          if (f.type.startsWith('image')) {
-            return `[File ${i + 1}: ${f.name} (image)]:\n${f.imageData || '[Image data not available]'}`
-          }
-          return `[File ${i + 1}: ${f.name}]:\n${f.text}`
-        }).join('\n\n')
-      }`
+      if (!message.files?.length) {
+        return message.content
+      }
+      const content = []
+      if (message.content.trim()) {
+        content.push({ type: 'text', text: message.content })
+      }
+      message.files.forEach(f => {
+        if (!f.imageData) {
+          content.push({
+            type: 'text',
+            text: `[File: ${f.name}]: ${f.text}` 
+          })
+        } else {
+          content.push({
+            type: 'image_url',
+            image_url: { url: f.imageData }
+          })
+        }
+      })
+      return content
     }
 
     #throttleAppendToken(id, token) {
