@@ -3,9 +3,9 @@
 <head>
     <script>
         // CONFIGURATION
-        const MAX_IMAGE_WIDTH = 256         // Maximum dimensions for attached images (needs vision model)
-        const MAX_IMAGE_HEIGHT = 256
-        const MAX_TOKENS = 32764            // Adjust to what you can run
+        const MAX_IMAGE_WIDTH = 128         // Maximum dimensions for attached images (needs vision model)
+        const MAX_IMAGE_HEIGHT = 128
+        const MAX_TOKENS = 8192            // Adjust to what you can run
         const MAX_STORAGE_CHARS = 5242880   // 5MB character limit for localStorage
         window.TOOLS = []                   // OpenAI compatible tool definitions
         window.EXECUTE_TOOL = {}            // Object with the JS function implementations defined in TOOLS
@@ -1676,7 +1676,6 @@
                 files: !messageText && attachedFiles
             }
 
-                console.log(prompt)
             if (!prompt.content && !prompt.files.length) return
 
             userInputElem.blur()
