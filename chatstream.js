@@ -270,7 +270,12 @@ const ChatStream = (function() {
       if (!message.files?.length) return message.content
       
       return `${message.content}\n\n${message.files.length} file(s) are attached for context:\n${
-        message.files.map((f, i) => `[File ${i + 1}: ${f.name}]:\n${f.text}`).join('\n\n')
+        message.files.map((f, i) => {
+          if (f.type === 'image') {
+            return `[File ${i + 1}: ${f.name} (image)]:\n${f.imageData || '[Image data not available]'}`
+          }
+          return `[File ${i + 1}: ${f.name}]:\n${f.text}`
+        }).join('\n\n')
       }`
     }
 
