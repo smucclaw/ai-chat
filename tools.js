@@ -197,7 +197,7 @@ EXECUTE_TOOL.search_user_history = async ({ keywords }, id) => {
       description: (list?.length ? `${matching.length} previous conversations matching the given keywords` : `Latest ${logs.length} conversations`) + ' of ' + history.length + ' total past conversations with this user.',
       results: logs
   }
-  ENDER_TOOL.search_user_history(results, id)
+  RENDER_TOOL.search_user_history(results, id)
   return results
 }
 

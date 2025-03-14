@@ -5,7 +5,7 @@
         // CONFIGURATION
         const MAX_IMAGE_WIDTH = 256         // Maximum dimensions for attached images (needs vision model)
         const MAX_IMAGE_HEIGHT = 256
-        const MAX_TOKENS = 20000             // Adjust to what you can run
+        const MAX_TOKENS = 16000             // Adjust to what you can run
         const MAX_STORAGE_CHARS = 5242880   // 5MB character limit for localStorage
         window.TOOLS = []                   // OpenAI compatible tool definitions
         window.EXECUTE_TOOL = {}            // Object with the JS function implementations defined in TOOLS
@@ -1557,7 +1557,7 @@
                     const ctx = canvas.getContext('2d')
                     ctx.drawImage(img, 0, 0, width, height)
                     
-                    resolve(canvas.toDataURL(file.type))
+                    resolve(canvas.toDataURL(file.type, 0.7))
                 }
                 
                 img.onerror = () => {
