@@ -3,8 +3,9 @@
 <head>
     <script>
         // CONFIGURATION
-        const MAX_IMAGE_WIDTH = 300         // Maximum dimensions for attached images (needs vision model)
-        const MAX_IMAGE_HEIGHT = 300
+        const PERSIST_API = ''              // Work in progress to store chat logs for sharing ...
+        const MAX_IMAGE_WIDTH = 164         // Maximum dimensions for attached images (needs vision model)
+        const MAX_IMAGE_HEIGHT = 164
         const MAX_TOKENS = 20000            // Adjust to what you can run
         const MAX_STORAGE_CHARS = 5242880   // 5MB character limit for localStorage
         window.TOOLS = []                   // OpenAI compatible tool definitions
@@ -1980,10 +1981,11 @@
           selectedModel = ''
 
           const defaultModels = DEFAULT_MODEL?.replace(/\s/g, '').split(',')
-          const q = location.search ? (new URLSearchParams(location.search)).get('q') : null
+          const queryParams = new URLSearchParams(location.search)
+          const q = queryParams?.get('q')
+          const s = queryParams?.get('s')
 
           try {
-            
             const response = await fetch(window.API_URL + '/v1/models', {
               headers: {
                 'Authorization': `Bearer ${window.API_KEY}`,
@@ -2046,6 +2048,10 @@
 
             if (q) {
                 sendMessage(q)
+            } else if (s?.length === 17) {
+                queryParams.delete('s')
+                history.replaceState({}, document.title, location.pathname + (queryParams.size ? '?' + queryParams.toString() : ''))
+                loadChat(s)
             } else {
                 sayHello()
             }
@@ -2140,8 +2146,9 @@
             }
             parts.push(model)
             if (state.startsWith('Done')) {
-                parts.push(`<button onclick="repeatMessage('${loadedChatId}')">Resubmit</button>`)
-                parts.push(`<button onclick="deleteFromHistory('${loadedChatId}')">Delete chat</button>`)
+                parts.push(`<button onclick="repeatMessage()">Resubmit</button>`)
+                parts.push(`<button onclick="saveChat()">Save chat</button>`)
+                parts.push(`<button onclick="deleteFromHistory()">Delete chat</button>`)
             }
             return parts.join(' &#183; ')
         }
@@ -2207,7 +2214,7 @@
             search(container.firstElementChild, container.lastElementChild)
         }
 
-        async function repeatMessage(id) {
+        async function repeatMessage(id = loadedChatId) {
             const history = JSON.parse(localStorage.getItem('history')) || []
             const chat = history.find(h => h.id === id)
             const last = Array.from(chatMessagesElem.querySelectorAll('.user-message'))?.pop()
@@ -2224,7 +2231,7 @@
             }
         }
 
-        async function deleteFromHistory (id) {
+        async function deleteFromHistory (id = loadedChatId) {
             if(!id) return
             if(!confirm('Are you sure you want to remove this chat?')) return
             if(chatStreams[id]?.isGenerating) {
@@ -2343,6 +2350,58 @@
             chatStreams[chat.id]?.isGenerating && onToken('', chat.id)
             window.scrollTo(0, document.documentElement.scrollHeight)
             setTimeout(() => window.scrollTo(0, document.documentElement.scrollHeight), 280)
+        }
+
+        async function saveChat(chat) {
+            if (!chat) {
+                const history = JSON.parse(localStorage.getItem('history')) || []
+                chat = history?.find(h => h.id === loadedChatId)
+            }
+            if (!chat) return
+            try {
+                const response = await fetch(`${window.PERSIST_API}/save.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${window.API_KEY}`
+                    },
+                    body: JSON.stringify({ content: chat })
+                })
+                if (response.status === 401) {
+                    alert('Not a valid API key')
+                    return
+                }
+                const result = await response.json()
+                if (result.success) {
+                    const url = `${window.PERSIST_API}/?s=${result.filename}`
+                    window.open(url, '_blank')
+                    console.log('Saved chat url:', url)
+                } else {
+                    throw Error(result.error)
+                }
+            } catch (error) {
+                console.error('Error saving chat:', error)
+            }
+        }
+
+        async function loadChat(s) {
+            try {
+                const response = await fetch(`${window.PERSIST_API}/load.php?s=${s}`, {
+                    headers: {
+                        Authorization: `Bearer ${window.API_KEY}`
+                    }
+                })
+                if (response.ok) {
+                    const savedChat = await response.json()
+                    await loadHistoryLog(savedChat.content)
+                } else {
+                    console.error('Failed to load saved chat:', response.status)
+                    throw Error('Invalid chat')
+                }
+            } catch (error) {
+                console.error('Error loading saved chat:', error)
+                await appendMessage({ text: 'Could not load the saved chat', sender: 'system' })
+            }
         }
 
         function showActiveChat() {
