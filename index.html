@@ -3,9 +3,9 @@
 <head>
     <script>
         // CONFIGURATION
-        const MAX_IMAGE_WIDTH = 128         // Maximum dimensions for attached images (needs vision model)
-        const MAX_IMAGE_HEIGHT = 128
-        const MAX_TOKENS = 8192             // Adjust to what you can run
+        const MAX_IMAGE_WIDTH = 256         // Maximum dimensions for attached images (needs vision model)
+        const MAX_IMAGE_HEIGHT = 256
+        const MAX_TOKENS = 20000             // Adjust to what you can run
         const MAX_STORAGE_CHARS = 5242880   // 5MB character limit for localStorage
         window.TOOLS = []                   // OpenAI compatible tool definitions
         window.EXECUTE_TOOL = {}            // Object with the JS function implementations defined in TOOLS
@@ -1844,23 +1844,31 @@
         }
 
         async function createChatLogName(log) {
-            if (!log?.length || !chatStreams[null]) return
+            if (!log?.length) return
             let name
             let i = 0
-            try {
-                const json = await chatStreams[null].call({
-                    messages: MODES.titleize.initialMessages(log.reduce((a, l) => {
-                        if (l.role === 'user') {
-                            a.push(`#${++i} Prompt: "${l.content}"` + (l.files?.length ? `, file attachments: "${l.files.map(f => f.name).join(', ')}"` : '') + '\n')
-                        }
-                        return a
-                    }, []))
-                })
-                name = json.content.replace(/<think>[\S\s]+?(<\/think>)?/, '')
-            } catch (e) {
-                console.error('Could not summarise prompt', e)
+            if (chatStreams[null]) {
+                try {
+                    const json = await chatStreams[null].call({
+                        messages: MODES.titleize.initialMessages(log.reduce((a, l) => {
+                            if (l.role === 'user') {
+                                a.push(`#${++i} Prompt: "${l.content}"` + (l.files?.length ? `, file attachments: "${l.files.map(f => f.name).join(', ')}"` : '') + '\n')
+                            }
+                            return a
+                        }, []))
+                    })
+                    name = json.content.replace(/<think>[\S\s]+?(<\/think>)?/, '').replace(/['"]/g, '').trim()
+                } catch (e) {
+                    console.error('Could not summarise prompt', e)
+                }
+            } else {
+                name = log.reduce((a, l) => {
+                    if (!a && l.role === 'user') {
+                        return l.content + (l.files?.length ? ' [' + l.files.map(f => f.name).join(', ') + ']' : '')
+                    }
+                }, '').trim().substring(0, 200)
             }
-            return name?.replace(/['"]/g, '')
+            return name
         }
 
         async function appendTool({ html, id }) {
