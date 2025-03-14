@@ -5,7 +5,7 @@
         // CONFIGURATION
         const MAX_IMAGE_WIDTH = 128         // Maximum dimensions for attached images (needs vision model)
         const MAX_IMAGE_HEIGHT = 128
-        const MAX_TOKENS = 8192            // Adjust to what you can run
+        const MAX_TOKENS = 8192             // Adjust to what you can run
         const MAX_STORAGE_CHARS = 5242880   // 5MB character limit for localStorage
         window.TOOLS = []                   // OpenAI compatible tool definitions
         window.EXECUTE_TOOL = {}            // Object with the JS function implementations defined in TOOLS
@@ -2217,6 +2217,7 @@
         }
 
         async function deleteFromHistory (id) {
+            if(!id) return
             if(!confirm('Are you sure you want to remove this chat?')) return
             if(chatStreams[id]?.isGenerating) {
                 await chatStreams[id].stop()
