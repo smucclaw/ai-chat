@@ -62,10 +62,10 @@ MODES = Object.assign({
     name: 'Suggest three follow-ups',
     initialMessages: content => [{
         role: 'system',
-        content: 'You\'re an AI with the sole purpose to suggest the three most relevant follow up topics worth researching given a specific text. Each suggestion should be less than 8 words. Always respond in the form of a valid JSON array containing strings.'
+        content: 'You\'re an AI with the sole purpose to suggest the three most relevant follow up topics or answers to questions in a given text. Each suggestion should be less than 8 words. Always respond in the form of a valid JSON array containing the suggestions as strings.'
     }, {
         role: 'user',
-        content: 'Return the JSON array with short follow up topics for:\n\n' + content
+        content: 'Return the JSON array with short follow up topics or suggestions for answers to questions in this text:\n\n' + content
     }]
   },
   sayHello: {
