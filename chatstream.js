@@ -154,10 +154,12 @@ const ChatStream = (function() {
               this.#onToken?.(this.#queuedTokens, id)
               this.#queuedTokens = ''
             }
-            messages.push({
-              role: 'assistant',
-              content: this.#_response
-            })
+            if (this.#_response) {
+                messages.push({
+                  role: 'assistant',
+                  content: this.#_response
+                })
+            }
             this.#options.onComplete?.(this.#_messages, this.#status(), id)
           }
         }, this.#tokenThrottleMS)

@@ -3,9 +3,9 @@
 <head>
     <script>
         // CONFIGURATION
-        const MAX_IMAGE_WIDTH = 256         // Maximum dimensions for attached images (needs vision model)
-        const MAX_IMAGE_HEIGHT = 256
-        const MAX_TOKENS = 16000             // Adjust to what you can run
+        const MAX_IMAGE_WIDTH = 300         // Maximum dimensions for attached images (needs vision model)
+        const MAX_IMAGE_HEIGHT = 300
+        const MAX_TOKENS = 20000            // Adjust to what you can run
         const MAX_STORAGE_CHARS = 5242880   // 5MB character limit for localStorage
         window.TOOLS = []                   // OpenAI compatible tool definitions
         window.EXECUTE_TOOL = {}            // Object with the JS function implementations defined in TOOLS
@@ -1779,7 +1779,7 @@
             const updated = new Date().getTime().toString()
             id = id || updated
 
-            if (isUser && log[log.length - 1]?.role === 'user') {
+            while (isUser && log[log.length - 1]?.role === 'user') {
                 log = log.slice(0, -1)
             }
 
