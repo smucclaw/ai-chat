@@ -2048,7 +2048,7 @@
 
             if (q) {
                 sendMessage(q)
-            } else if (s?.length === 17) {
+            } else if (s?.length === 16) {
                 loadChat(s)
             } else {
                 sayHello()
@@ -2059,7 +2059,7 @@
                 userInputElem.value = q
             }
             clearMemory()
-            if (s?.length === 17) {
+            if (s?.length === 16) {
                 loadChat(s)
             } else {
                 await appendMessage({ text: 'Configure a valid OpenAI v1 compatible API in the server settings.', sender: 'system' })
