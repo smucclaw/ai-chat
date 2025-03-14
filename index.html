@@ -1463,6 +1463,7 @@
         // Globals. Don't touch.
         let isAvailable = null,
          loadedChatId = null,
+         loadedChat = null,
          selectedModel = null,
          loadedModels = [],
          attachedFiles = [],
@@ -1776,7 +1777,7 @@
             const history = JSON.parse(localStorage.getItem('history')) || []
             const index = history?.findIndex(h => h.id === id)
 
-            let log = [...(history?.[index]?.log || [])] 
+            let log = [...(history?.[index]?.log || loadedChat?.log || [])] 
             const updated = new Date().getTime().toString()
             id = id || updated
 
@@ -1808,6 +1809,7 @@
                 const toStore = JSON.stringify(history)
                 localStorage.setItem('history', toStore)
                 console.log(`Saved ${toStore.length} characters to history.`)
+                loadedChat = null
             } catch (error) {
                 console.error('Error:', error)
             }
@@ -2396,6 +2398,7 @@
                 if (response.ok) {
                     const savedChat = await response.json()
                     await loadHistoryLog(savedChat.content)
+                    loadedChat = savedChat.content
                 } else {
                     console.error('Failed to load saved chat:', response.status)
                     throw Error('Invalid chat')
