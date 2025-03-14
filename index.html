@@ -2317,7 +2317,7 @@
             historyItemsElem.prepend(option)
         }
 
-        async function loadHistoryLog(chat) {
+        async function loadHistoryLog(chat, fromTop) {
             closeMenu()
             clearMemory()
             loadedChatId = chat.id
@@ -2352,8 +2352,8 @@
             showActiveChat()
             document.body.classList[chatStreams[chat.id]?.isGenerating ? 'add' : 'remove']('generating')
             chatStreams[chat.id]?.isGenerating && onToken('', chat.id)
-            window.scrollTo(0, document.documentElement.scrollHeight)
-            setTimeout(() => window.scrollTo(0, document.documentElement.scrollHeight), 280)
+            window.scrollTo(0, fromTop ? 0 : document.documentElement.scrollHeight)
+            setTimeout(() => window.scrollTo(0, fromTop ? 0 : document.documentElement.scrollHeight), 280)
         }
 
         async function saveChat(chat) {
@@ -2397,7 +2397,7 @@
                 })
                 if (response.ok) {
                     const savedChat = await response.json()
-                    await loadHistoryLog(savedChat.content)
+                    await loadHistoryLog(savedChat.content, true)
                     loadedChat = savedChat.content
                 } else {
                     console.error('Failed to load saved chat:', response.status)
