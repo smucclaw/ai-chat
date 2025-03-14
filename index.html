@@ -1050,7 +1050,7 @@
             cursor: pointer;
         }
 
-        .chat-messages .message:last-child .status {
+        .chat-messages .ai-message:last-of-type .status {
             display: block;
         }
 
@@ -1889,7 +1889,7 @@
         }
 
         async function appendMessage({ text, sender, files, status }) {
-            const message = sender === 'user' && chatMessagesElem.lastElementChild?.classList.contains('user-message') ? chatMessagesElem.lastElementChild : document.createElement(sender === 'tool' ? 'section' : 'div')
+            const message = sender === 'user' && chatMessagesElem.lastElementChild?.classList.contains('user-message') ? chatMessagesElem.lastElementChild : document.createElement(sender === 'tool' ? 'section' : (sender === 'assistant' ? 'article' : 'div'))
             message.className = `message ${sender === 'user' ? 'user-message' : sender === 'assistant' ? 'ai-message' : sender === 'system' ? 'system-message' : 'tool-message'}`
             if (!message.parentElement) {
                 const content = message.firstElementChild || document.createElement('div')
@@ -2359,7 +2359,7 @@
             }
             if (!chat) return
             try {
-                const response = await fetch(`${window.PERSIST_API}/save.php`, {
+                const response = await fetch(`${PERSIST_API}/save.php`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2373,9 +2373,9 @@
                 }
                 const result = await response.json()
                 if (result.success) {
-                    const url = `${window.PERSIST_API}/?s=${result.filename}`
-                    window.open(url, '_blank')
-                    console.log('Saved chat url:', url)
+                    const url = `${PERSIST_API}/?s=${result.filename}`
+                    await appendMessage({ text: `Chat saved at:<a style='display: block' href='${url}'>${url}</a>`, sender: 'system' })
+                    scrollToEnd()
                 } else {
                     throw Error(result.error)
                 }
@@ -2386,7 +2386,7 @@
 
         async function loadChat(s) {
             try {
-                const response = await fetch(`${window.PERSIST_API}/load.php?s=${s}`, {
+                const response = await fetch(`${PERSIST_API}/load.php?s=${s}`, {
                     headers: {
                         Authorization: `Bearer ${window.API_KEY}`
                     }
