@@ -2158,12 +2158,12 @@
         }
         
         async function sayHello() {
-            if (!isAvailable) return
-
             clearMemory()
             showActiveChat()
 
             document.body.classList.add('new')
+
+            if (!isAvailable) return
 
             if (chatStreams[loadedChatId]) {
                 const history = JSON.parse(localStorage.getItem('history')) || []
