@@ -2164,7 +2164,10 @@
 
             document.body.classList.add('new')
 
-            if (!isAvailable) return
+            if (!isAvailable) {
+                await appendMessage({ text: 'Configure a valid OpenAI v1 compatible API in the server settings.', sender: 'system' })
+                return
+            }
 
             if (chatStreams[loadedChatId]) {
                 const history = JSON.parse(localStorage.getItem('history')) || []
