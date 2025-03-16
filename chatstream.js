@@ -272,10 +272,7 @@ const ChatStream = (function() {
       if (!message.files?.length) {
         return message.content
       }
-      const content = []
-      if (message.content.trim()) {
-        content.push({ type: 'text', text: message.content })
-      }
+      const content = [{ type: 'text', text: message.content?.trim() ? message.content : 'Explain' }]
       message.files.forEach(f => {
         if (!f.imageData) {
           content.push({
