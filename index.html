@@ -2631,6 +2631,9 @@
             const firstMode = modeSelectElem.children[0]?.value
             modeSelectElem.value = firstMode || 'chat'
             changeMode(firstMode)
+            const queryParams = new URLSearchParams(location.search)
+            queryParams.delete('s')
+            history.replaceState({}, document.title, location.pathname + (queryParams.size ? '?' + queryParams.toString() : ''))
             sayHello()
             setTimeout(() => userInputElem.focus(), 800)
         }
