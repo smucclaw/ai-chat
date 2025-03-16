@@ -24,7 +24,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#111111">
     <link rel="apple-touch-icon" href="icon-192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name ="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <title>AI</title>
     <style>
@@ -626,7 +626,7 @@
         }
 
 
-        .tool-message ol {
+        .tool-message > .content > ol {
             margin: -.5em 0 1em;
             padding-left: 1.5em;
             line-height: 1.5em;
@@ -1515,10 +1515,9 @@
                     }
                 } else if (file.type.startsWith('image/')) {
                     try {
-                        const imageData = await resizeImage(file, MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT);
                         attachedFiles.push({
                             name: file.name,
-                            imageData,
+                            url: URL.createObjectURL(file),
                             type: file.type.split('/')[1]
                         });
                     } catch (error) {
@@ -1536,48 +1535,109 @@
             event.target.value = '';
         }
 
-        async function resizeImage(file, maxWidth, maxHeight) {
-            return new Promise((resolve, reject) => {
-                const img = new Image()
-                img.onload = () => {
-                    let width = img.width
-                    let height = img.height
-                    
-                    if (width > maxWidth) {
-                        height = Math.round(height * (maxWidth / width))
-                        width = maxWidth
-                    }
-                    
-                    if (height > maxHeight) {
-                        width = Math.round(width * (maxHeight / height))
-                        height = maxHeight
-                    }
+        async function prepareImageForVisionLLM(url, maxCharacters = MAX_TOKENS) {
+            const img = new Image();
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
 
-                    const canvas = document.createElement('canvas')
-                    canvas.width = width
-                    canvas.height = height
-                    
-                    const ctx = canvas.getContext('2d')
-                    ctx.drawImage(img, 0, 0, width, height)
-                    
-                    resolve(canvas.toDataURL(file.type, 0.75))
+            // Load image
+            const imgPromise = new Promise((resolve) => {
+                img.onload = () => resolve();
+                img.src = url;
+            });
+            await imgPromise;
+
+            // Initial settings
+            let width = img.width;
+            let height = img.height;
+            let quality = 0.95; // Start with high quality (0-1 scale)
+            let format = 'image/jpeg'; // JPEG is default for smaller size, but we'll test PNG too
+            const aspectRatio = width / height;
+
+            // Metadata (kept minimal for character efficiency)
+            const metadata = {
+                originalName: file.name,
+                mimeType: file.type,
+                timestamp: new Date().toISOString()
+            };
+
+            // Function to generate base64 and measure length
+            const generatePayload = (w, h, fmt, qual) => {
+                canvas.width = w;
+                canvas.height = h;
+                ctx.drawImage(img, 0, 0, w, h);
+                const base64 = canvas.toDataURL(fmt, qual).split(',')[1]; // Strip prefix
+                return { payload: base64, length: payload.length };
+            };
+
+            // Binary search-like approximation for size and quality
+            let targetSize = maxCharacters * 0.9; // Aim for 90% of limit to leave buffer
+            let minDimension = 100; // Minimum acceptable size for detail
+            let maxDimension = Math.min(img.width, img.height, 1000); // Cap for practicality
+            let currentDimension = maxDimension;
+            let step = (maxDimension - minDimension) / 2;
+
+            let bestResult = null;
+            let bestScore = -Infinity;
+
+            // Try different sizes and formats
+            for (let i = 0; i < 10; i++) { // Limit iterations for performance
+                width = Math.round(currentDimension * aspectRatio);
+                height = Math.round(currentDimension);
+
+                // Test JPEG first (usually smaller)
+                let result = generatePayload(width, height, 'image/jpeg', quality);
+                let length = result.length;
+
+                // Score based on size and detail retention
+                let score = (width * height) * quality - Math.abs(length - targetSize) * 10;
+
+                if (length <= maxCharacters && score > bestScore) {
+                    bestResult = result.payload;
+                    bestScore = score;
                 }
-                
-                img.onerror = () => {
-                    reject(new Error('Failed to load image'))
+
+                // If too big, try PNG (better for text/details) at lower quality
+                if (length > maxCharacters) {
+                result = generatePayload(width, height, 'image/png', 1.0); // PNG doesn't use quality param
+                length = result.length;
+                score = (width * height) * 0.9 - Math.abs(length - targetSize) * 10; // Approximate quality
+                if (length <= maxCharacters && score > bestScore) {
+                    bestResult = result.payload;
+                    bestScore = score;
                 }
-                
-                const reader = new FileReader()
-                reader.onload = (e) => {
-                    img.src = e.target.result
                 }
-                reader.onerror = () => {
-                    reject(new Error('Failed to read file'))
+
+                // Adjust dimension based on size
+                if (length > maxCharacters) {
+                    maxDimension = currentDimension;
+                    currentDimension -= step;
+                } else {
+                    minDimension = currentDimension;
+                    currentDimension += step;
                 }
-                reader.readAsDataURL(file)
-            })
+                step /= 2;
+
+                // Fine-tune quality if we're close
+                if (length > maxCharacters && length < maxCharacters * 1.1) {
+                    quality -= 0.05;
+                    if (quality < 0.5) break; // Don't go too low
+                    i--; // Retry this iteration
+                }
+
+                if (currentDimension <= minDimension) break;
+            }
+
+            if (!bestResult) {
+                console.warn('Could not fit image within character limit with acceptable detail.');
+                // Fallback to minimal size
+                result = generatePayload(minDimension * aspectRatio, minDimension, 'image/jpeg', 0.5);
+                return result.payload;
+            }
+
+            console.log('Final length:', bestResult.length, 'characters');
+            return bestResult;
         }
-
         
 
         function changeMode (value = 'chat') {
@@ -1596,7 +1656,7 @@
                 const attachment = document.createElement('div');
                 attachment.className = 'attachment ' + file.type;
                 attachment.innerHTML = `
-                    ${file.imageData ? `<img src='${file.imageData}' />` : ''}
+                    ${file.imageData ? `<img src='${file.url}' />` : ''}
                     <span class="type">${file.type}</span>
                     <span class="name">${file.name}</span>
                     <button onclick="removeFile('${file.name}')">&times;</button>

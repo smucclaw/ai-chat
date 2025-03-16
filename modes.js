@@ -6,7 +6,7 @@ MODES = Object.assign({
     tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math'],
     initialMessages: () => [{
       role: 'system',
-      content: 'You\'re a information retrieval and answering AI and always use the `search_web_info` tool or other tools to retrieve relevant and up-to-date information first.'
+      content: 'You\'re a information retrieval and answering AI and always use the `search_web_info` tool or other tools to retrieve relevant and up-to-date information before you reply.'
         + `\n${window.SYSTEM_PROMPT || ''} ${window.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
     }]
   },
@@ -103,7 +103,7 @@ MODES = Object.assign({
   verify: {
     name: 'Verify information and suggest improvements',
     tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math'],
-    initialMessages: (info, context) => [{
+    initialMessages: (context, info) => [{
         role: 'system',
         content: 'You\'re an AI agent with the sole purpose to double-check the key finding to be most accurate and useful for a given prompt, suggest improvements and correct mistakes then summarize they key findings using a bullet point lists. Research critical questions by using tools.'
     }, {

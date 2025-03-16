@@ -213,13 +213,15 @@ EXECUTE_TOOL.spawn_research_agents = async (topics, id) => {
   await Promise.all(topics.map(async topic => {
       try {
           await new Promise(resolve => setTimeout(resolve, 250))
+          const tid = id + '-' + topic.i
           const json = await chatStreams[id].call({
-              id: id + '-' + topic.i,
+              id: tid,
               model: getSummaryModel(),
               messages: MODES.researchAgent.initialMessages(topic.topic, context),
               tools: TOOLS.filter(t => MODES.researchAgent.tools.includes(t.function.name))
           })
           topic.result = json.content?.replace(/<think>[\s\S]*<\/think>/g, '') || 'No information found'
+          appendTool({ html: await markdownToHtml(topic.result), id: tid })
       } catch (e) {
           console.error('Could not research topic for ' + id, topic, e)
       }
@@ -227,12 +229,14 @@ EXECUTE_TOOL.spawn_research_agents = async (topics, id) => {
   await Promise.all(addedSteps.map(async step => {
       try {
           await new Promise(resolve => setTimeout(resolve, 250))
+          const sid = id + '-' + step.i
           const json = await chatStreams[id].call({
-              id: id + '-' + step.i,
+              id: sid,
               messages: MODES.verify.initialMessages(context, topics.map(t => t.result).join('\n\n')),
               tools: TOOLS.filter(t => MODES.verify.tools.includes(t.function.name))
           })
-          step.result = json.content?.replace(/<think>[\s\S]*<\/think>/g, '') || 'No information found'
+          step.result = json.content?.replace(/<think>[\s\S]*<\/think>/g, '') || 'Was unable to verify previous information'
+          appendTool({ html: await markdownToHtml(step.result), id: sid })
       } catch (e) {
           console.error('Could not research step for ' + id, step, e)
       }
