@@ -4,9 +4,7 @@
     <script>
         // CONFIGURATION
         const PERSIST_API = ''              // Work in progress to store chat logs for sharing ...
-        const MAX_IMAGE_WIDTH = 164         // Maximum dimensions for attached images (needs vision model)
-        const MAX_IMAGE_HEIGHT = 164
-        const MAX_TOKENS = 18000            // Adjust to what you can run
+        const MAX_TOKENS = 17000            // Adjust to what you can run
         const MAX_STORAGE_CHARS = 5242880   // 5MB character limit for localStorage
         window.TOOLS = []                   // OpenAI compatible tool definitions
         window.EXECUTE_TOOL = {}            // Object with the JS function implementations defined in TOOLS
@@ -580,7 +578,7 @@
             color: #777;
             position: relative;
             border-radius: 8px;
-            border: 2px solid #282828;
+            border: 2px solid #222222;
             box-sizing: border-box;
             --background: #22222288;
             max-height: 56vh;
@@ -1517,8 +1515,8 @@
                     try {
                         attachedFiles.push({
                             name: file.name,
-                            url: URL.createObjectURL(file),
-                            type: file.type.split('/')[1]
+                            type: file.type.split('/')[1],
+                            url: URL.createObjectURL(file)
                         });
                     } catch (error) {
                         console.error('Error processing image:', error);
@@ -1539,76 +1537,49 @@
             const img = new Image();
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-
-            // Load image
             const imgPromise = new Promise((resolve) => {
                 img.onload = () => resolve();
                 img.src = url;
             });
             await imgPromise;
-
-            // Initial settings
             let width = img.width;
             let height = img.height;
             let quality = 0.95; // Start with high quality (0-1 scale)
             let format = 'image/jpeg'; // JPEG is default for smaller size, but we'll test PNG too
             const aspectRatio = width / height;
-
-            // Metadata (kept minimal for character efficiency)
-            const metadata = {
-                originalName: file.name,
-                mimeType: file.type,
-                timestamp: new Date().toISOString()
-            };
-
-            // Function to generate base64 and measure length
             const generatePayload = (w, h, fmt, qual) => {
                 canvas.width = w;
                 canvas.height = h;
                 ctx.drawImage(img, 0, 0, w, h);
                 const base64 = canvas.toDataURL(fmt, qual).split(',')[1]; // Strip prefix
-                return { payload: base64, length: payload.length };
+                return { payload: base64, length: base64.length };
             };
-
-            // Binary search-like approximation for size and quality
             let targetSize = maxCharacters * 0.9; // Aim for 90% of limit to leave buffer
             let minDimension = 100; // Minimum acceptable size for detail
             let maxDimension = Math.min(img.width, img.height, 1000); // Cap for practicality
             let currentDimension = maxDimension;
             let step = (maxDimension - minDimension) / 2;
-
             let bestResult = null;
             let bestScore = -Infinity;
-
-            // Try different sizes and formats
             for (let i = 0; i < 10; i++) { // Limit iterations for performance
                 width = Math.round(currentDimension * aspectRatio);
                 height = Math.round(currentDimension);
-
-                // Test JPEG first (usually smaller)
                 let result = generatePayload(width, height, 'image/jpeg', quality);
                 let length = result.length;
-
-                // Score based on size and detail retention
                 let score = (width * height) * quality - Math.abs(length - targetSize) * 10;
-
                 if (length <= maxCharacters && score > bestScore) {
-                    bestResult = result.payload;
+                    bestResult = result;
                     bestScore = score;
                 }
-
-                // If too big, try PNG (better for text/details) at lower quality
                 if (length > maxCharacters) {
-                result = generatePayload(width, height, 'image/png', 1.0); // PNG doesn't use quality param
-                length = result.length;
-                score = (width * height) * 0.9 - Math.abs(length - targetSize) * 10; // Approximate quality
-                if (length <= maxCharacters && score > bestScore) {
-                    bestResult = result.payload;
-                    bestScore = score;
+                    result = generatePayload(width, height, 'image/png', 1.0); // PNG doesn't use quality param
+                    length = result.length;
+                    score = (width * height) * 0.9 - Math.abs(length - targetSize) * 10; // Approximate quality
+                    if (length <= maxCharacters && score > bestScore) {
+                        bestResult = result;
+                        bestScore = score;
+                    }
                 }
-                }
-
-                // Adjust dimension based on size
                 if (length > maxCharacters) {
                     maxDimension = currentDimension;
                     currentDimension -= step;
@@ -1617,28 +1588,46 @@
                     currentDimension += step;
                 }
                 step /= 2;
-
-                // Fine-tune quality if we're close
                 if (length > maxCharacters && length < maxCharacters * 1.1) {
                     quality -= 0.05;
                     if (quality < 0.5) break; // Don't go too low
                     i--; // Retry this iteration
                 }
-
                 if (currentDimension <= minDimension) break;
             }
-
             if (!bestResult) {
                 console.warn('Could not fit image within character limit with acceptable detail.');
-                // Fallback to minimal size
-                result = generatePayload(minDimension * aspectRatio, minDimension, 'image/jpeg', 0.5);
+                const result = generatePayload(minDimension * aspectRatio, minDimension, 'image/jpeg', 0.78);
                 return result.payload;
             }
-
-            console.log('Final length:', bestResult.length, 'characters');
-            return bestResult;
+            console.log(`Image optimized: ${width}x${height}, size: ${bestResult.length} characters`);
+            return bestResult.payload;
         }
-        
+
+        async function prepareImagesForPrompt(prompt, initialMessages) {
+            const imageFiles = prompt.files.filter(f => f.url);
+            if (!imageFiles.length) return prompt;
+            const promptWithoutImages = {
+                ...prompt,
+                files: prompt.files.filter(f => !f.url)
+            };
+            const promptTextSize = JSON.stringify(promptWithoutImages).length;
+            const initialMessagesSize = JSON.stringify(initialMessages).length;
+            const remainingTokens = MAX_TOKENS - promptTextSize - initialMessagesSize;
+            console.log(`Remaining tokens for images: ${remainingTokens} characters`);
+            if (remainingTokens <= 4000) {
+                return prompt;
+            }
+            const tokensPerImage = Math.floor(remainingTokens / imageFiles.length * 0.95);
+            for (const file of imageFiles) {
+                try {
+                    file.imageData = `data:image/jpeg;base64,${await prepareImageForVisionLLM(file.url, tokensPerImage)}`;
+                } catch (error) {
+                    console.error('Error optimizing image ' + file.name, error);
+                }
+            }
+            return prompt;
+        }
 
         function changeMode (value = 'chat') {
             userInputElem.placeholder = MODES[value].placeholder
@@ -1656,7 +1645,7 @@
                 const attachment = document.createElement('div');
                 attachment.className = 'attachment ' + file.type;
                 attachment.innerHTML = `
-                    ${file.imageData ? `<img src='${file.url}' />` : ''}
+                    ${file.imageData ? `<img src='${file.imageData}' />` : ''}
                     <span class="type">${file.type}</span>
                     <span class="name">${file.name}</span>
                     <button onclick="removeFile('${file.name}')">&times;</button>
@@ -1733,7 +1722,7 @@
 
             if (document.body.classList.contains('generating')) return
 
-            const prompt = {
+            let prompt = {
                 role: 'user',
                 content: messageText || userInputElem.value.trim(),
                 files: !messageText && attachedFiles
@@ -1753,6 +1742,13 @@
             }
 
             const initialMessages = MODES[mode].initialMessages()
+            
+            // Process images if there are any - prioritize them over historic messages
+            if (prompt.files && prompt.files.some(f => f.type && ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(f.type.toLowerCase()))) {
+                console.log('Processing images for prompt...');
+                prompt = await prepareImagesForPrompt(prompt, initialMessages);
+            }
+            
             const size = JSON.stringify([...initialMessages, prompt]).length
             console.log(`Prompt size total: ${size} / ${MAX_TOKENS} characters`)
 

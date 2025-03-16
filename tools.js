@@ -276,8 +276,7 @@ RENDER_TOOL.search_user_history = (results, id) => {
   const parts = id.split('-')
   if (loadedChatId?.toString() === parts[0] && results.id) {
       const content = results.results?.map(r => {
-          const html = r[0].content.replace(/</g, '&lt;').replace(/>/g, '&gt;')
-          return `<li><span title="${r[0].content.replace(/"/g, '\"')}">"${html}"</span></li>`
+          return `<li><span title="${r[0].content.replace(/"/g, '\"')}">"${r.name}"</span></li>`
       })
       id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
       appendTool({ html: `<p>Reviewing history: ${results.keywords.slice(0, 5).join(', ')}</p><ul class="items">${content?.join('') || ''}</ul>`, id })
