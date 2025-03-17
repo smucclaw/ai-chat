@@ -2122,9 +2122,9 @@
             clearMemory()
             if (s?.length === 16) {
                 loadChat(s)
-            } else {
-                await appendMessage({ text: 'Configure a valid OpenAI v1 compatible API in the server settings.', sender: 'system' })
             }
+          } finally {
+            registerModes()
           }
         }
 
@@ -2217,15 +2217,15 @@
         }
         
         async function sayHello() {
-            clearMemory()
-            showActiveChat()
-
-            document.body.classList.add('new')
+            if (!document.body.classList.contains('new')) return
 
             if (!isAvailable) {
                 await appendMessage({ text: 'Configure a valid OpenAI v1 compatible API in the server settings.', sender: 'system' })
                 return
             }
+
+            clearMemory()
+            showActiveChat()
 
             const mode = modeSelectElem.value || 'chat'
             if (typeof MODES[mode].hello === 'function') {
@@ -2633,12 +2633,17 @@
 
         function startNew() {
             closeMenu()
+
             const firstMode = modeSelectElem.children[0]?.value
             modeSelectElem.value = firstMode || 'chat'
+
             const queryParams = new URLSearchParams(location.search)
             queryParams.delete('s')
             history.replaceState({}, document.title, location.pathname + (queryParams.size ? '?' + queryParams.toString() : ''))
+
+            document.body.classList.add('new')
             changeMode(firstMode)
+            
             setTimeout(() => userInputElem.focus(), 800)
         }
 
@@ -2715,10 +2720,8 @@
 
             loadExtensions()
             loadSettings()
-
             addThinkingAndKatexSupport()
-            await loadModels()
-            registerModes()
+            loadModels()
             loadHistory()
 
             userInputElem.addEventListener('input', function () {
