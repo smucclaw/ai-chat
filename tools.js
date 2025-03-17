@@ -285,7 +285,7 @@ RENDER_TOOL.search_user_history = (results, id) => {
 RENDER_TOOL.spawn_research_agents = (results, id) => {
   const parts = id.split('-')
   if (loadedChatId?.toString() === parts[0]) {
-    appendTool({ html: `<p>Researching ...</p><ol>${results.topics.map(t => `<li><strong>${t.topic}</strong><br><div id='${id + '-' + t.i}' class="subcontent"></div></li>`).join('')}</ol>` })
+    appendTool({ html: `<p>Researching ...</p><ol>${results.topics.map(t => `<li><strong>${t.topic}</strong><br><div id='${id + '-' + t.i}' class="subcontent"></div></li>`).join('')}</ol>`, id })
   }
 }
 // TOOL RESULT RENDER FUNCTIONS END

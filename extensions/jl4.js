@@ -119,7 +119,7 @@ EXECUTE_TOOL.legal_assessment = async ({ inquiry }, id) => {
 RENDER_TOOL.legal_assessment = (results, id) => {
   const parts = id.split('-')
   if (loadedChatId?.toString() === parts[0] && results.functions_used?.length) {
-    appendTool({ html: `<p>Doing law ...</p><ol>${results.functions_used.map(t => `<li><strong>Reviewing possibly relevant legal context: <code>${t.name}</code></strong><br><div id='${id + '-' + t.i}' class="subcontent"></div></li>`).join('')}</ol>` })
+    appendTool({ html: `<p>Doing law ...</p><ol>${results.functions_used.map(t => `<li><strong>Reviewing possibly relevant legal context: <code>${t.name}</code></strong><br><div id='${id + '-' + t.i}' class="subcontent"></div></li>`).join('')}</ol>`, id })
   }
 }
 
