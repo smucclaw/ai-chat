@@ -2,7 +2,7 @@
  * for https://github.com/serrynaimo/ai-chat
  * by Thomas Gorissen
  */
-JL4_API = 'https://jl4.utility.workers.dev/decision'
+JL4_API = 'https://jl4.utility.workers.dev'
 
 // REGISTER USER PROMPT MODES WITH THE UI
 MODES = Object.assign({
@@ -11,6 +11,10 @@ MODES = Object.assign({
     visible: true,
     placeholder: 'What would you like to assess?',
     tools: ['legal_assessment'],
+    hello: async () => {
+      await loadFunctions()
+      appendMessage({ text: `<p>I've the following contracts available: ${jl4_function_cache.map(f => `<code>${f.function.name}</code>`).join(', ')}</p>`, sender: 'assistant' })
+    },
     initialMessages: () => [{
       role: 'system',
       content: `You're a lawyer AI and always use the provided \`legal_assessment\` tool call to, 1. Help you find out if you can help the user and, 2. assess a valid inquiry against the law. You then format the output into an information-dense, structured response and highlight the key findings in bold. Don't provide any explanation beyond the tool results and remind in the end that this is not yet actually legal advice.\nNow is ${new Date().toString()}`
@@ -286,5 +290,3 @@ window.jl4_function_cache = [{
   },
   type: "function"
 }]
-
-loadFunctions()
