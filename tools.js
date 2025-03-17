@@ -203,11 +203,11 @@ EXECUTE_TOOL.search_user_history = async ({ keywords }, id) => {
 
 EXECUTE_TOOL.spawn_research_agents = async (topics, id) => {
   const context = topics.context?.trim()
-  topics = Object.keys(topics).reduce((a, v) => v !== 'context' && topics[v]?.trim() ? [...a, { i: window.toolCount++, topic: topics[v] }] : a, [])
+  topics = Object.keys(topics).reduce((a, v) => v !== 'context' && topics[v]?.trim() ? [...a, { i: window.toolcount++, topic: topics[v] }] : a, [])
   if (!topics?.length || !context) {
       throw new Error('No topic to research specified')
   }
-  const addedSteps = [{ i: window.toolCount++, topic: 'Verifying results and synthesizing ...' }]
+  const addedSteps = [{ i: window.toolcount++, topic: 'Verifying results and synthesizing ...' }]
   RENDER_TOOL.spawn_research_agents({ topics: [...topics, ...addedSteps] }, id)
   await Promise.all(topics.map(async topic => {
       try {
