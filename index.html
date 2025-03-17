@@ -1544,17 +1544,25 @@
             await imgPromise;
             let width = img.width;
             let height = img.height;
-            let quality = 0.95; // Start with high quality (0-1 scale)
+            let quality = 0.9; // Start with high quality (0-1 scale)
             let format = 'image/jpeg'; // JPEG is default for smaller size, but we'll test PNG too
             const aspectRatio = width / height;
-            const generatePayload = (w, h, fmt, qual) => {
+            const generatePayload = async (w, h, fmt, qual) => {
                 canvas.width = w;
                 canvas.height = h;
-                ctx.drawImage(img, 0, 0, w, h);
+                // Use createImageBitmap for high quality resizing
+                const bitmap = await createImageBitmap(img, {
+                  resizeWidth: w,
+                  resizeHeight: h,
+                  resizeQuality: 'high'
+                })
+                ctx.drawImage(bitmap, 0, 0)
+                bitmap.close()
                 const base64 = canvas.toDataURL(fmt, qual).split(',')[1]; // Strip prefix
                 return { payload: base64, length: base64.length };
             };
-            let targetSize = maxCharacters * 0.9; // Aim for 90% of limit to leave buffer
+            let type
+            let targetSize = maxCharacters * 0.99; // Aim for 99% of limit to leave buffer
             let minDimension = 100; // Minimum acceptable size for detail
             let maxDimension = Math.min(img.width, img.height, 1000); // Cap for practicality
             let currentDimension = maxDimension;
@@ -1564,21 +1572,13 @@
             for (let i = 0; i < 10; i++) { // Limit iterations for performance
                 width = Math.round(currentDimension * aspectRatio);
                 height = Math.round(currentDimension);
-                let result = generatePayload(width, height, 'image/jpeg', quality);
+                let result = await generatePayload(width, height, 'image/jpeg', quality);
                 let length = result.length;
                 let score = (width * height) * quality - Math.abs(length - targetSize) * 10;
                 if (length <= maxCharacters && score > bestScore) {
                     bestResult = result;
                     bestScore = score;
-                }
-                if (length > maxCharacters) {
-                    result = generatePayload(width, height, 'image/png', 1.0); // PNG doesn't use quality param
-                    length = result.length;
-                    score = (width * height) * 0.9 - Math.abs(length - targetSize) * 10; // Approximate quality
-                    if (length <= maxCharacters && score > bestScore) {
-                        bestResult = result;
-                        bestScore = score;
-                    }
+                    type = 'image/jpeg'
                 }
                 if (length > maxCharacters) {
                     maxDimension = currentDimension;
@@ -1588,19 +1588,19 @@
                     currentDimension += step;
                 }
                 step /= 2;
-                if (length > maxCharacters && length < maxCharacters * 1.1) {
-                    quality -= 0.05;
-                    if (quality < 0.5) break; // Don't go too low
+                if (length > maxCharacters && length < maxCharacters * 1.2) {
+                    quality -= 0.02;
+                    if (quality < 0.75) break; // Don't go too low
                     i--; // Retry this iteration
                 }
                 if (currentDimension <= minDimension) break;
             }
             if (!bestResult) {
                 console.warn('Could not fit image within character limit with acceptable detail.');
-                const result = generatePayload(minDimension * aspectRatio, minDimension, 'image/jpeg', 0.78);
+                const result = generatePayload(minDimension * aspectRatio, minDimension, 'image/jpeg', 0.75);
                 return result.payload;
             }
-            console.log(`Image optimized: ${width}x${height}, size: ${bestResult.length} characters`);
+            console.log(`Image optimized: ${width}x${height} size,  ${quality} quality: ${bestResult.length} characters`);
             return bestResult.payload;
         }
 
