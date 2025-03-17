@@ -2224,6 +2224,10 @@
                 return
             }
 
+            if (chatStreams[loadedChatId].isGenerating) {
+                await chatStreams[loadedChatId].stop()
+            }
+
             clearMemory()
             showActiveChat()
 
