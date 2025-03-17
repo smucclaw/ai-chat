@@ -1459,6 +1459,7 @@
     </div>
     <script>
         // Globals. Don't touch.
+        window.toolCount = 0
         let isAvailable = null,
          loadedChatId = null,
          loadedChat = null,
@@ -1466,8 +1467,7 @@
          loadedModels = [],
          attachedFiles = [],
          blockAutoScrolling = false,
-         chatStreams = {},
-         toolCount = 0
+         chatStreams = {}
         
         function adjustOffset(value) {
             if (!value) {
@@ -2658,16 +2658,16 @@
         function registerModes () {
             modeSelectElem.innerHTML = ''
             Object.keys(MODES).forEach(k => {
-                const mode = MODES[k]
-                if (!mode.visible) return
+                const m = MODES[k]
+                if (!m.visible) return
                 const option = document.createElement('option')
-                if (!userInputElem.placeholder && mode.placeholder) {
-                    userInputElem.placeholder = mode.placeholder
-                    modelInfoElem.textContent = (selectedModel ? selectedModel + ' - ' : '') + mode.name
+                if (!userInputElem.placeholder && m.placeholder) {
+                    userInputElem.placeholder = m.placeholder
+                    modelInfoElem.textContent = (selectedModel ? selectedModel + ' - ' : '') + m.name
                     option.selected = true
                 }
                 option.value = k
-                option.textContent = mode.name
+                option.textContent = m.name
                 modeSelectElem.appendChild(option)
             })
         }
