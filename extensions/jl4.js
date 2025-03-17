@@ -93,7 +93,7 @@ EXECUTE_TOOL.legal_assessment = async ({ inquiry }, id) => {
               if (!jl4Response.ok) {
                   throw new Error('Failed to provide jl4 results') 
               }
-              tdef = await jl4Response.json()
+              tdef = Object.assign(tdef, await jl4Response.json())
           }
           const toolJson = await chatStreams[id].call({
               id: tid,
@@ -154,139 +154,15 @@ async function evaluateFunction (func, args, id) {
 
 // ONLOAD UPDATE FUNCTION CACHE
 async function loadFunctions () {
-  if (new URLSearchParams(window.location.search).get('jl4_mock')) {
-    window.jl4_mock = true
-  }
-  if (!window.jl4_mock) {
-    const response = await fetch(`${JL4_API}/functions`)
-    if (!response.ok) {
-      throw new Error('Failed to load jl4 functions results') 
-    }       
-    jl4_function_cache = await response.json()
-  }
+  const response = await fetch(`${JL4_API}/functions`)
+  if (!response.ok) {
+    throw new Error('Failed to load jl4 functions results') 
+  }       
+  jl4_function_cache = await response.json()
   jl4_function_cache.forEach(f => {
     EXECUTE_TOOL[f.function.name] = evaluateFunction.bind(window, f.function.name)
   })
 }
 
-// TEMPORARY GLOBAL VARIABLES FOR THIS EXTENSION
-window.jl4_function_cache = [{
-  function: {
-    description: "Determines if a person qualifies for being human.\nThe input object describes the person's properties in the primary parameters: walks, eats, drinks.\nSecondary parameters can be given which are sufficient to determine some of the primary parameters.\nA person drinks whether or not they consume an alcoholic or a non-alcoholic beverage, in part or in whole;\nthose specific details don't really matter.\nThe output of the function can be either a request for required information;\na restatement of the user input requesting confirmation prior to function calling;\nor a Boolean answer with optional explanation summary.",
-    name: "compute_qualifies",
-    parameters: {
-        properties: {
-          "drinks": {
-            "alias": null,
-            "description": "Did the person drink?",
-            "enum": ["true", "false"],
-            "type": "string"
-          },
-          "eats": {
-            "alias": null,
-            "description": "Did the person eat?",
-            "enum": ["true", "false"],
-            "type": "string"
-          },
-          "walks": {
-            "alias": null,
-            "description": "Did the person walk?",
-            "enum": ["true", "false"],
-            "type": "string"
-          }
-        },
-        required: [
-          "drinks",
-          "eats",
-          "walks"
-        ],
-        type: "object",
-      },
-      supportedBackends: []
-  },
-  type: "function"
-}, {
-  function: {
-    description: "Assesses household insurance case viability based on who damaged it (e.g. human or type of animal), and impact of damage (e.g. to furnitue, household appliance, swimming pool or plumbing, heating or air conditioning system)",
-    name: "vermin_and_rodent",
-    parameters: {
-      properties: {
-        "Loss or Damage.caused by birds": {
-          "alias": null,
-          "description": "Was the damage caused by birds?",
-          "enum": ["true", "false"],
-          "type": "string"
-        },
-        "Loss or Damage.caused by insects": {
-          "alias": null,
-          "description": "Was the damage caused by insects?",
-          "enum": ["true", "false"],
-          "type": "string"
-        },
-        "Loss or Damage.caused by rodents": {
-          "alias": null,
-          "description": "Was the damage caused by rodents?",
-          "enum": ["true", "false"],
-          "type": "string"
-        },
-        "Loss or Damage.caused by vermin": {
-          "alias": null,
-          "description": "Was the damage caused by vermin?",
-          "enum": ["true", "false"],
-          "type": "string"
-        },
-        "Loss or Damage.ensuing covered loss": {
-          "alias": null,
-          "description": "Is the damage ensuing covered loss",
-          "enum": ["true", "false"],
-          "type": "string"
-        },
-        "Loss or Damage.to Contents": {
-          "alias": null,
-          "description": "Is the damage to your contents?",
-          "enum": ["true", "false"],
-          "type": "string"
-        },
-        "a household appliance": {
-          "alias": null,
-          "description": "Did water escape from a household appliance due to an animal?",
-          "enum": ["true", "false"],
-          "type": "string"
-        },
-        "a plumbing, heating, or air conditioning system": {
-          "alias": null,
-          "description": "Did water escape from a plumbing, heating or conditioning system due to an animal?",
-          "enum": ["true", "false"],
-          "type": "string"
-        },
-        "a swimming pool": {
-          "alias": null,
-          "description": "Did water escape from a swimming pool due to an animal?",
-          "enum": ["true", "false"],
-          "type": "string"
-        },
-        "any other exclusion applies": {
-          "alias": null,
-          "description": "Are any other exclusions besides mentioned ones?",
-          "enum": ["true", "false"],
-          "type": "string"
-        }
-      },
-      required: [
-        "Loss or Damage.caused by birds",
-        "Loss or Damage.caused by insects",
-        "Loss or Damage.caused by rodents",
-        "Loss or Damage.caused by vermin",
-        "Loss or Damage.ensuing covered loss",
-        "Loss or Damage.to Contents",
-        "a household appliance",
-        "a plumbing, heating, or air conditioning system",
-        "a swimming pool",
-        "any other exclusion applies"
-      ],
-      type: "object"
-    },
-    supportedBackends: []
-  },
-  type: "function"
-}]
+// GLOBAL VARIABLES FOR THIS EXTENSION
+window.jl4_function_cache = []
