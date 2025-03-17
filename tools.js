@@ -189,7 +189,7 @@ EXECUTE_TOOL.search_user_history = async ({ keywords }, id) => {
     }
     return r
   })))
-  const logs = (list?.length ? matching : history)?.slice(0, 3).map(h => h.log)
+  const logs = (list?.length ? matching : history)?.slice(0, 3)
   const results = {
       id,
       keywords: list,
@@ -276,7 +276,7 @@ RENDER_TOOL.search_user_history = (results, id) => {
   const parts = id.split('-')
   if (loadedChatId?.toString() === parts[0] && results.id) {
       const content = results.results?.map(r => {
-          return `<li><span title="${r[0].content.replace(/"/g, '\"')}">"${r.name}"</span></li>`
+          return `<li><span title="${r.logs[0].content.replace(/"/g, '\"')}">"${r.name}"</span></li>`
       })
       id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
       appendTool({ html: `<p>Reviewing history: ${results.keywords.slice(0, 5).join(', ')}</p><ul class="items">${content?.join('') || ''}</ul>`, id })
