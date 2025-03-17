@@ -2224,7 +2224,7 @@
                 return
             }
 
-            if (chatStreams[loadedChatId].isGenerating) {
+            if (chatStreams[loadedChatId]?.isGenerating) {
                 await chatStreams[loadedChatId].stop()
             }
 
