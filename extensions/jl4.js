@@ -13,7 +13,7 @@ MODES = Object.assign({
     tools: ['legal_assessment'],
     hello: async () => {
       await loadFunctions()
-      appendMessage({ text: `<p>I've the following contracts available: ${jl4_function_cache.map(f => `<code>${f.function.name}</code>`).join(', ')}</p>`, sender: 'assistant' })
+      await appendMessage({ text: `<p>I've the following contracts available: ${jl4_function_cache.map(f => `<code>${f.function.name}</code>`).join(', ')}</p>`, sender: 'assistant' })
     },
     initialMessages: () => [{
       role: 'system',

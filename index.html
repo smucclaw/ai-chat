@@ -1718,8 +1718,10 @@
         async function sendMessage(messageText) {
             if (!isAvailable) return
 
-            if (chatStreams[loadedChatId]?.isGenerating) {
-                chatStreams[loadedChatId].stop()
+            const cid = loadedChatId
+
+            if (chatStreams[cid]?.isGenerating) {
+                chatStreams[cid].stop()
                 return
             }
 
@@ -1740,7 +1742,7 @@
 
             const acceptedModels = MODES[mode].models?.replace(/\s/g, '').split(',')
             if (acceptedModels?.length && !acceptedModels.includes(selectedModel)) {
-                await appendMessage({ text: `The selected mode "${MODES[mode].name}" does only support the following models:<ul><li>${acceptedModels.join('</li><li>')}</li>`, sender: 'system' })
+                await appendMessage({ text: `The selected mode "${MODES[mode].name}" does only support the following models:<ul><li>${acceptedModels.join('</li><li>')}</li>`, sender: 'system', id: cid })
                 return
             }
 
@@ -1756,7 +1758,7 @@
             console.log(`Prompt size total: ${size} / ${MAX_TOKENS} characters`)
 
             if (size > MAX_TOKENS) {
-                await appendMessage({ text: `Prompt size is ${Math.round(size / MAX_TOKENS * 100)}% of maximum.`, sender: 'system' })
+                await appendMessage({ text: `Prompt size is ${Math.round(size / MAX_TOKENS * 100)}% of maximum.`, sender: 'system', id: cid })
                 return
             }
 
@@ -1768,7 +1770,7 @@
             document.body.classList.add('generating')
             window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
 
-            const { id, log } = await updateHistory([prompt], loadedChatId)
+            let { id, log } = await updateHistory([prompt], loadedChatId)
 
             const messages = [...log, prompt]
 
@@ -1784,7 +1786,7 @@
                 }
             }
 
-            await appendMessage({ text: prompt.content, sender: 'user', files: prompt.files })
+            await appendMessage({ text: prompt.content, sender: 'user', files: prompt.files, id: cid })
 
             userInputElem.value = ''
             userInputElem.style.height = 'auto'
@@ -1797,7 +1799,7 @@
             chatStreams[id] = ChatStream.create({
                 apiUrl: window.API_URL,
                 apiKey: window.API_KEY,
-                id: loadedChatId,
+                id,
                 onComplete: async (messages, status, id) => {
                     document.body.classList.remove('generating')
 
@@ -1946,11 +1948,12 @@
                 content.scrollIntoView({ behavior: 'smooth' })
                 return toolElem
             } else {
-                return await appendMessage({ text: html, sender: 'tool' })
+                return await appendMessage({ text: html, sender: 'tool', id: id?.split('-')[0] })
             }
         }
 
-        async function appendMessage({ text, sender, files, status }) {
+        async function appendMessage({ text, sender, files, status, id = null }) {
+            if (loadedChatId !== id) return
             const message = sender === 'user' && chatMessagesElem.lastElementChild?.classList.contains('user-message') ? chatMessagesElem.lastElementChild : document.createElement(sender === 'tool' ? 'section' : (sender === 'assistant' ? 'article' : 'div'))
             message.className = `message ${sender === 'user' ? 'user-message' : sender === 'assistant' ? 'ai-message' : sender === 'system' ? 'system-message' : 'tool-message'}`
             if (!message.parentElement) {
@@ -2094,7 +2097,7 @@
             const summaryModel = getSummaryModel()
 
             if (summaryModel) {
-                chatStreams[loadedChatId] = ChatStream.create({
+                chatStreams[null] = ChatStream.create({
                     apiUrl: window.API_URL,
                     apiKey: window.API_KEY,
                     id: loadedChatId,
@@ -2141,7 +2144,6 @@
 
         function onStart(id) {
             if (loadedChatId !== id) return
-
             document.body.classList.add('generating')
         }
 
@@ -2153,7 +2155,6 @@
             history.replaceState({}, document.title, location.pathname + (queryParams.size ? '?' + queryParams.toString() : ''))
 
             if (loadedChatId !== id) return
-
             document.body.classList.remove('generating')
             scrollToEnd()
         }
@@ -2163,7 +2164,7 @@
 
             let message = chatMessagesElem.lastElementChild;
             if (!message?.classList.contains('ai-message')) {
-                message = await appendMessage({ text: '', sender: 'assistant' })
+                message = await appendMessage({ text: '', sender: 'assistant', id })
             }  
             message.lastElementChild.innerHTML = formatStatus(status)
             scrollToEnd()
@@ -2172,7 +2173,7 @@
         async function onError(error, id) {
             if (loadedChatId !== id) return
 
-            await appendMessage({ text: 'There was a network error.', sender: 'system' })
+            await appendMessage({ text: 'There was a network error.', sender: 'system', id })
         }
 
         async function onToken(token, id) {
@@ -2180,7 +2181,7 @@
 
             let message = chatMessagesElem.lastElementChild
             if (!message?.classList.contains('ai-message')) {
-                message = await appendMessage({ text: '', sender: 'assistant' })
+                message = await appendMessage({ text: '', sender: 'assistant', id })
             }   
             message.firstElementChild.innerHTML = await markdownToHtml(chatStreams[id]?.response)
 
@@ -2225,8 +2226,8 @@
                 return
             }
 
-            if (chatStreams[loadedChatId]?.isGenerating) {
-                await chatStreams[loadedChatId].stop()
+            if (chatStreams[null]?.isGenerating) {
+                await chatStreams[null].stop()
             }
 
             clearMemory()
@@ -2239,9 +2240,9 @@
                 return
             }
 
-            if (chatStreams[loadedChatId]) {
+            if (chatStreams[null]) {
                 const history = JSON.parse(localStorage.getItem('history')) || []
-                chatStreams[loadedChatId].stream({
+                chatStreams[null].stream({
                     messages: MODES.sayHello.initialMessages(history)
                 })
             } else {
@@ -2419,7 +2420,8 @@
                         text: l.content, 
                         sender: l.role, 
                         files: l.files, 
-                        status: l.status 
+                        status: l.status,
+                        id: chat.id
                     })
                 }
             }
@@ -2455,7 +2457,7 @@
                 const result = await response.json()
                 if (result.success) {
                     const url = `${PERSIST_API}/?s=${result.filename}`
-                    await appendMessage({ text: `Chat saved at:<a style='display: block' target='_blank' rel='noopener' href='${url}'>${url}</a>`, sender: 'system' })
+                    await appendMessage({ text: `Chat saved at:<a style='display: block' target='_blank' rel='noopener' href='${url}'>${url}</a>`, sender: 'system', id: chat.id })
                     scrollToEnd()
                 } else {
                     throw Error(result.error)
@@ -2646,6 +2648,8 @@
             queryParams.delete('s')
             history.replaceState({}, document.title, location.pathname + (queryParams.size ? '?' + queryParams.toString() : ''))
 
+            clearMemory()
+            showActiveChat()
             document.body.classList.add('new')
             changeMode(firstMode)
             
