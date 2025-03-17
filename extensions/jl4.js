@@ -43,7 +43,7 @@ MODES = Object.assign({
 TOOLS.unshift({
   type: "function", 
   function: {
-      name: "functions_available",
+      name: "list_functions_available",
       description: "List all available functions or contracts",
       parameters: {
           type: "object",
