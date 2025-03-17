@@ -10,10 +10,10 @@ MODES = Object.assign({
     name: 'Legal assessment',
     visible: true,
     placeholder: 'What would you like to assess?',
-    tools: ['legal_assessment', 'list_functions_available'],
+    tools: ['legal_assessment'],
     initialMessages: () => [{
       role: 'system',
-      content: `You're a lawyer AI and always use the provided \`list_functions_available\` or \`legal_assessment\` tool call to, 1. Help you find out if you can help the user and, 2. assess a valid inquiry against the law. You then format the output into an information-dense, structured response and highlight the key findings in bold. Don't provide any explanation beyond the tool results and remind in the end that this is not yet actually legal advice.\nNow is ${new Date().toString()}`
+      content: `You're a lawyer AI and always use the provided \`legal_assessment\` tool call to, 1. Help you find out if you can help the user and, 2. assess a valid inquiry against the law. You then format the output into an information-dense, structured response and highlight the key findings in bold. Don't provide any explanation beyond the tool results and remind in the end that this is not yet actually legal advice.\nNow is ${new Date().toString()}`
     }]
   },
   jl4_find_function: {
@@ -43,17 +43,6 @@ MODES = Object.assign({
 TOOLS.unshift({
   type: "function", 
   function: {
-      name: "list_functions_available",
-      description: "List all available functions or contracts",
-      parameters: {
-          type: "object",
-          properties: {},
-          required: []
-      }
-  }
-}, {
-  type: "function", 
-  function: {
       name: "legal_assessment",
       description: "Find out if and how you can help the user with their legal inquiry. If valid, assesses the inquiry against the law. Call only once.",
       parameters: {
@@ -71,18 +60,6 @@ TOOLS.unshift({
 
 
 // TOOL FUNCTION EXECUTION
-EXECUTE_TOOL.list_functions_available = async (id) => {
-  try {
-    if(!jl4_function_cache?.length) {
-        await loadFunctions()
-    }
-  } catch (e) {
-    console.error('Loading available functions/contracts failed' + id, e)
-  }
-
-  return { id, functions_available: jl4_function_cache?.map(m => m.function) || [] }
-}
-
 EXECUTE_TOOL.legal_assessment = async ({ inquiry }, id) => {
   if (!inquiry.trim()) {
       throw new Error('No inquiry passed')
