@@ -3,7 +3,7 @@
  * by Thomas Gorissen
  */
 CONFIG = Object.assign({
-  JL4_API: 'https://jl4.utility.workers.dev',
+  JL4_API: '',
   JL4_KEY: ''
 }, CONFIG)
 
