@@ -150,6 +150,8 @@ async function jl4_eval_func (func, args, id) {
 }
 
 async function jl4_hello () {
+  if (!document.body.classList.contains('new')) return
+  clearMemory()
   await jl4_load_func_list()
   await appendMessage({ text: `<p>The following contracts are available: ${jl4_function_cache.map(f => `<code style='cursor: pointer;' onclick='jl4_render_func("${f.function.name}")'>${f.function.name}</code>`).join(', ')}</p>`, sender: 'assistant' })
 }
