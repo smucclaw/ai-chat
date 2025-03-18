@@ -11,10 +11,7 @@ MODES = Object.assign({
     visible: true,
     placeholder: 'What would you like to assess?',
     tools: ['legal_assessment'],
-    hello: async () => {
-      await loadFunctions()
-      await appendMessage({ text: `<p>I've the following contracts available: ${jl4_function_cache.map(f => `<code>${f.function.name}</code>`).join(', ')}</p>`, sender: 'assistant' })
-    },
+    hello: jl4_hello,
     initialMessages: () => [{
       role: 'system',
       content: `You're a lawyer AI and always use the provided \`legal_assessment\` tool call to, 1. Help you find out if you can help the user and, 2. assess a valid inquiry against the law. You then format the output into an information-dense, structured response and highlight the key findings in bold. Don't provide any explanation beyond the tool results and remind in the end that this is not yet actually legal advice.\nNow is ${new Date().toString()}`
@@ -74,7 +71,7 @@ EXECUTE_TOOL.legal_assessment = async ({ inquiry }, id) => {
 
   try {
       if(!jl4_function_cache?.length) {
-          await loadFunctions()
+          await jl4_load_func_list()
       }
       const functionsJson = await chatStreams[id].call({
           id: id + '-' + (window.toolcount++),
@@ -124,7 +121,7 @@ RENDER_TOOL.legal_assessment = (results, id) => {
 }
 
 // HANDLE THE TOOL CALL EXECUTION OF FUNCTIONS IN jl4_function_cache
-async function evaluateFunction (func, args, id) {
+async function jl4_eval_func (func, args, id) {
   // Use jl4 for legal assessment
   if(!window.jl4_function_cache?.find(f => f.function.name === func)) {
       throw Error('Not a valid tool call')
@@ -152,15 +149,37 @@ async function evaluateFunction (func, args, id) {
   return result.contents
 }
 
+async function jl4_hello () {
+  await jl4_load_func_list()
+  await appendMessage({ text: `<p>The following contracts are available: ${jl4_function_cache.map(f => `<code style='cursor: pointer;' onclick='jl4_render_func("${f.function.name}")'>${f.function.name}</code>`).join(', ')}</p>`, sender: 'assistant' })
+}
+
+async function jl4_render_func (name) {
+  if (document.body.classList.contains('generating')) return
+  clearMemory()
+  document.body.classList.remove('new')
+  let tdef = jl4_function_cache?.find(f => f.function.name === name)
+  if (!tdef?.function.parameters) {
+      const jl4Response = await fetch(`${JL4_API}/functions/${name}`)
+      if (!jl4Response.ok) {
+          throw new Error('Failed to provide jl4 results') 
+      }
+      tdef = Object.assign(tdef, await jl4Response.json())
+  }
+  const props = tdef.function.parameters.properties || {}
+  const reqs = tdef.function.parameters.required || []
+  await appendMessage({ text: `<strong>Description for <code>${tdef.function.name}</code></strong><p>${tdef.function.description}</p><ul>${Object.keys(props).map(k => `<li><code${reqs?.includes(k) ? ` style='text-decoration: underline;'` : ''}>${k}</code><i>${props[k].type}</i>: ${props[k].description}</li>`).join('')}</ul>`, sender: 'assistant', id: loadedChatId})
+}
+
 // ONLOAD UPDATE FUNCTION CACHE
-async function loadFunctions () {
+async function jl4_load_func_list () {
   const response = await fetch(`${JL4_API}/functions`)
   if (!response.ok) {
     throw new Error('Failed to load jl4 functions results') 
   }       
   jl4_function_cache = await response.json()
   jl4_function_cache.forEach(f => {
-    EXECUTE_TOOL[f.function.name] = evaluateFunction.bind(window, f.function.name)
+    EXECUTE_TOOL[f.function.name] = jl4_eval_func.bind(window, f.function.name)
   })
 }
 
