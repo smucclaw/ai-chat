@@ -3,9 +3,10 @@
 <head>
     <script>
         // CONFIGURATION
-        const PERSIST_API = ''              // Work in progress to store chat logs for sharing ...
-        const MAX_TOKENS = 33000            // Adjust to what you can run
-        const MAX_STORAGE_CHARS = 5242880   // 5MB character limit for localStorage
+        window.CONFIG = {
+            MAX_TOKENS: 33000,            // Adjust to what you can run
+            MAX_STORAGE_CHARS: 5242880,   // 5MB character limit for localStorage
+        }
         window.TOOLS = []                   // OpenAI compatible tool definitions
         window.EXECUTE_TOOL = {}            // Object with the JS function implementations defined in TOOLS
         window.RENDER_TOOL = {}             // Object with JS functions to render tool info in message stream using `appendTool({ html, id })`
@@ -1436,6 +1437,12 @@
                     <input type="text" id="GOOGLE_CUSTOMSEARCH_API_KEY" placeholder="Google Custom Search API key" autocorrect="off" data-default="" onfocus="document.body.classList.add('settingsMenu-open')" onblur="saveSetting('GOOGLE_CUSTOMSEARCH_API_KEY')" class="setting" />
                     <input type="text" id="GOOGLE_CUSTOMSEARCH_ENGINE_ID" placeholder="Google Custom Search Engine ID" autocorrect="off" autocomplete="off" data-default="" onfocus="document.body.classList.add('settingsMenu-open')" onblur="saveSetting('GOOGLE_CUSTOMSEARCH_ENGINE_ID')" class="setting" />
                 </div>
+                <div>
+                    <h4>External Config JSON</h4>
+                    <input type="text" id="CONFIG_URL" placeholder="URL" autocorrect="off" data-default="" onfocus="document.body.classList.add('settingsMenu-open')" onblur="saveSetting('CONFIG_URL')" class="setting" />
+                    <button id="reconnect" onclick="loadSettings(); saveSetting();">Reload</button>
+                    <br /><br />
+                </div>
             </div>
         </div>
         <div class="chat-container">
@@ -1535,7 +1542,7 @@
             event.target.value = '';
         }
 
-        async function prepareImageForVisionLLM(url, maxCharacters = MAX_TOKENS) {
+        async function prepareImageForVisionLLM(url, maxCharacters = CONFIG.MAX_TOKENS) {
             const img = new Image();
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
@@ -1615,7 +1622,7 @@
             };
             const promptTextSize = JSON.stringify(promptWithoutImages).length;
             const initialMessagesSize = JSON.stringify(initialMessages).length;
-            const remainingTokens = MAX_TOKENS - promptTextSize - initialMessagesSize;
+            const remainingTokens = CONFIG.MAX_TOKENS - promptTextSize - initialMessagesSize;
             console.log(`Remaining tokens for images: ${remainingTokens} characters`);
             if (remainingTokens <= 4000) {
                 return prompt;
@@ -1634,7 +1641,9 @@
         function changeMode (value = 'chat') {
             userInputElem.placeholder = MODES[value].placeholder
             modelInfoElem.textContent = (selectedModel ? selectedModel + ' - ' : '') + MODES[value].name
-            sayHello()
+            if (isAvailable) {
+                sayHello()
+            }
         }
 
         function appendFileElements(files, elem) {
@@ -1755,10 +1764,10 @@
             }
             
             const size = JSON.stringify([...initialMessages, prompt]).length
-            console.log(`Prompt size total: ${size} / ${MAX_TOKENS} characters`)
+            console.log(`Prompt size total: ${size} / ${CONFIG.MAX_TOKENS} characters`)
 
-            if (size > MAX_TOKENS) {
-                await appendMessage({ text: `Prompt size is ${Math.round(size / MAX_TOKENS * 100)}% of maximum.`, sender: 'system', id: cid })
+            if (size > CONFIG.MAX_TOKENS) {
+                await appendMessage({ text: `Prompt size is ${Math.round(size / CONFIG.MAX_TOKENS * 100)}% of maximum.`, sender: 'system', id: cid })
                 return
             }
 
@@ -1777,7 +1786,7 @@
             let tokenLength = JSON.stringify(initialMessages).length
             for (let i = messages.length - 1; i >= 0; i--) {
                 tokenLength += JSON.stringify(messages[i]).length + 1
-                if (tokenLength > MAX_TOKENS) {
+                if (tokenLength > CONFIG.MAX_TOKENS) {
                     while (i >= 0) {
                         messages.shift()
                         i--
@@ -1797,8 +1806,8 @@
             showActiveChat()
 
             chatStreams[id] = ChatStream.create({
-                apiUrl: window.API_URL,
-                apiKey: window.API_KEY,
+                apiUrl: CONFIG.API_URL,
+                apiKey: CONFIG.API_KEY,
                 id,
                 onComplete: async (messages, status, id) => {
                     document.body.classList.remove('generating')
@@ -1864,7 +1873,7 @@
             }
             
             try {
-                while (history.length > 0 && JSON.stringify(history).length >= MAX_STORAGE_CHARS) {
+                while (history.length > 0 && JSON.stringify(history).length >= CONFIG.MAX_STORAGE_CHARS) {
                     history.pop()
                 }
                 history.sort((a, b) => (a.updated || a.id) - (b.updated || b.id))
@@ -2047,15 +2056,15 @@
             selectedModel = ''
           }
 
-          const defaultModels = DEFAULT_MODEL?.replace(/\s/g, '').split(',')
+          const defaultModels = CONFIG.DEFAULT_MODEL?.replace(/\s/g, '').split(',')
           const queryParams = new URLSearchParams(location.search)
           const q = queryParams?.get('q')
           const s = queryParams?.get('s')
 
           try {
-            const response = await fetch(window.API_URL + '/v1/models', {
+            const response = await fetch(CONFIG.API_URL + '/v1/models', {
               headers: {
-                'Authorization': `Bearer ${window.API_KEY}`,
+                'Authorization': `Bearer ${CONFIG.API_KEY}`,
                 'Content-Type': 'application/json'
               }
             })
@@ -2082,7 +2091,7 @@
               text.textContent = m.name || m.id
               option.onclick = onclick
               option.ondblclick = function (e) {
-                DEFAULT_MODEL = m.id
+                CONFIG.DEFAULT_MODEL = m.id
                 const dm = document.getElementById('DEFAULT_MODEL')
                 dm.value = dm.value.trim() ? dm.value + ', ' + m.id : m.id
                 saveSetting('DEFAULT_MODEL')
@@ -2098,8 +2107,8 @@
 
             if (summaryModel) {
                 chatStreams[null] = ChatStream.create({
-                    apiUrl: window.API_URL,
-                    apiKey: window.API_KEY,
+                    apiUrl: CONFIG.API_URL,
+                    apiKey: CONFIG.API_KEY,
                     id: loadedChatId,
                     model: summaryModel,
                     onToken,
@@ -2126,6 +2135,8 @@
             clearMemory()
             if (s?.length === 16) {
                 loadChat(s)
+            } else {
+                sayHello()
             }
           } finally {
             registerModes()
@@ -2133,12 +2144,12 @@
         }
 
         function getDefaultModel () {
-            const models = DEFAULT_MODEL?.replace(/\s/g, '').split(',')
+            const models = CONFIG.DEFAULT_MODEL?.replace(/\s/g, '').split(',')
             return loadedModels.find(m => models.includes(m.id))?.id || loadedModels[0]?.id
         }
 
         function getSummaryModel () {
-            const models = SUMMARY_MODEL?.replace(/\s/g, '').split(',')
+            const models = CONFIG.SUMMARY_MODEL?.replace(/\s/g, '').split(',')
             return loadedModels.find(m => models.includes(m.id))?.id
         }
 
@@ -2442,11 +2453,11 @@
             }
             if (!chat) return
             try {
-                const response = await fetch(`${PERSIST_API}/save.php`, {
+                const response = await fetch(`${CONFIG.PERSIST_API}/save.php`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${window.API_KEY}`
+                        'Authorization': `Bearer ${CONFIG.PERSIST_KEY}`
                     },
                     body: JSON.stringify({ content: chat })
                 })
@@ -2456,7 +2467,7 @@
                 }
                 const result = await response.json()
                 if (result.success) {
-                    const url = `${PERSIST_API}/?s=${result.filename}`
+                    const url = `${CONFIG.PERSIST_API}/?s=${result.filename}`
                     await appendMessage({ text: `Chat saved at:<a style='display: block' target='_blank' rel='noopener' href='${url}'>${url}</a>`, sender: 'system', id: chat.id })
                     scrollToEnd()
                 } else {
@@ -2469,11 +2480,7 @@
 
         async function loadChat(s) {
             try {
-                const response = await fetch(`${PERSIST_API}/load.php?s=${s}`, {
-                    headers: {
-                        Authorization: `Bearer ${window.API_KEY}`
-                    }
-                })
+                const response = await fetch(`${CONFIG.PERSIST_API}/load.php?s=${s}`)
                 if (response.ok) {
                     const savedChat = await response.json()
                     await loadHistoryLog(savedChat.content, true)
@@ -2623,18 +2630,22 @@
             marked.use(markedOptions);
         }
 
-        function loadExtensions () {
+        async function loadExtensions () {
           const extensionParam = new URLSearchParams(window.location.search).get('e')
           if (extensionParam) {
             const extensions = extensionParam.split(',')
-            extensions.forEach(extension => {
+            await Promise.all(extensions.map(extension => new Promise(resolve => {
               if (extension.trim()) {
                 const script = document.createElement('script')
                 script.src = `./extensions/${extension.trim()}.js`
-                script.onload = registerModes
+                script.onload = () => {
+                    registerModes()
+                    resolve()
+                }
+                script.onerror = resolve
                 document.head.appendChild(script)
               }
-            })
+            })))
           }
         }
 
@@ -2665,14 +2676,34 @@
             document.querySelectorAll('.menu').forEach(e => e.id !== menu && document.body.classList.remove(e.id + '-open'))
         }
 
-        function loadSettings() {
-            document.querySelectorAll('.menu .setting').forEach(i => {
+        async function loadSettings() {
+            const settings = JSON.parse(localStorage.getItem('settings')) || {}
+            Object.assign(window.CONFIG, settings)
+
+            if(CONFIG.CONFIG_URL) {
                 try {
-                    i.value = localStorage.getItem(i.id) || i.dataset.default;
-                } catch(e) {
-                    i.value = i.dataset.default
+                    const response = await fetch(CONFIG.CONFIG_URL)
+                    if (response.ok) {
+                        const config = await response.json()
+                        if (!config.CONFIG) {
+                            throw Error('Invalid JSON')
+                        }
+                        Object.assign(window.CONFIG, config.CONFIG)
+                    } else {
+                        throw Error(response.status)
+                    }
+                } catch (error) {
+                    console.error('Error loading config ' + CONFIG.CONFIG_URL, error)
                 }
-                window[i.id] = i.value;
+            }
+
+            document.querySelectorAll('.menu .setting').forEach(i => {
+                if (window.CONFIG[i.id]) {
+                    i.value = window.CONFIG[i.id]
+                } else {
+                    i.value = i.dataset.default
+                    window.CONFIG[i.id] = i.dataset.default
+                }
             });
         }
 
@@ -2692,15 +2723,15 @@
         }
 
         function saveSetting(id) {
-            const val = document.getElementById(id).value.trim()
-
-            if (val === window[id]) return;
-
-            window[id] = val
+            if (id) {
+                const val = document.getElementById(id).value.trim()
+                if (val === window.CONFIG[id]) return;
+                window.CONFIG[id] = val
+            }
             try {
-                localStorage.setItem(id, val);
+                localStorage.setItem('settings', JSON.stringify(window.CONFIG));
             } catch(error) {
-                console.error('Error: ', error);
+                console.error('Could not save settings: ', error);
             }
         }
 
@@ -2727,9 +2758,9 @@
             window.activeChatsElem = document.getElementById('activeChats')
             const previewBody = type => '<head><scr' + 'ipt>var l = (m, t = "black") => { const p = document.createElement("div"); p.textContent = m; p.style = `padding: 8px 0; border-top: 1px solid #eee; color: ${t}`; document.getElementById("_console").appendChild(p); }; window.console = { log: a => l(a), warn: a => l(a, "gold"), error: a => l(a, "red") }</sc' + 'ript><style>body { padding-top: 46px; font-family: Arial, sans-serif; } .forceOpen { display: block !important; }</style><meta name="theme-color" content="#111111"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><div style="position: fixed; z-index: 999999; top: 0; left: 0; right: 0; background: #111; text-align: center; box-shadow: 0 2px 10px #00000022; padding: 14px; font-weight: bold; color: #ddd;"><button style="position: absolute; left: 12px; top: 8px; appearance: none; background: none; border: 0; font-size: 1em; height: 30px; padding: 0; color: #ddd;" onClick="document.getElementById(\'_console\').classList.toggle(\'forceOpen\')">Console</button>' + (type === 'javascript' ? '<button style="position: absolute; left: 80px; top: 8px; appearance: none; background: none; border: 0; font-size: 1em; height: 30px; padding: 0; color: #ddd;" onClick="document.getElementById(\'_canvas\').classList.toggle(\'forceOpen\')">Canvas</button>' : '') + '<button style="position: absolute; right: 12px; top: 8px; padding: 0; height: 30px; appearance: none; background: none; border: 0; font-size: 1.4em; color: #ddd;" onClick="window.close()">×</button>&nbsp;</div><div id="_console" style="position: fixed; background: #ffffffee; top: 48px; left: 0; right: 0; bottom: 0; overflow: auto; display: none; z-index: 999999; padding: 0 1.2em;"><h4>Console output</h4></div><canvas id="_canvas" style="position: fixed; top: 54px; left: 8px; background: #fff; width: calc(100vw - 16px); height: calc(100dvh - 66px); display: none; z-index: 999998; box-shadow: 0 0 8px #00000044;"></canvas>'
 
-            loadExtensions()
-            loadSettings()
             addThinkingAndKatexSupport()
+            await loadExtensions()
+            await loadSettings()
             loadModels()
             loadHistory()
 

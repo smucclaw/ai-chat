@@ -2,7 +2,10 @@
  * for https://github.com/serrynaimo/ai-chat
  * by Thomas Gorissen
  */
-JL4_API = 'https://jl4.utility.workers.dev'
+CONFIG = Object.assign({
+  JL4_API: 'https://jl4.utility.workers.dev',
+  JL4_KEY: ''
+}, CONFIG)
 
 // REGISTER USER PROMPT MODES WITH THE UI
 MODES = Object.assign({
@@ -86,7 +89,11 @@ EXECUTE_TOOL.legal_assessment = async ({ inquiry }, id) => {
           const tid = id + '-' + tool.i
           let tdef = jl4_function_cache?.find(f => f.function.name === tool.name)
           if (!tdef?.function.parameters) {
-              const jl4Response = await fetch(`${JL4_API}/functions/${tool.name}`)
+              const jl4Response = await fetch(`${CONFIG.JL4_API}/functions/${tool.name}`, {
+                headers: {
+                  'Authorization': `Bearer ${CONFIG.JL4_KEY}`
+                }
+              })
               if (!jl4Response.ok) {
                   throw new Error('Failed to provide jl4 results') 
               }
@@ -129,10 +136,11 @@ async function jl4_eval_func (func, args, id) {
 
   appendTool({ html: `<p>Evaluating contract</p><ul class='items'>${Object.keys(args)?.map(k => `<li>${k}: <code>${args[k]}</code></li>`).join('')}</ul>`, id })
 
-  const response = await fetch(`${JL4_API}/functions/${func}/evaluation`, {
+  const response = await fetch(`${CONFIG.JL4_API}/functions/${func}/evaluation`, {
       method: 'POST',
       headers: {
-          'Content-type': 'application/json'
+          'Content-type': 'application/json',
+          'Authorization': `Bearer ${CONFIG.JL4_KEY}`
       },
       body: JSON.stringify({
           fnArguments: args,
@@ -152,8 +160,11 @@ async function jl4_eval_func (func, args, id) {
 async function jl4_hello () {
   if (!document.body.classList.contains('new')) return
   clearMemory()
-  await jl4_load_func_list()
-  await appendMessage({ text: `<p>The following contracts are available: ${jl4_function_cache.map(f => `<code style='cursor: pointer;' onclick='jl4_render_func("${f.function.name}")'>${f.function.name}</code>`).join(', ')}</p>`, sender: 'assistant' })
+  if(await jl4_load_func_list()) {
+    await appendMessage({ text: `<p>The following contracts are available: ${jl4_function_cache.map(f => `<code style='cursor: pointer;' onclick='jl4_render_func("${f.function.name}")'>${f.function.name}</code>`).join(', ')}</p>`, sender: 'assistant' })
+  } else {
+    await appendMessage({ text: `Could not access JL4 API`, sender: 'system' })
+  }
 }
 
 async function jl4_render_func (name) {
@@ -162,7 +173,11 @@ async function jl4_render_func (name) {
   document.body.classList.remove('new')
   let tdef = jl4_function_cache?.find(f => f.function.name === name)
   if (!tdef?.function.parameters) {
-      const jl4Response = await fetch(`${JL4_API}/functions/${name}`)
+      const jl4Response = await fetch(`${CONFIG.JL4_API}/functions/${name}`, {
+        headers: {
+          'Authorization': `Bearer ${CONFIG.JL4_KEY}`
+        }
+      })
       if (!jl4Response.ok) {
           throw new Error('Failed to provide jl4 results') 
       }
@@ -175,14 +190,20 @@ async function jl4_render_func (name) {
 
 // ONLOAD UPDATE FUNCTION CACHE
 async function jl4_load_func_list () {
-  const response = await fetch(`${JL4_API}/functions`)
+  const response = await fetch(`${CONFIG.JL4_API}/functions`, {
+    headers: {
+      'Authorization': `Bearer ${CONFIG.JL4_KEY}`
+    }
+  })
   if (!response.ok) {
-    throw new Error('Failed to load jl4 functions results') 
+    console.error('Failed to load jl4 functions')
+    return false
   }       
   jl4_function_cache = await response.json()
   jl4_function_cache.forEach(f => {
     EXECUTE_TOOL[f.function.name] = jl4_eval_func.bind(window, f.function.name)
   })
+  return true
 }
 
 // GLOBAL VARIABLES FOR THIS EXTENSION

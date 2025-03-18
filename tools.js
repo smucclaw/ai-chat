@@ -121,7 +121,7 @@ EXECUTE_TOOL.search_web_info = async ({ query }, id) => {
   if (!query.trim()) {
       throw new Error('No query or keywords passed')
   }
-  const response = await fetch(`https://www.googleapis.com/customsearch/v1?key=${GOOGLE_CUSTOMSEARCH_API_KEY}&cx=${GOOGLE_CUSTOMSEARCH_ENGINE_ID}&q=${encodeURIComponent(query)}`)
+  const response = await fetch(`https://www.googleapis.com/customsearch/v1?key=${CONFIG.GOOGLE_CUSTOMSEARCH_API_KEY}&cx=${CONFIG.GOOGLE_CUSTOMSEARCH_ENGINE_ID}&q=${encodeURIComponent(query)}`)
   if (response.status === 403) {
       return { error: 'Please tell the user that they have not set up their Google Custom Search key in the source code, yet.' }
   } else if (response.status === 429) {
