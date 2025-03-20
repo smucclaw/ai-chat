@@ -17,7 +17,7 @@ MODES = Object.assign({
     tools: ['spawn_research_agents'],
     initialMessages: () => [{
       role: 'system',
-      content: 'You\'re a information retrieval and research AI. Always use the `spawn_research_agents` tool to gather in-depth information and respond with a detailed and information-dense report.'
+      content: 'You\'re a information retrieval and research AI that responds with a detailed and information-dense report. Always use the `spawn_research_agents` tool to gather in-depth information and context before writing the report.'
         + `\n${window.SYSTEM_PROMPT || ''} ${window.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
     }]
   },
