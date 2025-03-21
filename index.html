@@ -1838,13 +1838,12 @@
                     const result = await window.EXECUTE_TOOL[func](args, id)
                     console.log('ToolCall for ' + id + ':', { func, args, result })
                     const history = JSON.parse(localStorage.getItem('history')) || []
-                    const idParts = id?.split('-')
-                    const chatIdx = history.findIndex(h => h.id === idParts[0])
-                    if (chatIdx && idParts[1]) {
+                    const chatIdx = history.findIndex(h => h.id === id?.split('-')[0])
+                    if (chatIdx) {
                         if (!history[chatIdx].toolArtifacts?.length) {
                             history[chatIdx].toolArtifacts = []
                         }
-                        history[chatIdx].toolArtifacts.push({ func, result, id: '-' + idParts[1] })
+                        history[chatIdx].toolArtifacts.push({ func, result, id })
                         saveToLocalStorage(history)
                     }
                     return result
@@ -2457,16 +2456,18 @@
                 }
             }
             if (chat.toolArtifacts?.length) {
-                for (const t of chat.toolArtifacts) {
-                    if (window.RENDER_TOOL[t.func]) {
-                        try {
-                            const sid = t.id.split('-')[1]
-                            await window.RENDER_TOOL[t.func](t.result, chat.id + '-' + sid)
-                        } catch (e) {
-                            console.error('Failed rendering tool artifact history for ' + chat.id, t.func, t, e)
+                for (const t of chat.toolArtifacts.toReversed()) {
+                    const sid = t.id.split('-')[1]
+                    if (sid || !toolCalls.length) {
+                        if (window.RENDER_TOOL[t.func]) {
+                            try {
+                                await window.RENDER_TOOL[t.func](t.result, chat.id + (sid ? '-' + sid : ''))
+                            } catch (e) {
+                                console.error('Failed rendering tool artifact history for ' + chat.id, t.func, t, e)
+                            }
+                        } else {
+                            console.warn('No render function found for tool ' + t.func)
                         }
-                    } else {
-                        console.warn('No render function found for tool ' + t.func)
                     }
                 }
             }
