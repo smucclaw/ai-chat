@@ -127,6 +127,16 @@ RENDER_TOOL.legal_assessment = (results, id) => {
   }
 }
 
+function jl4_render_eval_result(results, id) {
+  console.log(results, id, 'eval')
+  if (results?.args) {
+    appendTool({ html: `<p>Evaluating contract</p><ul class='items'>${Object.keys(results.args)?.map(k => `<li>${k}: <code>${results.args[k]}</code></li>`).join('')}</ul>`, id })
+  }
+  if (results?.values) {
+    appendTool({ html: `<p>Para-legal says</p><ul class='items'>${results.values?.map(v => `<li>${v[0]}: <code>${v[1]}</code></li>`).join('')}</ul>`, id })
+  }
+}
+
 // HANDLE THE TOOL CALL EXECUTION OF FUNCTIONS IN jl4_function_cache
 async function jl4_eval_func (func, args, id) {
   // Use jl4 for legal assessment
@@ -134,7 +144,7 @@ async function jl4_eval_func (func, args, id) {
       throw Error('Not a valid tool call')
   }
 
-  appendTool({ html: `<p>Evaluating contract</p><ul class='items'>${Object.keys(args)?.map(k => `<li>${k}: <code>${args[k]}</code></li>`).join('')}</ul>`, id })
+  jl4_render_eval_result({ args }, id)
 
   const response = await fetch(`${CONFIG.JL4_API}/functions/${func}/evaluation`, {
       method: 'POST',
@@ -152,9 +162,9 @@ async function jl4_eval_func (func, args, id) {
   }
   const result = await response.json()
   if (!result.tag.match(/Error/i)) {
-      appendTool({ html: `<p>Para-legal says</p><ul class='items'>${result.contents.values?.map(v => `<li>${v[0]}: <code>${v[1]}</code></li>`).join('')}</ul>`, id })
+    jl4_render_eval_result(result.contents, id)
   }
-  return result.contents
+  return Object.assign(result.contents, { args })
 }
 
 async function jl4_hello () {
@@ -202,6 +212,7 @@ async function jl4_load_func_list () {
   jl4_function_cache = await response.json()
   jl4_function_cache.forEach(f => {
     EXECUTE_TOOL[f.function.name] = jl4_eval_func.bind(window, f.function.name)
+    RENDER_TOOL[f.function.name] = jl4_render_eval_result
   })
   return true
 }

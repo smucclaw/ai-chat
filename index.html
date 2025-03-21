@@ -1837,6 +1837,16 @@
                 onToolCall: async (func, args, id) => {
                     const result = await window.EXECUTE_TOOL[func](args, id)
                     console.log('ToolCall for ' + id + ':', { func, args, result })
+                    const history = JSON.parse(localStorage.getItem('history')) || []
+                    const idParts = id?.split('-')
+                    const chatIdx = history.findIndex(h => h.id === idParts[0])
+                    if (chatIdx && idParts[1]) {
+                        if (!history[chatIdx].toolArtifacts?.length) {
+                            history[chatIdx].toolArtifacts = []
+                        }
+                        history[chatIdx].toolArtifacts.push({ func, result, id: '-' + idParts[1] })
+                        saveToLocalStorage(history)
+                    }
                     return result
                 }
             })
@@ -1853,6 +1863,7 @@
             const isAI = messages[messages.length - 1]?.role === 'assistant'
             const history = JSON.parse(localStorage.getItem('history')) || []
             const index = history?.findIndex(h => h.id === id)
+            const toolArtifacts = history?.[index]?.toolArtifacts
 
             let log = [...(history?.[index]?.log || loadedChat?.log || [])] 
             const updated = new Date().getTime().toString()
@@ -1870,7 +1881,7 @@
 
             const followUps = isAI ? await suggestFollowUp(messages, id) : undefined
             const name = isUser ? await createChatLogName(log) : history?.[index]?.name
-            const chat = { id, followUps, updated, name, log }
+            const chat = { id, followUps, toolArtifacts, updated, name, log }
 
             if (index >= 0) {
                 history[index] = chat
@@ -1878,6 +1889,14 @@
                 history.unshift(chat)
             }
             
+            saveToLocalStorage(history)
+            manageHistoryItemElem(chat)
+            manageActiveItemElem(chat)
+
+            return chat
+        }
+
+        function saveToLocalStorage(history) {
             try {
                 while (history.length > 0 && JSON.stringify(history).length >= CONFIG.MAX_STORAGE_CHARS) {
                     history.pop()
@@ -1888,13 +1907,8 @@
                 console.log(`Saved ${toStore.length} characters to history.`)
                 loadedChat = null
             } catch (error) {
-                console.error('Error:', error)
+                console.error('Error saving localStorage', error)
             }
-
-            manageHistoryItemElem(chat)
-            manageActiveItemElem(chat)
-
-            return chat
         }
 
         function manageActiveItemElem(chat) {
@@ -2440,6 +2454,20 @@
                         status: l.status,
                         id: chat.id
                     })
+                }
+            }
+            if (chat.toolArtifacts?.length) {
+                for (const t of chat.toolArtifacts) {
+                    if (window.RENDER_TOOL[t.func]) {
+                        try {
+                            const sid = t.id.split('-')[1]
+                            await window.RENDER_TOOL[t.func](t.result, chat.id + '-' + sid)
+                        } catch (e) {
+                            console.error('Failed rendering tool artifact history for ' + chat.id, t.func, t, e)
+                        }
+                    } else {
+                        console.warn('No render function found for tool ' + t.func)
+                    }
                 }
             }
             hljs.highlightAll()
