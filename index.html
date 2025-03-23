@@ -1459,7 +1459,7 @@
                 <div>
                     <h4>External Config JSON</h4>
                     <input type="text" id="CONFIG_URL" placeholder="URL" autocorrect="off" data-default="" onfocus="document.body.classList.add('settingsMenu-open')" onblur="saveSetting('CONFIG_URL')" class="setting" />
-                    <button id="reconnect" onclick="loadSettings(); saveSetting();">Reload</button>
+                    <button id="reconnect" onclick="loadSettings(); saveSetting(); loadModels();">Reload</button>
                     <br /><br />
                 </div>
             </div>
