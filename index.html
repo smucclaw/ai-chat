@@ -27,6 +27,7 @@
     <link rel="apple-touch-icon" href="icon-192.png">
     <meta name ="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta property="og:image" content="./icon512.png">
     <title>AI</title>
     <style>
         body {
@@ -1460,7 +1461,7 @@
         <div class="input-container">
             <div id="modelInfo"></div>
             <div class="attachments" id="fileAttachments"></div>
-            <textarea id="userInput" rows="1" tabindex="0" onfocus="adjustOffset('0px')" onblur="adjustOffset()"></textarea>
+            <textarea id="userInput" placeholder="Getting ready ..." rows="1" tabindex="0" onfocus="adjustOffset('0px')" onblur="adjustOffset()"></textarea>
             <select id="modeSelect" title="Select prompt mode" onChange="changeMode(this.value)"></select>
             <input type="file" id="fileInput" accept=".pdf,.txt,.csv,.tsv,.js,.json,.jsx,.ts,.tsx,.css,.scss,.less,.html,.htm,.xml,.yaml,.yml,.md,.py,.rb,.java,.c,.cpp,.h,.hpp,.cs,.php,.sql,.sh,.bash,.zsh,.png,.jpg,.jpeg,.gif" multiple>
             <button id="addFiles" onclick="fileInputElem.click()" title="Attach PDF or Text files">Files</button>
@@ -1476,7 +1477,6 @@
         window.toolcount = 0
         let isAvailable = null,
          loadedChatId = null,
-         loadedChat = null,
          selectedModel = null,
          loadedModels = [],
          attachedFiles = [],
@@ -2502,7 +2502,9 @@
                 }
                 const result = await response.json()
                 if (result.success) {
-                    const url = `${CONFIG.PERSIST_API}/?s=${result.filename}`
+                    const queryParams = new URLSearchParams(window.location.search)
+                    queryParams.set('s', result.filename)
+                    const url = `${CONFIG.PERSIST_API}?${queryParams.toString()}`
                     await appendMessage({ text: `Chat saved at:<a style='display: block' target='_blank' rel='noopener' href='${url}'>${url}</a>`, sender: 'system', id: chat.id })
                     scrollToEnd()
                 } else {
@@ -2514,19 +2516,23 @@
         }
 
         async function loadChat(s) {
-            try {
-                const response = await fetch(`${CONFIG.PERSIST_API}/load.php?s=${s}`)
-                if (response.ok) {
-                    const savedChat = await response.json()
-                    await loadHistoryLog(savedChat.content, true)
-                    loadedChat = savedChat.content
-                } else {
-                    console.error('Failed to load saved chat:', response.status)
-                    throw Error('Invalid chat')
+            if (!window.loadedChat) {
+                try {
+                    const response = await fetch(`${CONFIG.PERSIST_API}/load.php?s=${s}`)
+                    if (response.ok) {
+                        const savedChat = await response.json()
+                        window.loadedChat = savedChat.content
+                    } else {
+                        console.error('Failed to load saved chat:', response.status)
+                        throw Error('Invalid chat')
+                    }
+                } catch (error) {
+                    console.error('Error loading saved chat:', error)
+                    await appendMessage({ text: 'Could not load the saved chat', sender: 'system' })
                 }
-            } catch (error) {
-                console.error('Error loading saved chat:', error)
-                await appendMessage({ text: 'Could not load the saved chat', sender: 'system' })
+            }
+            if (window.loadedChat) {
+                await loadHistoryLog(window.loadedChat, true)
             }
         }
 
@@ -2791,7 +2797,7 @@
             window.settingsMenuElem = document.getElementById('settingsMenu')
             window.scrolldownElem = document.getElementById('scrolldown')
             window.activeChatsElem = document.getElementById('activeChats')
-            const previewBody = type => '<head><scr' + 'ipt>var l = (m, t = "black") => { const p = document.createElement("div"); p.textContent = m; p.style = `padding: 8px 0; border-top: 1px solid #eee; color: ${t}`; document.getElementById("_console").appendChild(p); }; window.console = { log: a => l(a), warn: a => l(a, "gold"), error: a => l(a, "red") }</sc' + 'ript><style>body { padding-top: 46px; font-family: Arial, sans-serif; } .forceOpen { display: block !important; }</style><meta name="theme-color" content="#111111"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><div style="position: fixed; z-index: 999999; top: 0; left: 0; right: 0; background: #111; text-align: center; box-shadow: 0 2px 10px #00000022; padding: 14px; font-weight: bold; color: #ddd;"><button style="position: absolute; left: 12px; top: 8px; appearance: none; background: none; border: 0; font-size: 1em; height: 30px; padding: 0; color: #ddd;" onClick="document.getElementById(\'_console\').classList.toggle(\'forceOpen\')">Console</button>' + (type === 'javascript' ? '<button style="position: absolute; left: 80px; top: 8px; appearance: none; background: none; border: 0; font-size: 1em; height: 30px; padding: 0; color: #ddd;" onClick="document.getElementById(\'_canvas\').classList.toggle(\'forceOpen\')">Canvas</button>' : '') + '<button style="position: absolute; right: 12px; top: 8px; padding: 0; height: 30px; appearance: none; background: none; border: 0; font-size: 1.4em; color: #ddd;" onClick="window.close()">×</button>&nbsp;</div><div id="_console" style="position: fixed; background: #ffffffee; top: 48px; left: 0; right: 0; bottom: 0; overflow: auto; display: none; z-index: 999999; padding: 0 1.2em;"><h4>Console output</h4></div><canvas id="_canvas" style="position: fixed; top: 54px; left: 8px; background: #fff; width: calc(100vw - 16px); height: calc(100dvh - 66px); display: none; z-index: 999998; box-shadow: 0 0 8px #00000044;"></canvas>'
+            const previewBody = type => '<head><scr' + 'ipt>var l = (m, t = "black") => { const p = document.createElement("div"); p.textContent = m; p.style = `padding: 8px 0; border-top: 1px solid #eee; color: ${t}`; document.getElementById("_console").appendChild(p); }; window.console = { log: a => l(a), warn: a => l(a, "gold"), error: a => l(a, "red") }</sc' + 'ript><style>body { padding-top: 46px; font-family: Arial, sans-serif; } .forceOpen { display: block !important; }</style><meta name="theme-color" content="#111111"><meta name="viewport" content="width=device-width, initial-scale=1.0"></h' + 'ead><div style="position: fixed; z-index: 999999; top: 0; left: 0; right: 0; background: #111; text-align: center; box-shadow: 0 2px 10px #00000022; padding: 14px; font-weight: bold; color: #ddd;"><button style="position: absolute; left: 12px; top: 8px; appearance: none; background: none; border: 0; font-size: 1em; height: 30px; padding: 0; color: #ddd;" onClick="document.getElementById(\'_console\').classList.toggle(\'forceOpen\')">Console</button>' + (type === 'javascript' ? '<button style="position: absolute; left: 80px; top: 8px; appearance: none; background: none; border: 0; font-size: 1em; height: 30px; padding: 0; color: #ddd;" onClick="document.getElementById(\'_canvas\').classList.toggle(\'forceOpen\')">Canvas</button>' : '') + '<button style="position: absolute; right: 12px; top: 8px; padding: 0; height: 30px; appearance: none; background: none; border: 0; font-size: 1.4em; color: #ddd;" onClick="window.close()">×</button>&nbsp;</div><div id="_console" style="position: fixed; background: #ffffffee; top: 48px; left: 0; right: 0; bottom: 0; overflow: auto; display: none; z-index: 999999; padding: 0 1.2em;"><h4>Console output</h4></div><canvas id="_canvas" style="position: fixed; top: 54px; left: 8px; background: #fff; width: calc(100vw - 16px); height: calc(100dvh - 66px); display: none; z-index: 999998; box-shadow: 0 0 8px #00000044;"></canvas>'
 
             addThinkingAndKatexSupport()
             await loadExtensions()

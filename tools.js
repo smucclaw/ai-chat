@@ -215,7 +215,7 @@ EXECUTE_TOOL.spawn_research_agents = async (topics, id) => {
           const tid = id + '-' + topic.i
           const json = await chatStreams[id].call({
               id: tid,
-              model: getSummaryModel(),
+              // model: getSummaryModel(),
               messages: MODES.researchAgent.initialMessages(topic.topic, context),
               tools: TOOLS.filter(t => MODES.researchAgent.tools.includes(t.function.name))
           })
