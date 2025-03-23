@@ -549,6 +549,7 @@
         .system-message {
             line-height: 1.5em;
             font-style: italic;
+            font-weight: 300;
             padding: 0 0 0 28px;
             color: #777;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' aria-hidden='true'%3E%3Cpath fill='%23777' d='M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM11 7h2v2h-2V7zm0 4h2v6h-2v-6z'%3E%3C/path%3E%3C/svg%3E");
@@ -634,6 +635,10 @@
             padding-left: 1.5em;
             line-height: 1.5em;
             font-size: .8em;
+        }
+
+        .tool-message > .content > ol > li > strong {
+            font-size: 1.1em;
         }
 
         .tool-message li {
@@ -2516,6 +2521,14 @@
                     const url = `${CONFIG.PERSIST_API}?${queryParams.toString()}`
                     await appendMessage({ text: `Chat saved at:<a style='display: block' target='_blank' rel='noopener' href='${url}'>${url}</a>`, sender: 'system', id: chat.id })
                     scrollToEnd()
+                    if (navigator.share) {
+                      navigator.share({
+                        title: chat.name + ' - AI',
+                        url: url
+                      }).catch(err => {
+                        console.error('Error sharing:', err)
+                      })
+                    }
                 } else {
                     throw Error(result.error)
                 }
