@@ -2679,15 +2679,15 @@
               if (extension.trim()) {
                 const script = document.createElement('script')
                 script.src = `./extensions/${extension.trim()}.js`
-                script.onload = () => {
-                    registerModes()
-                    resolve()
-                }
+                script.onload = resolve
                 script.onerror = resolve
                 document.head.appendChild(script)
+              } else {
+                resolve()
               }
             })))
           }
+          await contentLoaded()
         }
 
         function startNew() {
@@ -2782,7 +2782,9 @@
           }
         })
         
-        window.addEventListener('DOMContentLoaded', async function () {
+        window.addEventListener('DOMContentLoaded', loadExtensions)
+        
+        async function contentLoaded() {
             window.askButtonElem = document.getElementById('ask')
             window.userInputElem = document.getElementById('userInput')
             window.chatMessagesElem = document.getElementById('chatMessages')
@@ -2800,7 +2802,6 @@
             const previewBody = type => '<head><scr' + 'ipt>var l = (m, t = "black") => { const p = document.createElement("div"); p.textContent = m; p.style = `padding: 8px 0; border-top: 1px solid #eee; color: ${t}`; document.getElementById("_console").appendChild(p); }; window.console = { log: a => l(a), warn: a => l(a, "gold"), error: a => l(a, "red") }</sc' + 'ript><style>body { padding-top: 46px; font-family: Arial, sans-serif; } .forceOpen { display: block !important; }</style><meta name="theme-color" content="#111111"><meta name="viewport" content="width=device-width, initial-scale=1.0"></h' + 'ead><div style="position: fixed; z-index: 999999; top: 0; left: 0; right: 0; background: #111; text-align: center; box-shadow: 0 2px 10px #00000022; padding: 14px; font-weight: bold; color: #ddd;"><button style="position: absolute; left: 12px; top: 8px; appearance: none; background: none; border: 0; font-size: 1em; height: 30px; padding: 0; color: #ddd;" onClick="document.getElementById(\'_console\').classList.toggle(\'forceOpen\')">Console</button>' + (type === 'javascript' ? '<button style="position: absolute; left: 80px; top: 8px; appearance: none; background: none; border: 0; font-size: 1em; height: 30px; padding: 0; color: #ddd;" onClick="document.getElementById(\'_canvas\').classList.toggle(\'forceOpen\')">Canvas</button>' : '') + '<button style="position: absolute; right: 12px; top: 8px; padding: 0; height: 30px; appearance: none; background: none; border: 0; font-size: 1.4em; color: #ddd;" onClick="window.close()">×</button>&nbsp;</div><div id="_console" style="position: fixed; background: #ffffffee; top: 48px; left: 0; right: 0; bottom: 0; overflow: auto; display: none; z-index: 999999; padding: 0 1.2em;"><h4>Console output</h4></div><canvas id="_canvas" style="position: fixed; top: 54px; left: 8px; background: #fff; width: calc(100vw - 16px); height: calc(100dvh - 66px); display: none; z-index: 999998; box-shadow: 0 0 8px #00000044;"></canvas>'
 
             addThinkingAndKatexSupport()
-            await loadExtensions()
             await loadSettings()
             loadModels()
             loadHistory()
@@ -2961,7 +2962,7 @@
                 document.addEventListener('touchmove', touchMove)
                 document.addEventListener('touchend', touchEnd)
             })
-        })
+        }
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

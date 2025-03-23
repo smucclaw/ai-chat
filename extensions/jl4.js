@@ -123,6 +123,7 @@ EXECUTE_TOOL.legal_assessment = async ({ inquiry }, id) => {
 RENDER_TOOL.legal_assessment = (results, id) => {
   const parts = id.split('-')
   if (loadedChatId?.toString() === parts[0] && results.functions_used?.length) {
+    results.functions_used.forEach(f => window.RENDER_TOOL[f.name] = jl4_render_eval_result)
     appendTool({ html: `<p>Doing law ...</p><ol>${results.functions_used.map(t => `<li><strong>Reviewing possibly relevant legal context: <code>${t.name}</code></strong><br><div id='${id + '-' + t.i}' class="subcontent"></div></li>`).join('')}</ol>`, id })
   }
 }
@@ -212,10 +213,10 @@ async function jl4_load_func_list () {
   jl4_function_cache = await response.json()
   jl4_function_cache.forEach(f => {
     EXECUTE_TOOL[f.function.name] = jl4_eval_func.bind(window, f.function.name)
-    RENDER_TOOL[f.function.name] = jl4_render_eval_result
   })
   return true
 }
 
 // GLOBAL VARIABLES FOR THIS EXTENSION
 window.jl4_function_cache = []
+
