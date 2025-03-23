@@ -27,7 +27,7 @@
     <link rel="apple-touch-icon" href="icon-192.png">
     <meta name ="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta property="og:image" content="./icon512.png">
+    <meta property="og:image" content="./icon-512.png">
     <title>AI</title>
     <style>
         body {
@@ -1708,8 +1708,10 @@
         async function suggestFollowUp(log, id) {
             if (!log?.[log.length - 1]?.content?.trim() || !chatStreams[null]) return
             try {
+                const mode = modeSelectElem.value
+                const followUpMode = MODES[MODES[mode].followUpMode] || MODES.suggestFollowUps
                 const json = await chatStreams[null].call({
-                    messages: MODES.suggestFollowUps.initialMessages(log[log.length - 1].content)
+                    messages: followUpMode.initialMessages(log[log.length - 1].content)
                 })
                 const followUps = JSON.parse(json.content?.match(/(\[(\s*"[^"]*"\s*,?)*\s*\])/)?.[0])
                 appendFollowUps(followUps, id)
@@ -2459,6 +2461,7 @@
                 for (const t of chat.toolArtifacts.toReversed()) {
                     const sid = t.id.split('-')[1]
                     if (sid || !toolCalls.length) {
+                        window.toolcount = sid + 1
                         if (window.RENDER_TOOL[t.func]) {
                             try {
                                 await window.RENDER_TOOL[t.func](t.result, chat.id + (sid ? '-' + sid : ''))
