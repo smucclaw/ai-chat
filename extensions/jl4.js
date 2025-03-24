@@ -17,7 +17,7 @@ MODES = Object.assign({
     hello: jl4_hello,
     initialMessages: () => [{
       role: 'system',
-      content: `You're a lawyer AI and always use the provided \`legal_assessment\` tool call to, 1. Help you find out if you can help the user and, 2. assess a valid inquiry against the law. You then format the output into an information-dense, structured response and highlight the key findings in bold. Don't provide any explanation beyond the tool results and remind in the end that this is not yet actually legal advice.\nNow is ${new Date().toString()}`
+      content: `You're a lawyer AI and always use the provided \`legal_assessment\` tool call to, 1. Help you find out if you can help the user and, 2. assess a valid inquiry against the law. The tool call evaluates your inputs against a contract, so the result is determenistically evaluated and always correct even if common sense might disagree. Don't provide any explanations or findings of your own but share the results from the tool function, format it into an short yet information-dense response and highlight the key result relating to the user prompt in bold. Remind the user in the end that this is not yet actually legal advice.\nNow is ${new Date().toString()}`
     }]
   },
   jl4_find_function: {
