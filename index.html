@@ -2903,6 +2903,7 @@
                 const userElement = e.target.closest('.user-message')
                 if (userElement) {
                     userInputElem.value = userElement.innerText.trim()
+                    startNew()
                 }
 
                 const inputElement = e.target.closest('.input-container')
