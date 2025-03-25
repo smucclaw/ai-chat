@@ -13,7 +13,7 @@ MODES = Object.assign({
     name: 'Legal assessment',
     visible: true,
     placeholder: 'What would you like to assess?',
-    tools: ['legal_assessment', 'get_weather'],
+    tools: ['legal_assessment', 'get_weather', 'search_web_info'],
     hello: jl4_hello,
     initialMessages: () => [{
       role: 'system',
