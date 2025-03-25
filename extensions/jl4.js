@@ -129,7 +129,6 @@ RENDER_TOOL.legal_assessment = (results, id) => {
 }
 
 function jl4_render_eval_result(results, id) {
-  console.log(results, id, 'eval')
   if (results?.args) {
     appendTool({ html: `<p>Evaluating contract</p><ul class='items'>${Object.keys(results.args)?.map(k => `<li>${k}: <code>${results.args[k]}</code></li>`).join('')}</ul>`, id })
   }
