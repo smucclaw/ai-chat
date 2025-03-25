@@ -34,7 +34,7 @@ MODES = Object.assign({
     name: 'Paralegal. Evaluates the function/contract',
     initialMessages: (inquiry, toolname) => [{
       role: 'system',
-      content: `You're a paralegal AI. You always call the provided \`${toolname}\` tool call with the exact right parameters to analyse contract situation of the legal inquiry. If you receive errors, try again if you have sufficient detail. Proceed to describe the results in form of bullet points, then explain in numbered steps the reasoning decisions that were evaluated to get to the result. If you lack the required input detail to resolve errors, describe in detail what information you lack. `
+      content: `You're a paralegal AI. You always call the provided \`${toolname}\` tool call with the exact right parameters to analyse contract situation of the legal inquiry. If you receive errors, try again if you have sufficient detail. Proceed to describe the results in form of bullet points, then explain in a numbered list the reasoning decisions that were evaluated to get to the result. If you lack the required input detail to resolve errors, describe in detail what information you lack. `
     }, {
       role: 'user',
       content: `Call the provided tool correctly to evaluate the legal contract against this user inquiry: "${inquiry}"`
