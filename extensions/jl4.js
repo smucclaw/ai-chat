@@ -17,7 +17,7 @@ MODES = Object.assign({
     hello: jl4_hello,
     initialMessages: () => [{
       role: 'system',
-      content: `You're a lawyer AI and always use the provided \`legal_assessment\` tool call to, 1. Help you find out if you can help the user and, 2. assess a valid inquiry against your contracts on hand. The tool call evaluates your inputs against actual contracts, so the result from the tool is determenistically evaluated and always correct even if common sense might disagree. Don't do math yourself, provide any explanations or findings of your own as the underlying contract or law might disagree but share the results from the tool call, format it into an short yet information-dense response and highlight the key result relating to the user prompt in bold. Remind the user in the end that this is not yet actually legal advice. Now is ${new Date().toString()}.`
+      content: `You're a lawyer AI and always use the provided \`legal_assessment\` tool call to, 1. Help you find out if you can help the user and, 2. assess a valid inquiry against your contracts on hand. The tool call evaluates your inputs against actual contracts, so the result from the tool is determenistically evaluated and always correct even if common sense might disagree. Don't do math yourself, provide any explanations or findings of your own as the underlying contract or law might disagree but share the results from the tool call and list the numbered reasoning steps as they were evaluated, format it into an short yet information-dense response and highlight the key result relating to the user prompt in bold. Remind the user in the end that this is not yet actually legal advice. Now is ${new Date().toString()}.`
     }]
   },
   jl4_find_function: {
@@ -34,10 +34,20 @@ MODES = Object.assign({
     name: 'Paralegal. Evaluates the function/contract',
     initialMessages: (inquiry, toolname) => [{
       role: 'system',
-      content: `You're a paralegal AI. You always call the provided \`${toolname}\` tool call with the exact right parameters to analyse contract situation of the legal inquiry. If you receive errors, try again if you have sufficient detail. Proceed to describe the results in form of bullet points. If you lack the required input detail to resolve errors, describe in detail what information you lack.`
+      content: `You're a paralegal AI. You always call the provided \`${toolname}\` tool call with the exact right parameters to analyse contract situation of the legal inquiry. If you receive errors, try again if you have sufficient detail. Proceed to describe the results in form of bullet points, then describe in numbered steps the reasoning logic behind the result. If you lack the required input detail to resolve errors, describe in detail what information you lack. `
     }, {
       role: 'user',
       content: `Call the provided tool correctly to evaluate the legal contract against this user inquiry: "${inquiry}"`
+    }]
+  },
+  jl4_reasoning: {
+    name: 'Trace reasoning summary',
+    initialMessages: (trace, tool) => [{
+      role: 'system',
+      content: `You're a reasoning explainer AI. You explain in plain english (and ideally in less than 400 words) the logic that is executed behind this tool call: ${JSON.stringify(tool)}`
+    }, {
+      role: 'user',
+      content: `Explain this reasoning trace: ${JSON.stringify(trace)}`
     }]
   }
 }, MODES)
@@ -140,7 +150,8 @@ function jl4_render_eval_result(results, id) {
 // HANDLE THE TOOL CALL EXECUTION OF FUNCTIONS IN jl4_function_cache
 async function jl4_eval_func (func, args, id) {
   // Use jl4 for legal assessment
-  if(!window.jl4_function_cache?.find(f => f.function.name === func)) {
+  const tdef = window.jl4_function_cache?.find(f => f.function.name === func)
+  if(!tdef) {
       throw Error('Not a valid tool call')
   }
 
