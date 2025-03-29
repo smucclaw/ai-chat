@@ -227,6 +227,10 @@ async function jl4_load_func_list () {
   return true
 }
 
+// ADD SETTING INPUTS
+const d = document.createElement('div')
+d.innerHTML = `<h4>JL4 API</h4><input type="text" id="JL4_API" placeholder="API URL" autocorrect="off" data-default="" class="setting" /><input type="text" id="JL4_KEY" placeholder="API key" autocorrect="off" autocomplete="off" data-default="" class="setting" />`
+document.getElementById("extensionSettings").appendChild(d)
+
 // GLOBAL VARIABLES FOR THIS EXTENSION
 window.jl4_function_cache = []
-

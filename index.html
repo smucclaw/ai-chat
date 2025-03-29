@@ -1437,20 +1437,20 @@
             </div>
             <div class="menu" id="settingsMenu">
                 <div id="modelMenu">
-                    <input type="text" class="search-input" placeholder="Search model name ..." autocorrect="off" data-q="" onfocus="document.body.classList.add('settingsMenu-open')" onkeyup="search(this, modelSectionElem, event)" />
+                    <input type="text" class="search-input" placeholder="Search model name ..." autocorrect="off" data-q="" onkeyup="search(this, modelSectionElem, event)" />
                     <button onclick="this.previousElementSibling.value = ''; search(this.previousElementSibling, modelSectionElem);" class="clear">&times;</button>
                     <div class="items" id="modelSection"></div>
                 </div>
                 <div>
                     <h4>Server</h4>
-                    <input type="text" id="API_URL" placeholder="API URL" autocorrect="off" data-default="http://localhost:1234" onfocus="document.body.classList.add('settingsMenu-open')" onblur="saveSetting('API_URL')" class="setting" />
-                    <input type="text" id="API_KEY" placeholder="API key" autocorrect="off" autocomplete="off" data-default="lm-studio" onfocus="document.body.classList.add('settingsMenu-open')" onblur="saveSetting('API_KEY')" class="setting" />
+                    <input type="text" id="API_URL" placeholder="API URL" autocorrect="off" data-default="http://localhost:1234" class="setting" />
+                    <input type="text" id="API_KEY" placeholder="API key" autocorrect="off" autocomplete="off" data-default="lm-studio"  class="setting" />
                     <button id="reconnect" onclick="closeMenu(); loadModels()">Reconnect</button>
                 </div>
                 <div>
                     <h4>Default Models</h4>
-                    <input type="text" id="DEFAULT_MODEL" placeholder="for chat" autocorrect="off" data-default="" onfocus="document.body.classList.add('settingsMenu-open')" onblur="saveSetting('DEFAULT_MODEL')" class="setting" />
-                    <input type="text" id="SUMMARY_MODEL" placeholder="for text summary" autocorrect="off" data-default="" onfocus="document.body.classList.add('settingsMenu-open')" onblur="saveSetting('SUMMARY_MODEL')" class="setting" />
+                    <input type="text" id="DEFAULT_MODEL" placeholder="for chat" autocorrect="off" data-default="" class="setting" />
+                    <input type="text" id="SUMMARY_MODEL" placeholder="for text summary" autocorrect="off" data-default="" class="setting" />
                 </div>
                 <div>
                     <h4>System prompt</h4>
@@ -1462,12 +1462,13 @@
                 </div>
                 <div>
                     <h4>Google Custom Search</h4>
-                    <input type="text" id="GOOGLE_CUSTOMSEARCH_API_KEY" placeholder="Google Custom Search API key" autocorrect="off" data-default="" onfocus="document.body.classList.add('settingsMenu-open')" onblur="saveSetting('GOOGLE_CUSTOMSEARCH_API_KEY')" class="setting" />
-                    <input type="text" id="GOOGLE_CUSTOMSEARCH_ENGINE_ID" placeholder="Google Custom Search Engine ID" autocorrect="off" autocomplete="off" data-default="" onfocus="document.body.classList.add('settingsMenu-open')" onblur="saveSetting('GOOGLE_CUSTOMSEARCH_ENGINE_ID')" class="setting" />
+                    <input type="text" id="GOOGLE_CUSTOMSEARCH_API_KEY" placeholder="Google Custom Search API key" autocorrect="off" data-default="" class="setting" />
+                    <input type="text" id="GOOGLE_CUSTOMSEARCH_ENGINE_ID" placeholder="Google Custom Search Engine ID" autocorrect="off" autocomplete="off" data-default="" class="setting" />
                 </div>
+                <div id="extensionSettings"></div>
                 <div>
                     <h4>External Config JSON</h4>
-                    <input type="text" id="CONFIG_URL" placeholder="URL" autocorrect="off" data-default="" onfocus="document.body.classList.add('settingsMenu-open')" onblur="saveSetting('CONFIG_URL')" class="setting" />
+                    <input type="text" id="CONFIG_URL" placeholder="URL" autocorrect="off" data-default="" class="setting" />
                     <button id="reconnect" onclick="loadSettings(); saveSetting();">Reload</button>
                     <br /><br />
                 </div>
@@ -2838,6 +2839,26 @@
             window.scrolldownElem = document.getElementById('scrolldown')
             window.activeChatsElem = document.getElementById('activeChats')
             const previewBody = type => '<head><scr' + 'ipt>var l = (m, t = "black") => { const p = document.createElement("div"); p.textContent = m; p.style = `padding: 8px 0; border-top: 1px solid #eee; color: ${t}`; document.getElementById("_console").appendChild(p); }; window.console = { log: a => l(a), warn: a => l(a, "gold"), error: a => l(a, "red") }</sc' + 'ript><style>body { padding-top: 46px; font-family: Arial, sans-serif; } .forceOpen { display: block !important; }</style><meta name="theme-color" content="#111111"><meta name="viewport" content="width=device-width, initial-scale=1.0"></h' + 'ead><div style="position: fixed; z-index: 999999; top: 0; left: 0; right: 0; background: #111; text-align: center; box-shadow: 0 2px 10px #00000022; padding: 14px; font-weight: bold; color: #ddd;"><button style="position: absolute; left: 12px; top: 8px; appearance: none; background: none; border: 0; font-size: 1em; height: 30px; padding: 0; color: #ddd;" onClick="document.getElementById(\'_console\').classList.toggle(\'forceOpen\')">Console</button>' + (type === 'javascript' ? '<button style="position: absolute; left: 80px; top: 8px; appearance: none; background: none; border: 0; font-size: 1em; height: 30px; padding: 0; color: #ddd;" onClick="document.getElementById(\'_canvas\').classList.toggle(\'forceOpen\')">Canvas</button>' : '') + '<button style="position: absolute; right: 12px; top: 8px; padding: 0; height: 30px; appearance: none; background: none; border: 0; font-size: 1.4em; color: #ddd;" onClick="window.close()">×</button>&nbsp;</div><div id="_console" style="position: fixed; background: #ffffffee; top: 48px; left: 0; right: 0; bottom: 0; overflow: auto; display: none; z-index: 999999; padding: 0 1.2em;"><h4>Console output</h4></div><canvas id="_canvas" style="position: fixed; top: 54px; left: 8px; background: #fff; width: calc(100vw - 16px); height: calc(100dvh - 66px); display: none; z-index: 999998; box-shadow: 0 0 8px #00000044;"></canvas>'
+
+            settingsMenuElem.querySelectorAll('input').forEach(elem => {
+                elem.addEventListener('focus', function() {
+                    document.body.classList.add('settingsMenu-open')
+                })
+                elem.addEventListener('blur', function() {
+                    if (this.id) {
+                        saveSetting(this.id)
+                    }
+                })
+                elem.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && this.id) {
+                        saveSetting(this.id)
+                        if (this.id === 'CONFIG_URL') {
+                            loadSettings()
+                            saveSetting()
+                        }
+                    }
+                })
+            })
 
             addThinkingAndKatexSupport()
             await loadSettings()
