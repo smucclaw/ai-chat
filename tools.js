@@ -113,7 +113,23 @@ TOOLS = [{
           required: ["latitude", "longitude", "forecast"]
       },
   }
-}, ...TOOLS]
+}, {
+    type: "function",
+    function: {
+        name: "generate_image",
+        description: "Generate an image based on a user prompt",
+        parameters: {
+            type: "object",
+            properties: {
+                prompt: {
+                    type: "string",
+                    description: "The description of the image"
+                }
+            },
+            required: ["prompt"]
+        },
+    }
+  }, ...TOOLS]
 
 
 // GENERAL TOOL FUNCTIONS
@@ -242,6 +258,34 @@ EXECUTE_TOOL.spawn_research_agents = async (topics, id) => {
   }))
   return { id, topics: [...topics, ...addedSteps]  }
 }
+
+EXECUTE_TOOL.generate_image = async ({ prompt }, id) => {
+    if (!prompt || typeof prompt !== 'string') {
+      throw new Error('No valid prompt')
+    }
+    let images = [{ i: window.toolcount++, prompt: prompt }, { i: window.toolcount++, prompt: prompt }]
+    RENDER_TOOL.generate_image({ images }, id)
+    try {
+      await Promise.all(images.map(async i => {
+      try {
+        const iid = id + '-' + i.i
+        const json = await chatStreams[id].image({
+            id: iid,
+            model: getImageModel(),
+            prompt: i.prompt
+        })
+        i.prompt = json[0].revised_prompt || i.prompt
+        i.url = json[0].url || json[0].b64_json
+        appendTool({ html: `<a href='${i.url}' target='_blank'><img src='${i.url}' /></a>`, id: iid })
+      } catch (e) {
+          console.error('Could not generate image for ' + id, topic, e)
+      }
+  }))
+      return { id, images }
+    } catch (error) {
+      return { id, error: 'Couldn\'t generate this image right now :(' }
+    }
+  }
 // TOOL FUNCTIONS END
 
 
@@ -288,4 +332,11 @@ RENDER_TOOL.spawn_research_agents = (results, id) => {
     appendTool({ html: `<p>Researching ...</p><ol>${results.topics.map(t => `<li><strong>${t.topic}</strong><br><div id='${id + '-' + t.i}' class="subcontent"></div></li>`).join('')}</ol>`, id })
   }
 }
+
+RENDER_TOOL.generate_image = (results, id) => {
+    const parts = id.split('-')
+    if (loadedChatId?.toString() === parts[0]) {
+      appendTool({ html: `<p>Generating images ...</p><div class='images'>${results.images.map(i => `<div class='image' id='${id + '-' + i.i}'>${i.url ? `<div class='content'><a href='${i.url}' target='_blank'><img src='${i.url}' /></a></div>` : ''}</div>`).join('')}</div>`, id })
+    }
+  }
 // TOOL RESULT RENDER FUNCTIONS END

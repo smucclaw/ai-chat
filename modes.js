@@ -3,7 +3,7 @@ MODES = Object.assign({
     name: 'Lookup',
     visible: true,
     placeholder: 'What would you like to know?',
-    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math'],
+    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'generate_image'],
     initialMessages: () => [{
       role: 'system',
       content: 'You\'re a information retrieval and answering AI and always use the `search_web_info` tool or other tools to retrieve relevant and up-to-date information before you reply.'
@@ -25,10 +25,10 @@ MODES = Object.assign({
     name: 'Chat',
     visible: true,
     placeholder: 'What\'s on your mind?',
-    tools: ['search_user_history', 'solve_math'],
+    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'generate_image'],
     initialMessages: () => [{
       role: 'system',
-      content: 'You\'re a chat AI. You know the user and can lookup past conversations and context by keyword whenever relevant. Use tools only when necessary.'
+      content: 'You\'re a chat AI. Use tools only when necessary to be most helpful.'
         + `\n${window.SYSTEM_PROMPT || ''}\n${window.USER_INFO ? `Here is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
     }]
   },

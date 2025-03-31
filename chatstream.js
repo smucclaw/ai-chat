@@ -51,6 +51,28 @@ const ChatStream = (function() {
       this.#id = options.id
     }
 
+    async image({ id = this.#id, prompt, n = 1, model = this.#model }) {
+      const response = await fetch(this.#options.apiUrl + '/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.#options.apiKey}`
+        },
+        body: JSON.stringify({
+          model,
+          prompt,
+          n
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`)
+      }
+
+      const json = await response.json()
+      return json.data
+    }
+
     async call({ id = this.#id, messages, model = this.#model, tools = this.#options.tools, max_tokens = this.#options.max_tokens, temperature = this.#options.temperature }) {
         let result = await this.#completionsCall(id, messages, model, tools, max_tokens, temperature)
         this.#tokenAmount += JSON.stringify(result).length
