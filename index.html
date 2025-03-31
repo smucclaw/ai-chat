@@ -667,8 +667,8 @@
         .tool-message .images {
             margin: 0 0 1em;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(calc(50% - 1em), 1fr));
-            grid-gap: 1em;
+            grid-template-columns: repeat(auto-fill, minmax(calc(50% - 8px), 1fr));
+            grid-gap: 8px;
         }
 
         .tool-message .image {
@@ -2316,16 +2316,22 @@
             }
             const { state, generationTime, tokenPerSecond, tokens, model } = status
             const parts = []
+            const buttons = []
+            const resubmitBtn = '<button onclick="repeatMessage()" title="Resubmit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="stroke-[2] size-4"><path d="M4 20V15H4.31241M4.31241 15H9M4.31241 15C5.51251 18.073 8.50203 20.25 12 20.25C15.8582 20.25 19.0978 17.6016 20 14.0236M20 4V9H19.6876M19.6876 9H15M19.6876 9C18.4875 5.92698 15.498 3.75 12 3.75C8.14184 3.75 4.90224 6.3984 4 9.9764" stroke="currentColor"></path></svg></button>'
+            const saveBtn = '<button onclick="saveChat()" title="Save/Share"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="stroke-[2] size-4"><path d="M6.99609 9L11.9961 4L16.9961 9M6.99609 9M12 16V4" stroke="currentColor"></path><path d="M4 15V16C4 18.2091 5.79086 20 8 20H16C18.2091 20 20 18.2091 20 16V15" stroke="currentColor"></path></svg></button>'
+            const deleteBtn = '<button onclick="deleteFromHistory()" title="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="stroke-[2] text-primary"><path d="M2.99561 7H20.9956" stroke="currentColor"></path><path d="M9.99561 11V17M13.9956 11V17" stroke="currentColor"></path><path d="M8 6.5L8.68917 4.08792C8.87315 3.44397 9.46173 3 10.1315 3H13.8685C14.5383 3 15.1268 3.44397 15.3108 4.08792L16 6.5" stroke="currentColor"></path><path d="M5 7L5.80098 18.2137C5.91312 19.7837 7.21944 21 8.79336 21H15.2066C16.7806 21 18.0869 19.7837 18.199 18.2137L19 7" stroke="currentColor"></path></svg></button>'
             if(state.startsWith('Waiting')) {
                 parts.push(formatDuration(generationTime))
                 parts.push(state)
             } else {
                 if (!state.startsWith('Generating')) {
-                    if (state.startsWith('Done')) {
-                        parts.push(`<button onclick="repeatMessage()" title="Resubmit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="stroke-[2] size-4"><path d="M4 20V15H4.31241M4.31241 15H9M4.31241 15C5.51251 18.073 8.50203 20.25 12 20.25C15.8582 20.25 19.0978 17.6016 20 14.0236M20 4V9H19.6876M19.6876 9H15M19.6876 9C18.4875 5.92698 15.498 3.75 12 3.75C8.14184 3.75 4.90224 6.3984 4 9.9764" stroke="currentColor"></path></svg></button><button onclick="saveChat()" title="Save/Share"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="stroke-[2] size-4"><path d="M6.99609 9L11.9961 4L16.9961 9M6.99609 9M12 16V4" stroke="currentColor"></path><path d="M4 15V16C4 18.2091 5.79086 20 8 20H16C18.2091 20 20 18.2091 20 16V15" stroke="currentColor"></path></svg></button><button onclick="deleteFromHistory()" title="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="stroke-[2] text-primary"><path d="M2.99561 7H20.9956" stroke="currentColor"></path><path d="M9.99561 11V17M13.9956 11V17" stroke="currentColor"></path><path d="M8 6.5L8.68917 4.08792C8.87315 3.44397 9.46173 3 10.1315 3H13.8685C14.5383 3 15.1268 3.44397 15.3108 4.08792L16 6.5" stroke="currentColor"></path><path d="M5 7L5.80098 18.2137C5.91312 19.7837 7.21944 21 8.79336 21H15.2066C16.7806 21 18.0869 19.7837 18.199 18.2137L19 7" stroke="currentColor"></path></svg></button>`)
-                    } else {
+                    buttons.push(resubmitBtn)
+                    if (!state.startsWith('Done')) {
                         parts.push(state)
+                    } else {
+                        buttons.push(saveBtn)
                     }
+                    buttons.push(deleteBtn)
                 }
                 parts.push(formatDuration(generationTime))
                 parts.push(tokenPerSecond + ' tok/s')
@@ -2333,7 +2339,7 @@
                 // parts.push(timeToFirstTokenString + ' to first token')
             }
             parts.push(model)
-            return parts.join(' &#183; ')
+            return buttons.join('') + parts.join(' &#183; ')
         }
         
         async function sayHello() {
