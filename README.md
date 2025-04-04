@@ -8,13 +8,15 @@ Supports a few tool calls:
 3. User chat history inquiries
 4. Basic reasoning if you ask it to do research
 5. Solving simple math
+6. Generate images
+7. Improve social media posts
 
 
 
 # Getting started
 I can recommend LM Studio to run server APIs. Use a decently capable model as `Chat Model` and a fast, easy to run one as `Summary Model`. The latter enables automatic naming of conversations and the suggestion of follow-up topics.
 
-Hint: In the `index.html` is a max-length of 20,000 characters hardcoded. Adjust to your preferences.
+Hint: In the `index.html` is a max-length of 33,000 characters hardcoded. Adjust to your preferences.
 
 ---
 
