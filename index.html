@@ -1701,6 +1701,101 @@
             return bestResult.payload;
         }
 
+        async function prepareImageForVisionLLMByTile(url, maxCharacters = CONFIG.MAX_TOKENS) {
+            const img = new Image();
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const imgPromise = new Promise((resolve) => {
+                img.onload = () => resolve();
+                img.src = url;
+            });
+            await imgPromise;
+            let width = img.width;
+            let height = img.height;
+            let quality = 0.9; // Start with high quality (0-1 scale)
+            let format = 'image/jpeg'; // JPEG is default for smaller size, but we'll test PNG too
+            const aspectRatio = width / height;
+            const generatePayload = async (w, h, fmt, qual) => {
+                canvas.width = w;
+                canvas.height = h;
+                // Use createImageBitmap for high quality resizing
+                const bitmap = await createImageBitmap(img, {
+                  resizeWidth: w,
+                  resizeHeight: h,
+                  resizeQuality: 'high'
+                })
+                ctx.drawImage(bitmap, 0, 0)
+                bitmap.close()
+                const base64 = canvas.toDataURL(fmt, qual).split(',')[1]; // Strip prefix
+                return { payload: base64, length: base64.length };
+            };
+            
+            // Calculate max dimensions based on character limit (14x14 pixels per character)
+            const pixelsPerChar = 14 * 14
+            const maxPixels = maxCharacters * pixelsPerChar
+            
+            // Calculate initial dimensions while maintaining aspect ratio
+            let type = 'image/jpeg'
+            let targetPixels = maxPixels * 0.95 // Use 95% of available pixels to leave buffer
+            let initialHeight = Math.sqrt(targetPixels / aspectRatio)
+            let initialWidth = initialHeight * aspectRatio
+            
+            // Cap dimensions for practicality
+            const maxSide = 1400 // 100 characters at 14x14 pixels each
+            if (initialWidth > maxSide) {
+                initialWidth = maxSide
+                initialHeight = maxSide / aspectRatio
+            }
+            if (initialHeight > maxSide) {
+                initialHeight = maxSide
+                initialWidth = maxSide * aspectRatio
+            }
+            
+            // Round to integers
+            width = Math.floor(initialWidth)
+            height = Math.floor(initialHeight)
+            
+            // Start with high quality
+            quality = 0.9
+            
+            // Binary search to find optimal quality
+            let minQuality = 0.75
+            let maxQuality = 0.95
+            let bestResult = null
+            
+            for (let i = 0; i < 8; i++) { // Limit iterations for performance
+                let result = await generatePayload(width, height, type, quality)
+                let estimatedChars = Math.ceil((width * height) / pixelsPerChar)
+                
+                if (result.length <= maxCharacters) {
+                    // If we fit under the limit, this is a candidate result
+                    bestResult = result
+                    // Try higher quality
+                    minQuality = quality
+                    quality = (maxQuality + quality) / 2
+                } else {
+                    // Too large, reduce quality
+                    maxQuality = quality
+                    quality = (minQuality + quality) / 2
+                }
+                
+                // If we're close enough to optimal, stop
+                if (maxQuality - minQuality < 0.03) break
+            }
+            
+            // If we couldn't fit the image, reduce dimensions
+            if (!bestResult) {
+                // Calculate how much we need to scale down
+                const scaleFactor = Math.sqrt(maxCharacters / (width * height / pixelsPerChar))
+                width = Math.floor(width * scaleFactor)
+                height = Math.floor(height * scaleFactor)
+                bestResult = await generatePayload(width, height, type, minQuality)
+            }
+            
+            console.log(`Image optimized: ${width}x${height} size, ${quality} quality: ${bestResult.length} characters (estimated ${Math.ceil((width * height) / pixelsPerChar)} chars at 14x14 pixels per char)`)
+            return bestResult.payload
+        }
+
         async function prepareImagesForPrompt(prompt, initialMessages) {
             const imageFiles = prompt.files.filter(f => f.url);
             if (!imageFiles.length) return prompt;
@@ -1718,7 +1813,7 @@
             const tokensPerImage = Math.floor(remainingTokens / imageFiles.length * 0.95);
             for (const file of imageFiles) {
                 try {
-                    file.imageData = `data:image/jpeg;base64,${await prepareImageForVisionLLM(file.url, tokensPerImage)}`;
+                    file.imageData = `data:image/jpeg;base64,${await prepareImageForVisionLLMByTile(file.url, tokensPerImage)}`;
                 } catch (error) {
                     console.error('Error optimizing image ' + file.name, error);
                 }
@@ -1847,18 +1942,18 @@
 
             const initialMessages = MODES[mode].initialMessages()
             
-            // Process images if there are any - prioritize them over historic messages
-            if (prompt.files && prompt.files.some(f => f.type && ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(f.type.toLowerCase()))) {
-                console.log('Processing images for prompt...');
-                prompt = await prepareImagesForPrompt(prompt, initialMessages);
-            }
-            
             const size = JSON.stringify([...initialMessages, prompt]).length
             console.log(`Prompt size total: ${size} / ${CONFIG.MAX_TOKENS} characters`)
 
             if (size > CONFIG.MAX_TOKENS) {
-                await appendMessage({ text: `Prompt size is ${Math.round(size / CONFIG.MAX_TOKENS * 100)}% of maximum.`, sender: 'system', id: cid })
+                await appendMessage({ text: `Prompt size before files is ${Math.round(size / CONFIG.MAX_TOKENS * 100)}% of maximum.`, sender: 'system', id: cid })
                 return
+            }
+
+            // Process images if there are any - prioritize them over historic messages
+            if (prompt.files && prompt.files.some(f => f.type && ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(f.type.toLowerCase()))) {
+                console.log('Processing images for prompt...');
+                prompt = await prepareImagesForPrompt(prompt, initialMessages);
             }
 
             if (document.body.classList.contains('new')) {
@@ -1873,17 +1968,17 @@
 
             const messages = [...log, prompt]
 
-            let tokenLength = JSON.stringify(initialMessages).length
-            for (let i = messages.length - 1; i >= 0; i--) {
-                tokenLength += JSON.stringify(messages[i]).length + 1
-                if (tokenLength > CONFIG.MAX_TOKENS) {
-                    while (i >= 0) {
-                        messages.shift()
-                        i--
-                    }
-                    continue
-                }
-            }
+            // let tokenLength = JSON.stringify(initialMessages).length
+            // for (let i = messages.length - 1; i >= 0; i--) {
+            //     tokenLength += JSON.stringify(messages[i]).length + 1
+            //     if (tokenLength > CONFIG.MAX_TOKENS) {
+            //         while (i >= 0) {
+            //             messages.shift()
+            //             i--
+            //         }
+            //         continue
+            //     }
+            // }
 
             await appendMessage({ text: prompt.content, sender: 'user', files: prompt.files, id: cid })
 
@@ -1980,18 +2075,18 @@
         }
 
         function saveToLocalStorage(history) {
-            try {
-                while (history.length > 0 && JSON.stringify(history).length >= CONFIG.MAX_STORAGE_CHARS) {
+            history.sort((a, b) => (a.updated || a.id) - (b.updated || b.id))
+            const toStore = JSON.stringify(history)
+            while (history.length > 0) {
+                try {
+                    localStorage.setItem('history', toStore)
+                    continue
+                } catch (e) {
                     history.pop()
                 }
-                history.sort((a, b) => (a.updated || a.id) - (b.updated || b.id))
-                const toStore = JSON.stringify(history)
-                localStorage.setItem('history', toStore)
-                console.log(`Saved ${toStore.length} characters to history.`)
-                loadedChat = null
-            } catch (error) {
-                console.error('Error saving localStorage', error)
             }
+            console.log(`Saved ${history.length} chat logs with ${toStore.length} characters to history.`)
+            loadedChat = null
         }
 
         function manageActiveItemElem(chat) {
@@ -2384,9 +2479,9 @@
             option.onclick = () => {
                 if (!confirm('Are you sure?\nI won\'t be able reference your previous queries anymore. *sadface*')) return
                 try {
-                    localStorage.setItem('history', '[]')
                     historyItemsElem.innerHTML = ''
                     startNew()
+                    localStorage.setItem('history', '[]')
                 } catch (error) {
                     console.error('Error:', error)
                 }
@@ -2428,7 +2523,7 @@
                 const index = chat.log.findLastIndex(m => m.role === 'user')
                 const message = chat.log[index].content
                 chat.log = chat.log.slice(0, index)
-                localStorage.setItem('history', JSON.stringify(history))
+                saveToLocalStorage(history)
                 last?.remove()
                 sendMessage(message)
             }
@@ -2441,8 +2536,8 @@
                 await chatStreams[id].stop()
             }
             const history = JSON.parse(localStorage.getItem('history')) || []
-            const toStore = history.filter(h => h.id !== id)
-            localStorage.setItem('history', JSON.stringify(toStore))
+            saveToLocalStorage(history.filter(h => h.id !== id))
+
             historyItemsElem.querySelector(`button[data-id="${id}"]`)?.remove()
             if (!history.length) {
                 document.getElementById('clearHistory')?.remove()
