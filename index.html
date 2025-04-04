@@ -2080,7 +2080,7 @@
             while (history.length > 0) {
                 try {
                     localStorage.setItem('history', toStore)
-                    continue
+                    break
                 } catch (e) {
                     history.pop()
                 }
