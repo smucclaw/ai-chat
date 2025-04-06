@@ -2153,7 +2153,7 @@
             if (toolElem) {
                 const content = document.createElement('div')
                 content.className = 'content'
-                content.innerHTML = html
+                content.innerHTML = await markdownToHtml(html)
                 toolElem.appendChild(content)
                 content.scrollIntoView({ behavior: 'smooth' })
                 return toolElem
