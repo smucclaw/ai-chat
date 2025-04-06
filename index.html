@@ -592,6 +592,10 @@
             overflow-y: auto;
         }
 
+        .tool-message > .content .katex-display {
+            color: #ddd;
+        }
+
         .tool-message > .content:before {
             content: '';
             position: absolute;
@@ -2660,10 +2664,10 @@
                     }
                 }
             }
-            hljs.highlightAll()
             appendFollowUps(chat.followUps, chat.id)
             manageActiveItemElem(chat)
             showActiveChat()
+            hljs.highlightAll()
             document.body.classList[chatStreams[chat.id]?.isGenerating ? 'add' : 'remove']('generating')
             chatStreams[chat.id]?.isGenerating && onToken('', chat.id)
             window.scrollTo(0, fromTop ? 0 : document.documentElement.scrollHeight)

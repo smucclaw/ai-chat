@@ -30,6 +30,26 @@ TOOLS = [{
       },
   }
 }, {
+    type: "function",
+    function: {
+        name: "solve_complex_math",
+        description: "Helps to solve complex math that requires custom algorithms/function implementations and variables with data accurately by executing it in JavaScript and returning the result. Allows you to create your own algorithms and run them. E.g. for IRR, NPV, others",
+        parameters: {
+            type: "object",
+            properties: {
+                data: {
+                    type: "string",
+                    description: "The data as JSON array of objects required to run the algorithm"
+                },
+                algorithm: {
+                    type: "string",
+                    description: "The self-executing JavaScript closure that can calculate the result. Can access the data array as a global variable `data`."
+                }
+            },
+            required: ["data", "algorithm"]
+        },
+    }
+}, {
   type: "function",
   function: {
       name: "search_user_history",
@@ -161,8 +181,22 @@ EXECUTE_TOOL.solve_math = async ({ code }, id) => {
     RENDER_TOOL.solve_math(response, id)
     return response
   } catch (error) {
-    return { id, error: 'Couldn\'t run this code :(' }
+    return { id, error }
   }
+}
+
+EXECUTE_TOOL.solve_complex_math = async ({ data, algorithm }, id) => {
+    if (!algorithm || typeof algorithm !== 'string') {
+        throw new Error('No valid math provided')
+      }
+      try {
+        const result = new Function('let data = arguments[0]; return ' + algorithm)(JSON.parse(data) || [])
+        const response = { id, data, algorithm, result }
+        RENDER_TOOL.solve_complex_math(response, id)
+        return response
+      } catch (error) {
+        return { id, error }
+      }
 }
 
 EXECUTE_TOOL.get_weather = async ({ latitude, longitude, speed_unit = 'kmh', temp_unit = 'celsius', forecast = true }, id) => {
@@ -302,8 +336,14 @@ RENDER_TOOL.search_web_info = (results, id) => {
 RENDER_TOOL.solve_math = (results, id) => {
     const parts = id.split('-')
     if (loadedChatId?.toString() === parts[0] && results.id) {
-        console.log(results)
         appendTool({ html: `<p>Doing math: <code class='code language-javascript'>${results.code.replace(';', '')} = ${results.result}</code></p>\n`, id })
+    }
+}
+
+RENDER_TOOL.solve_complex_math = (results, id) => {
+    const parts = id.split('-')
+    if (loadedChatId?.toString() === parts[0] && results.id) {
+        appendTool({ html: `<p>Solving complex math for data:\n\n\`\`\`json\n${results.data}\n\`\`\`\n\nUsing algorithm:\n\n\`\`\`javascript\n${results.algorithm}\n\`\`\`\n\nResult:\n\n$$${results.result}$$\n</p>\n`, id })
     }
 }
 
