@@ -43,7 +43,7 @@ TOOLS = [{
                 },
                 algorithm: {
                     type: "string",
-                    description: "The self-executing JavaScript closure that can calculate the result. Can access the data array as a global variable `data`."
+                    description: "The self-executing JavaScript closure that can calculate the result. A `data` variable holds the pre-parsed data array."
                 }
             },
             required: ["data", "algorithm"]
