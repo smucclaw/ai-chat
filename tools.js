@@ -343,7 +343,7 @@ RENDER_TOOL.solve_math = (results, id) => {
 RENDER_TOOL.solve_complex_math = (results, id) => {
     const parts = id.split('-')
     if (loadedChatId?.toString() === parts[0] && results.id) {
-        appendTool({ html: `<p>Solving complex math for data:\n\n\`\`\`json\n${results.data}\n\`\`\`\n\nUsing algorithm:\n\n\`\`\`javascript\n${results.algorithm}\n\`\`\`\n\nResult:\n\n$$${results.result}$$\n</p>\n`, id })
+        appendTool({ html: `<p>Solving complex math for data:\n\n\`\`\`json\n${results.data}\n\`\`\`\n\nUsing algorithm:\n\n\`\`\`javascript\n${results.algorithm}\n\`\`\`\n\nResult:\n\n\`\`\`json\n${JSON.stringify(results.result)}\n\`\`\`\n</p>\n`, id })
     }
 }
 
