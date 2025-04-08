@@ -190,7 +190,7 @@ EXECUTE_TOOL.solve_complex_math = async ({ data, algorithm }, id) => {
         throw new Error('No valid math provided')
       }
       try {
-        const result = new Function('let data = arguments[0]; return ' + algorithm)(JSON.parse(data) || [])
+        const result = new Function('let data = arguments[0]; const func = ' + algorithm + '; return typeof func === "function" ? func(data) : func;')(JSON.parse(data) || [])
         const response = { id, data, algorithm, result }
         RENDER_TOOL.solve_complex_math(response, id)
         return response

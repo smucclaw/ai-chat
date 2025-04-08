@@ -2979,7 +2979,12 @@
 
         window.addEventListener('focus', function handleFocus() {
           if (loadedChatId === null && new Date().getTime() - 60000 > isAvailable) {
-            loadModels()
+            if (!isAvailable) {
+                loadModels()
+            } else {
+                isAvailable = new Date().getTime()
+                sayHello()
+            }
           }
         })
         
