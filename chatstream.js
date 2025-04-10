@@ -254,7 +254,19 @@ const ChatStream = (function() {
               }
               this.#tokenAmount++
 
-              if (delta.content) {
+              if (delta.reasoning_content) {
+                if (!thinking) {
+                  delta.reasoning_content = '<think>\n' + delta.reasoning_content
+                  thinking = true
+                }
+                this.#_response += delta.reasoning_content
+                this.#throttleAppendToken(id, delta.reasoning_content)
+              }
+              else if (delta.content) {
+                if (thinking) {
+                  delta.content = '</think>\n' + delta.content
+                  thinking = false
+                }
                 this.#_response += delta.content
                 this.#throttleAppendToken(id, delta.content)
               } else if (!thinking && delta.tool_calls?.length) {
