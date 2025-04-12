@@ -52,7 +52,7 @@ TOOLS = [{
 }, {
     type: "function",
     function: {
-        name: "chart",
+        name: "render_chart",
         description: "Renders a lightweight-charts.js v4.2 chart to visualise 2-dimensional data",
         parameters: {
             type: "object",
@@ -215,7 +215,7 @@ EXECUTE_TOOL.solve_complex_math = async ({ data, algorithm }, id) => {
       }
 }
 
-EXECUTE_TOOL.chart = async ({ chartcode }, id) => {
+EXECUTE_TOOL.render_chart = async ({ chartcode }, id) => {
     if (!chartcode || typeof chartcode !== 'string') {
         throw new Error('No valid chartcode provided')
       }
@@ -375,7 +375,7 @@ RENDER_TOOL.solve_complex_math = (results, id) => {
     }
 }
 
-RENDER_TOOL.chart = async (results, id) => {
+RENDER_TOOL.render_chart = async (results, id) => {
     const parts = id.split('-')
     if (loadedChatId?.toString() === parts[0] && results.chartcode) {
         await appendTool({ html: `<p>Visualising information:</p><div class='chart' id='chart-${id}'></div>`, id })
