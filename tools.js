@@ -221,7 +221,7 @@ EXECUTE_TOOL.render_chart = async ({ chartcode }, id) => {
       }
       try {
         RENDER_TOOL.render_chart({ id, chartcode }, id)
-        return { id, chartcode }
+        return { id, chartcode, result: 'Successfully rendered!' }
       } catch (error) {
         return { id, error }
       }
