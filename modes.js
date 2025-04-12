@@ -7,7 +7,7 @@ MODES = Object.assign({
     initialMessages: () => [{
       role: 'system',
       content: 'You\'re a information retrieval and answering AI and always use the `search_web_info` tool or other tools to retrieve relevant and up-to-date information before you reply.'
-        + `\n${window.SYSTEM_PROMPT || ''} ${window.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
+        + `\n${window.SYSTEM_PROMPT || ''} ${window.CONFIG.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.CONFIG.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
     }]
   },
   research: {
@@ -18,7 +18,7 @@ MODES = Object.assign({
     initialMessages: () => [{
       role: 'system',
       content: 'You\'re a information retrieval and research AI that responds with a detailed and information-dense report. Always use the `spawn_research_agents` tool to gather in-depth information and context before writing the report.'
-        + `\n${window.SYSTEM_PROMPT || ''} ${window.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
+        + `\n${window.SYSTEM_PROMPT || ''} ${window.CONFIG.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.CONFIG.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
     }]
   },
   chat: {
@@ -29,7 +29,7 @@ MODES = Object.assign({
     initialMessages: () => [{
       role: 'system',
       content: 'You\'re a chat AI. Use tools only when necessary to be most helpful.'
-        + `\n${window.SYSTEM_PROMPT || ''}\n${window.USER_INFO ? `Here is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
+        + `\n${window.SYSTEM_PROMPT || ''}\n${window.CONFIG.USER_INFO ? `Here is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.CONFIG.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
     }]
   },
   improve: {
@@ -41,7 +41,7 @@ MODES = Object.assign({
       {
         role: 'system',
         content: 'Your a social media post improvement AI. You use the spawn_research_agents tool to look-up related trending topics or other relevant input and use that information to suggest three versions of the content that would be more viral without changing the character and based on: Conciseness, Confidence & Clarity, Emotional Appeal, Trends & Relevance, Novelty & Surprise, Authenticity & Relatability, Humor & Entertainment Value, Practicality, Storytelling Elements, Call to Action and maybe a bit of controversy.'
-          + `\n${window.SYSTEM_PROMPT || ''} ${window.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
+          + `\n${window.SYSTEM_PROMPT || ''} ${window.CONFIG.USER_INFO ? `\nHere is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.CONFIG.USER_INFO}"` : ''}\nNow is ${new Date().toString()}`
       }, {
         role: 'user',
         content: 'Give me three better versions for this message:\n\n' + message
@@ -82,7 +82,7 @@ MODES = Object.assign({
       }
       return [{
         role: 'system',
-        content: `You\'re a professional entertainer. You MUST always use less than 30 words in your response!\n\n${window.USER_INFO ? `Here is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}`,
+        content: `You\'re a professional entertainer. You MUST always use less than 30 words in your response!\n\n${window.CONFIG.USER_INFO ? `Here is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.CONFIG.USER_INFO}"` : ''}`,
       }, {
         role: 'user',
         content: `Say hello and ask how to help. It\'s okay to be mildly cynical. Highlight your greeting and first short sentence in bold.\n\n${content}`,
