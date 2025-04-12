@@ -378,17 +378,18 @@ RENDER_TOOL.solve_complex_math = (results, id) => {
 RENDER_TOOL.render_chart = async (results, id) => {
     const parts = id.split('-')
     if (loadedChatId?.toString() === parts[0] && results.chartcode) {
-        await appendTool({ html: `<p>Visualising information:</p><div class='chart' id='chart-${id}'></div>`, id })
+        const tid = id + '-' + window.toolcount++
+        await appendTool({ html: `<p>Visualising information:</p><div class='chart' id='chart-${tid}'></div>`, id })
         const f = new Function('LightweightCharts', 'chartElement', 'var window = { LightweightCharts }, document = { getElementById: () => chartElement }, func = ' + results.chartcode)
         if (!window.LightweightCharts) {
             const s = document.createElement('scr' + 'ipt')
             s.src = 'https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.min.js'
             s.onload = function () {
-                f(window.LightweightCharts, document.getElementById('chart-' + id))
+                f(window.LightweightCharts, document.getElementById('chart-' + tid))
             }
             document.body.appendChild(s)
         } else {
-            f(window.LightweightCharts, document.getElementById('chart-' + id))
+            f(window.LightweightCharts, document.getElementById('chart-' + tid))
         }
     }
 }
