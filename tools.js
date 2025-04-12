@@ -220,7 +220,7 @@ EXECUTE_TOOL.render_chart = async ({ chartcode }, id) => {
         throw new Error('No valid chartcode provided')
       }
       try {
-        RENDER_TOOL.chart({ id, chartcode }, id)
+        RENDER_TOOL.render_chart({ id, chartcode }, id)
         return { id, chartcode }
       } catch (error) {
         return { id, error }
