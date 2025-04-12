@@ -50,6 +50,22 @@ TOOLS = [{
         },
     }
 }, {
+    type: "function",
+    function: {
+        name: "chart",
+        description: "Renders a lightweight-charts.js v4.2 chart to visualise 2-dimensional data",
+        parameters: {
+            type: "object",
+            properties: {
+                chartcode: {
+                    type: "string",
+                    description: "The JavaScript code to render the chart using lightweight-charts.js in version 4.2.3 (using LightweightCharts variable) inside of a self-executing closure and rendering it into the existing element referenced with variable name `chartElement`. Use chartElement.clientWidth as width, transparent as background color, #1f87cd as primary data color and #aaaaaa for text."
+                }
+            },
+            required: ["chartcode"]
+        },
+    }
+}, {
   type: "function",
   function: {
       name: "search_user_history",
@@ -194,6 +210,18 @@ EXECUTE_TOOL.solve_complex_math = async ({ data, algorithm }, id) => {
         const response = { id, data, algorithm, result }
         RENDER_TOOL.solve_complex_math(response, id)
         return response
+      } catch (error) {
+        return { id, error }
+      }
+}
+
+EXECUTE_TOOL.chart = async ({ chartcode }, id) => {
+    if (!chartcode || typeof chartcode !== 'string') {
+        throw new Error('No valid chartcode provided')
+      }
+      try {
+        RENDER_TOOL.chart({ id, chartcode }, id)
+        return { id, chartcode }
       } catch (error) {
         return { id, error }
       }
@@ -344,6 +372,24 @@ RENDER_TOOL.solve_complex_math = (results, id) => {
     const parts = id.split('-')
     if (loadedChatId?.toString() === parts[0] && results.id) {
         appendTool({ html: `<p>Solving complex math for data:\n\n\`\`\`json\n${results.data}\n\`\`\`\n\nUsing algorithm:\n\n\`\`\`javascript\n${results.algorithm}\n\`\`\`\n\nResult:\n\n\`\`\`json\n${JSON.stringify(results.result)}\n\`\`\`\n</p>\n`, id })
+    }
+}
+
+RENDER_TOOL.chart = async (results, id) => {
+    const parts = id.split('-')
+    if (loadedChatId?.toString() === parts[0] && results.chartcode) {
+        await appendTool({ html: `<p>Visualising information:</p><div class='chart' id='chart-${id}'></div>`, id })
+        const f = new Function('LightweightCharts', 'chartElement', 'var window = { LightweightCharts }, document = { getElementById: () => chartElement }, func = ' + results.chartcode)
+        if (!window.LightweightCharts) {
+            const s = document.createElement('scr' + 'ipt')
+            s.src = 'https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.min.js'
+            s.onload = function () {
+                f(window.LightweightCharts, document.getElementById('chart-' + id))
+            }
+            document.body.appendChild(s)
+        } else {
+            f(window.LightweightCharts, document.getElementById('chart-' + id))
+        }
     }
 }
 

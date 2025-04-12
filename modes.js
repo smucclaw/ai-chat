@@ -3,7 +3,7 @@ MODES = Object.assign({
     name: 'Lookup',
     visible: true,
     placeholder: 'What would you like to know?',
-    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'solve_complex_math', 'generate_image'],
+    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'solve_complex_math', 'generate_image', 'chart'],
     initialMessages: () => [{
       role: 'system',
       content: 'You\'re a information retrieval and answering AI and always use the `search_web_info` tool or other tools to retrieve relevant and up-to-date information before you reply.'
@@ -25,7 +25,7 @@ MODES = Object.assign({
     name: 'Chat',
     visible: true,
     placeholder: 'What\'s on your mind?',
-    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'solve_complex_math', 'generate_image'],
+    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'solve_complex_math', 'generate_image', 'chart'],
     initialMessages: () => [{
       role: 'system',
       content: 'You\'re a chat AI. Use tools only when necessary to be most helpful.'
@@ -70,7 +70,7 @@ MODES = Object.assign({
   },
   sayHello: {
     name: 'Welcome the user',
-    placeholder: 'Howdy, is it time to help again?',
+    placeholder: '<b>Howdy</b>, is it time to help again?',
     initialMessages: history => {
       let content = ''
       if (history?.length) {
@@ -85,7 +85,7 @@ MODES = Object.assign({
         content: `You\'re a professional entertainer. You MUST always use less than 30 words in your response!\n\n${window.USER_INFO ? `Here is some information the user would like you to know in general. Never reference it directly in your response but use it to relate better with the user!\n"${window.USER_INFO}"` : ''}`,
       }, {
         role: 'user',
-        content: `Say hello and ask how to help. It\'s okay to be mildly cynical.\n\n${content}`,
+        content: `Say hello and ask how to help. It\'s okay to be mildly cynical. Highlight your greeting and first short sentence in bold.\n\n${content}`,
       }]
     }
   },
@@ -102,7 +102,7 @@ MODES = Object.assign({
   },
   verify: {
     name: 'Verify information and suggest improvements',
-    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'solve_complex_math'],
+    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'solve_complex_math', 'chart'],
     initialMessages: (context, info) => [{
         role: 'system',
         content: 'You\'re an AI agent with the sole purpose to double-check the key finding to be most accurate and useful for a given prompt, suggest improvements and correct mistakes then summarize they key findings using a bullet point lists. Research critical questions by using tools.'
