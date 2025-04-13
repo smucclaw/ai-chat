@@ -423,7 +423,7 @@ RENDER_TOOL.spawn_research_agents = (results, id) => {
 RENDER_TOOL.generate_image = (results, id) => {
     const parts = id.split('-')
     if (loadedChatId?.toString() === parts[0]) {
-      appendTool({ html: `<p>Generating images ...</p><div class='images'>${results.images.map(i => `<div class='image' id='${id + '-' + i.i}'>${i.url ? `<div class='content'><a href='${i.url}' target='_blank'><img src='${i.url}' /></a></div>` : ''}</div>`).join('')}</div>`, id })
+      appendTool({ html: `<p>Generating images ...</p><div class='images'>${results.images.map(i => `<div class='image' id='${id + '-' + i.i}'>${i.url ? `<div class='content'><a href='${i.url}' target='_blank'><img src='${i.url}' onerror='this.parentNode.parentNode.remove()' /></a></div>` : ''}</div>`).join('')}</div>`, id })
     }
   }
 // TOOL RESULT RENDER FUNCTIONS END
