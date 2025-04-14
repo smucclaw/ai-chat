@@ -53,7 +53,7 @@ TOOLS = [{
     type: "function",
     function: {
         name: "render_chart",
-        description: "Renders a lightweight-charts.js v4.2 chart to visualise 2-dimensional data",
+        description: "Renders a lightweight-charts.js v4.2.3 chart to visualise time-based data",
         parameters: {
             type: "object",
             properties: {
