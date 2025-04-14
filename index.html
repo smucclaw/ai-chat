@@ -3164,7 +3164,7 @@
             document.addEventListener('touchstart', e => { 
                 if (document.body.classList.contains('new')) return
 
-                for (const selector of ['#activeChats', 'pre', '.table', '.katex-display', '.attachments', '.tool-message', '.status']) {
+                for (const selector of ['#activeChats', 'pre', '.table', '.katex-display', '.attachments', '.tool-message', '.status', '.chart']) {
                     const elem = e.target.closest(selector)
                     if (elem && elem.scrollLeft < elem.scrollWidth - elem.clientWidth) {
                         return
