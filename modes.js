@@ -3,7 +3,7 @@ MODES = Object.assign({
     name: 'Lookup',
     visible: true,
     placeholder: 'What would you like to know?',
-    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'solve_complex_math', 'generate_image', 'render_chart'],
+    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'solve_complex_math', 'generate_image', 'render_chart', 'stock_quotes'],
     initialMessages: () => [{
       role: 'system',
       content: 'You\'re a information retrieval and answering AI and always start by using the `search_web_info` tool or other tools to retrieve relevant and up-to-date information BEFORE you give any uninformed reply.'
@@ -25,7 +25,7 @@ MODES = Object.assign({
     name: 'Chat',
     visible: true,
     placeholder: 'What\'s on your mind?',
-    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'solve_complex_math', 'generate_image', 'render_chart'],
+    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'solve_complex_math', 'generate_image', 'render_chart', 'stock_quotes'],
     initialMessages: () => [{
       role: 'system',
       content: 'You\'re a chat AI. Use tools only when necessary to be most helpful.'
@@ -102,7 +102,7 @@ MODES = Object.assign({
   },
   verify: {
     name: 'Verify information and suggest improvements',
-    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'solve_complex_math', 'render_chart'],
+    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'solve_complex_math', 'render_chart', 'stock_quotes'],
     initialMessages: (context, info) => [{
         role: 'system',
         content: 'You\'re an AI agent with the sole purpose to double-check the key finding to be most accurate and useful for a given prompt, suggest improvements and correct mistakes then summarize they key findings using a bullet point lists. Research critical questions by using tools.'

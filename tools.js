@@ -152,6 +152,30 @@ TOOLS = [{
 }, {
     type: "function",
     function: {
+        name: "stock_quotes",
+        description: "Queries for stock symbol information from alphavantage.co",
+        parameters: {
+            type: "object",
+            properties: {
+                func: {
+                    type: "string",
+                    description: "The alphavantage function code such as TIME_SERIES_DAILY, TIME_SERIES_INTRADAY, TIME_SERIES_WEEKLY, REAL_GDP, CPI, DIGITAL_CURRENCY_DAILY, ETF_PROFILE, TOP_GAINERS_LOSERS, etc..."
+                },
+                symbol: {
+                    type: "string",
+                    description: "The stock or ETF or currency symbol. E.g. IBM, TSLA, SPY, ... No support for indexes."
+                },
+                interval: {
+                    type: "string",
+                    description: "1min, 5min, etc... Required for TIME_SERIES_INTRADAY and some other functions"
+                }
+            },
+            required: ["func"]
+        },
+    }
+}, {
+    type: "function",
+    function: {
         name: "generate_image",
         description: "Generate an image based on a user prompt",
         parameters: {
@@ -226,6 +250,14 @@ EXECUTE_TOOL.render_chart = async ({ chartcode }, id) => {
         return { id, error }
       }
 }
+
+EXECUTE_TOOL.stock_quotes = async ({ symbol, func, interval }, id) => {
+    const response = await fetch(`https://www.alphavantage.co/query?function=${func}&symbol=${symbol}&apikey=${window.CONFIG.ALPHAVANTAGE_KEY}`)
+    const data = await response.json()
+    const results = { id, symbol, func, interval, data }
+    RENDER_TOOL.stock_quotes(results, id)
+    return results
+  }
 
 EXECUTE_TOOL.get_weather = async ({ latitude, longitude, speed_unit = 'kmh', temp_unit = 'celsius', forecast = true }, id) => {
   const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}`
@@ -401,6 +433,15 @@ RENDER_TOOL.get_weather = (results, id) => {
       appendTool({ html: '<p>' + (results.forecast ? 'Checking the 7-day weather forecast ...' : 'Checking today\'s weather ...') + '</p>', id })
   }
 }
+
+RENDER_TOOL.stock_quotes = (results, id) => {
+    const parts = id.split('-')
+    if (loadedChatId?.toString() === parts[0] && results.id) {
+        id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
+        console.log(results.data)
+        appendTool({ html: `<p>Retrieving financial market information ${results.symbol ? `for <code>${results.symbol}</code>` : ''}...</p>`, id })
+    }
+  }
 
 RENDER_TOOL.search_user_history = (results, id) => {
   const parts = id.split('-')
