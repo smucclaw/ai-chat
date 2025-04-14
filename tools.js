@@ -59,7 +59,7 @@ TOOLS = [{
             properties: {
                 chartcode: {
                     type: "string",
-                    description: "The JavaScript code to render the chart using lightweight-charts.js in version 4.2.3 (using LightweightCharts variable) inside of a self-executing closure and rendering it into the existing element referenced with variable name `chartElement`. Use chartElement.clientWidth as width and 400px as height, transparent as background color, #1f87cd as primary data color and #aaaaaa for text."
+                    description: "The JavaScript code to render the chart using lightweight-charts.js in version 4.2.3 (using LightweightCharts variable) inside of a self-executing closure and rendering it into the existing element referenced with variable name `chartElement`. Use chartElement.clientWidth as width and 350px as height, transparent as background color, #1f87cd as primary data color and #aaaaaa for text."
                 }
             },
             required: ["chartcode"]
