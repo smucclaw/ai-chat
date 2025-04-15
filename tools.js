@@ -258,7 +258,7 @@ EXECUTE_TOOL.stock_quotes = async ({ symbol, func, interval }, id) => {
     }
     const response = await fetch(`https://www.alphavantage.co/query?function=${func}&symbol=${symbol}&apikey=${key}`)
     const data = await response.json()
-    const results = { id, symbol, func, interval, data }
+    const results = { id, info: data['Meta Data']?.['1. Information'], symbol, func, interval, data }
     RENDER_TOOL.stock_quotes(results, id)
     return results
   }
@@ -451,7 +451,7 @@ RENDER_TOOL.stock_quotes = (results, id) => {
     if (loadedChatId?.toString() === parts[0] && results.id) {
         id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
         console.log(results.data)
-        appendTool({ html: `<p>Retrieving financial market information ${results.symbol ? `for <code>${results.symbol}</code>` : ''}...</p>`, id })
+        appendTool({ html: `<p>Retrieving ${results.info || 'financial market information'} ${results.symbol ? `for <code>${results.symbol}</code>` : ''}...</p>`, id })
     }
   }
 
