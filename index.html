@@ -2932,11 +2932,19 @@
         }
 
         async function loadSettings() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const configParam = urlParams.get('config'); // Check for 'config' parameter in URL
+
+            if (configParam) {
+                CONFIG.CONFIG_URL = configParam; // Override CONFIG_URL with the URL param
+            }
+
             const settings = JSON.parse(localStorage.getItem('settings')) || {}
             Object.assign(window.CONFIG, settings)
 
             if(CONFIG.CONFIG_URL) {
                 try {
+                    console.log('Loading config from ' + CONFIG.CONFIG_URL)
                     const response = await fetch(CONFIG.CONFIG_URL)
                     if (response.ok) {
                         const config = await response.json()
