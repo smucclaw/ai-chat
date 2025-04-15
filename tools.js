@@ -199,9 +199,9 @@ EXECUTE_TOOL.search_web_info = async ({ query }, id) => {
   }
   const response = await fetch(`https://www.googleapis.com/customsearch/v1?key=${CONFIG.GOOGLE_CUSTOMSEARCH_API_KEY}&cx=${CONFIG.GOOGLE_CUSTOMSEARCH_ENGINE_ID}&q=${encodeURIComponent(query)}`)
   if (response.status === 403) {
-      return { error: 'Please tell the user that they have not set up their Google Custom Search key in the source code, yet.' }
+      return { error: 'No Google Custom Search key or Engine configured in AI chat settings.' }
   } else if (response.status === 429) {
-      return { error: 'Please tell the user that we have made too many requests for the day.'}
+      return { error: 'Too many earch requests for the day. Try again tomorrow.'}
   } else if (!response.ok) {
       throw new Error('Failed to provide search results') 
   }
@@ -252,7 +252,11 @@ EXECUTE_TOOL.render_chart = async ({ chartcode }, id) => {
 }
 
 EXECUTE_TOOL.stock_quotes = async ({ symbol, func, interval }, id) => {
-    const response = await fetch(`https://www.alphavantage.co/query?function=${func}&symbol=${symbol}&apikey=${window.CONFIG.ALPHAVANTAGE_KEY}`)
+    const key = window.CONFIG.ALPHAVANTAGE_KEY
+    if (!key) {
+        throw new Error('No Alpha Vantage key configured in AI chat settings.')
+    }
+    const response = await fetch(`https://www.alphavantage.co/query?function=${func}&symbol=${symbol}&apikey=${key}`)
     const data = await response.json()
     const results = { id, symbol, func, interval, data }
     RENDER_TOOL.stock_quotes(results, id)
@@ -357,6 +361,10 @@ EXECUTE_TOOL.generate_image = async ({ prompt }, id) => {
     if (!prompt || typeof prompt !== 'string') {
       throw new Error('No valid prompt')
     }
+    const model = getImageModel()
+    if (!model) {
+        throw new Error('No image model specified in AI chat settings.')
+    }
     let images = [{ i: window.toolcount++, prompt: prompt }, { i: window.toolcount++, prompt: prompt }]
     RENDER_TOOL.generate_image({ images }, id)
     try {
@@ -365,7 +373,7 @@ EXECUTE_TOOL.generate_image = async ({ prompt }, id) => {
         const iid = id + '-' + i.i
         const json = await chatStreams[id].image({
             id: iid,
-            model: getImageModel(),
+            model,
             prompt: i.prompt
         })
         i.prompt = json[0].revised_prompt || i.prompt

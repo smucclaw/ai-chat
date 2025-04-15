@@ -3,7 +3,7 @@ MODES = Object.assign({
     name: 'Lookup',
     visible: true,
     placeholder: 'What would you like to know?',
-    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'solve_complex_math', getImageModel() ? 'generate_image' : null, 'render_chart', 'stock_quotes'],
+    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'solve_complex_math', 'generate_image', 'render_chart', 'stock_quotes'],
     initialMessages: () => [{
       role: 'system',
       content: 'You\'re a information retrieval and answering AI and always start by using the `search_web_info` tool or other tools to retrieve relevant and up-to-date information BEFORE you give any uninformed reply.'
@@ -25,7 +25,7 @@ MODES = Object.assign({
     name: 'Chat',
     visible: true,
     placeholder: 'What\'s on your mind?',
-    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'solve_complex_math', getImageModel() ? 'generate_image' : null, 'render_chart', 'stock_quotes'],
+    tools: ['search_web_info', 'get_weather', 'search_user_history', 'solve_math', 'solve_complex_math', 'generate_image', 'render_chart', 'stock_quotes'],
     initialMessages: () => [{
       role: 'system',
       content: 'You\'re a chat AI. Use tools only when necessary to be most helpful.'
