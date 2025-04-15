@@ -450,7 +450,6 @@ RENDER_TOOL.stock_quotes = (results, id) => {
     const parts = id.split('-')
     if (loadedChatId?.toString() === parts[0] && results.id) {
         id = loadedChatId + '-' + (parts[1] || results.id.split('-')[1])
-        console.log(results.data)
         appendTool({ html: `<p>Retrieving ${results.info || 'financial market information'} ${results.symbol ? `for <code>${results.symbol}</code>` : ''}...</p>`, id })
     }
   }
