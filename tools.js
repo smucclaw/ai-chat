@@ -244,8 +244,8 @@ EXECUTE_TOOL.render_chart = async ({ chartcode }, id) => {
         throw new Error('No valid chartcode provided')
       }
       try {
-        RENDER_TOOL.render_chart({ id, chartcode }, id)
-        return { id, chartcode, result: 'Successfully rendered!' }
+        const rendered = RENDER_TOOL.render_chart({ id, chartcode }, id)
+        return { id, chartcode, result: rendered ? 'Successfully rendered chart!' : 'Could not render chart. Code was not in a self-executing closure or otherwise incompatible with LightweightCharts v4.2.3'}
       } catch (error) {
         return { id, error }
       }
@@ -419,18 +419,22 @@ RENDER_TOOL.render_chart = async (results, id) => {
     const parts = id.split('-')
     if (loadedChatId?.toString() === parts[0] && results.chartcode) {
         const tid = id + '-' + window.toolcount++
-        await appendTool({ html: `<p>Visualising information:</p><div class='chart' id='chart-${tid}'></div>`, id })
+        await appendTool({ html: `<p>Visualising information:</p><div class='chart' id='chart-${tid}'><i style='text-align: center; display: block; padding: 2em;'>Model did not render this chart successfully</i></div>`, id })
         const f = new Function('LightweightCharts', 'chartElement', 'var window = { LightweightCharts }, document = { getElementById: () => chartElement }, func = ' + results.chartcode)
+        const elem = document.getElementById('chart-' + tid)
         if (!window.LightweightCharts) {
             const s = document.createElement('scr' + 'ipt')
             s.src = 'https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.min.js'
             s.onload = function () {
-                f(window.LightweightCharts, document.getElementById('chart-' + tid))
+                elem.innerHTML = ''
+                f(window.LightweightCharts, elem)
             }
             document.body.appendChild(s)
         } else {
-            f(window.LightweightCharts, document.getElementById('chart-' + tid))
+            elem.innerHTML = ''
+            f(window.LightweightCharts, elem)
         }
+        return !elem.innerHTML
     }
 }
 
